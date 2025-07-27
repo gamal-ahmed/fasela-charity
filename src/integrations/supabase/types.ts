@@ -492,6 +492,66 @@ export type Database = {
         }
         Relationships: []
       }
+      experiments: {
+        Row: {
+          age_group: string
+          category: string
+          created_at: string
+          description: string
+          difficulty: string
+          duration: string
+          id: string
+          image_url: string | null
+          material_images: Json | null
+          materials: string[]
+          price: number | null
+          safety_tips: string[]
+          scientific_concepts: string[]
+          step_images: Json | null
+          steps: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          age_group: string
+          category: string
+          created_at?: string
+          description: string
+          difficulty: string
+          duration: string
+          id?: string
+          image_url?: string | null
+          material_images?: Json | null
+          materials: string[]
+          price?: number | null
+          safety_tips: string[]
+          scientific_concepts: string[]
+          step_images?: Json | null
+          steps: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          age_group?: string
+          category?: string
+          created_at?: string
+          description?: string
+          difficulty?: string
+          duration?: string
+          id?: string
+          image_url?: string | null
+          material_images?: Json | null
+          materials?: string[]
+          price?: number | null
+          safety_tips?: string[]
+          scientific_concepts?: string[]
+          step_images?: Json | null
+          steps?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       fasela_program_feedbacks: {
         Row: {
           cohort: string | null
