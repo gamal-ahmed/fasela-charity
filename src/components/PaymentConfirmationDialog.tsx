@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Copy, ExternalLink, CreditCard, User } from "lucide-react";
+import { Copy, ExternalLink, CreditCard, User, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface PaymentConfirmationDialogProps {
@@ -32,8 +32,9 @@ export const PaymentConfirmationDialog = ({
   onConfirm,
 }: PaymentConfirmationDialogProps) => {
   const { toast } = useToast();
-  const [step, setStep] = useState(1); // 1: donor info, 2: payment instructions
+  const [step, setStep] = useState(1); // 1: donor info, 2: payment instructions, 3: confirm understanding
   const [donorName, setDonorName] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
 
   // Safe amount with fallback to prevent undefined errors
   const safeAmount = amount && typeof amount === 'number' && !isNaN(amount) ? amount : 500;
@@ -58,18 +59,45 @@ export const PaymentConfirmationDialog = ({
     setStep(2);
   };
 
-  const handleConfirm = () => {
+  const handleUnderstandInstructions = () => {
+    setStep(3);
+  };
+
+  const handleConfirmUnderstanding = () => {
+    if (!confirmed) {
+      setConfirmed(true);
+      return;
+    }
     onConfirm(donorName);
   };
 
   const resetDialog = () => {
     setStep(1);
     setDonorName("");
+    setConfirmed(false);
   };
 
   const handleClose = () => {
     resetDialog();
     onOpenChange(false);
+  };
+
+  const getDialogTitle = () => {
+    switch (step) {
+      case 1: return "بيانات المتبرع";
+      case 2: return "تعليمات الدفع";
+      case 3: return "تأكيد الفهم";
+      default: return "تأكيد الدفع";
+    }
+  };
+
+  const getDialogDescription = () => {
+    switch (step) {
+      case 1: return "يرجى إدخال اسمك الكريم";
+      case 2: return "يرجى قراءة التعليمات بعناية";
+      case 3: return "يرجى تأكيد فهمك للتعليمات";
+      default: return "";
+    }
   };
 
   return (
@@ -78,13 +106,10 @@ export const PaymentConfirmationDialog = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="w-5 h-5" />
-            {step === 1 ? "بيانات المتبرع" : "تأكيد الدفع"}
+            {getDialogTitle()}
           </DialogTitle>
           <DialogDescription>
-            {step === 1 
-              ? "يرجى إدخال اسمك الكريم"
-              : "يرجى اتباع التعليمات التالية لإتمام عملية التبرع"
-            }
+            {getDialogDescription()}
           </DialogDescription>
         </DialogHeader>
 
@@ -126,7 +151,7 @@ export const PaymentConfirmationDialog = ({
                 </div>
               </div>
             </>
-          ) : (
+          ) : step === 2 ? (
             <>
               {/* تعليمات الدفع */}
               <div className="bg-accent/30 p-4 rounded-lg">
@@ -184,6 +209,51 @@ export const PaymentConfirmationDialog = ({
                 </p>
               </div>
             </>
+          ) : (
+            <>
+              {/* تأكيد الفهم */}
+              <div className="bg-accent/30 p-4 rounded-lg">
+                <h4 className="font-semibold mb-2">ملخص التبرع:</h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>المتبرع:</span>
+                    <span className="font-medium">{donorName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>المبلغ:</span>
+                    <span className="font-medium text-primary">{safeAmount.toLocaleString()} جنيه</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>كود الدفع:</span>
+                    <span className="font-medium font-mono">{paymentCode}</span>
+                  </div>
+                </div>
+              </div>
+
+              {!confirmed ? (
+                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2 text-yellow-800">تأكيد الفهم:</h4>
+                  <p className="text-sm text-yellow-700 mb-3">
+                    يرجى التأكد من فهمك للتعليمات التالية قبل المتابعة:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-sm text-yellow-700">
+                    <li>سأكتب كود الدفع "{paymentCode}" في خانة البيان</li>
+                    <li>أفهم أن بدون هذا الكود لن يتم ربط تبرعي بالحالة الصحيحة</li>
+                    <li>سأقوم بدفع المبلغ كاملاً: {safeAmount.toLocaleString()} جنيه</li>
+                  </ul>
+                  <p className="text-sm text-yellow-700 mt-3">
+                    اضغط "فهمت التعليمات" للمتابعة
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                  <p className="text-sm text-green-800 flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" />
+                    ممتاز! يمكنك الآن المتابعة إلى صفحة الدفع
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -201,7 +271,7 @@ export const PaymentConfirmationDialog = ({
                 متابعة
               </Button>
             </>
-          ) : (
+          ) : step === 2 ? (
             <>
               <Button variant="outline" onClick={() => setStep(1)}>
                 رجوع
@@ -210,11 +280,33 @@ export const PaymentConfirmationDialog = ({
                 إلغاء
               </Button>
               <Button 
-                onClick={handleConfirm}
+                onClick={handleUnderstandInstructions}
                 className="w-full sm:w-auto"
               >
-                <ExternalLink className="w-4 h-4 ml-2" />
-                المتابعة للدفع
+                فهمت التعليمات
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => setStep(2)}>
+                رجوع
+              </Button>
+              <Button variant="outline" onClick={handleClose}>
+                إلغاء
+              </Button>
+              <Button 
+                onClick={handleConfirmUnderstanding}
+                className="w-full sm:w-auto"
+                variant={confirmed ? "default" : "outline"}
+              >
+                {confirmed ? (
+                  <>
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                    المتابعة للدفع
+                  </>
+                ) : (
+                  "فهمت التعليمات"
+                )}
               </Button>
             </>
           )}
