@@ -137,51 +137,60 @@ const CasesList = () => {
 
       {/* الفلاتر وقائمة الحالات */}
       <div className="container mx-auto px-4 py-12">
-        {/* الفلاتر */}
-        <div className="mb-8 bg-card rounded-lg p-6 shadow-soft">
-          <div className="flex items-center gap-3 mb-4">
-            <Filter className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-semibold">تصفية الحالات</h3>
-          </div>
-          
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">حالة المشروع</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="اختر حالة المشروع" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">جميع الحالات</SelectItem>
-                  <SelectItem value="active">الحالات النشطة</SelectItem>
-                  <SelectItem value="complete">الحالات المكتملة</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">استحقاق الزكاة</label>
-              <Select value={zakahFilter} onValueChange={setZakahFilter}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="اختر استحقاق الزكاة" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">جميع الحالات</SelectItem>
-                  <SelectItem value="true">مستحق للزكاة</SelectItem>
-                  <SelectItem value="false">غير مستحق للزكاة</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        {/* الفلاتر البسيطة */}
+        <div className="mb-6 space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <span className="text-sm font-medium text-muted-foreground self-center ml-2">حالة المشروع:</span>
+            <Badge 
+              variant={statusFilter === "all" ? "default" : "outline"}
+              className="cursor-pointer hover:bg-primary/80"
+              onClick={() => setStatusFilter("all")}
+            >
+              جميع الحالات
+            </Badge>
+            <Badge 
+              variant={statusFilter === "active" ? "default" : "outline"}
+              className="cursor-pointer hover:bg-primary/80"
+              onClick={() => setStatusFilter("active")}
+            >
+              نشطة
+            </Badge>
+            <Badge 
+              variant={statusFilter === "complete" ? "default" : "outline"}
+              className="cursor-pointer hover:bg-primary/80"
+              onClick={() => setStatusFilter("complete")}
+            >
+              مكتملة
+            </Badge>
           </div>
 
-          {/* عداد النتائج */}
-          <div className="mt-4 pt-4 border-t border-border">
-            <p className="text-sm text-muted-foreground">
-              عدد الحالات المعروضة: <span className="font-semibold text-foreground">{cases?.length || 0}</span>
-              {allCases && (
-                <span> من أصل <span className="font-semibold text-foreground">{allCases.length}</span></span>
-              )}
-            </p>
+          <div className="flex flex-wrap gap-2">
+            <span className="text-sm font-medium text-muted-foreground self-center ml-2">استحقاق الزكاة:</span>
+            <Badge 
+              variant={zakahFilter === "all" ? "default" : "outline"}
+              className="cursor-pointer hover:bg-primary/80"
+              onClick={() => setZakahFilter("all")}
+            >
+              جميع الحالات
+            </Badge>
+            <Badge 
+              variant={zakahFilter === "true" ? "default" : "outline"}
+              className="cursor-pointer hover:bg-primary/80"
+              onClick={() => setZakahFilter("true")}
+            >
+              مستحق للزكاة
+            </Badge>
+            <Badge 
+              variant={zakahFilter === "false" ? "default" : "outline"}
+              className="cursor-pointer hover:bg-primary/80"
+              onClick={() => setZakahFilter("false")}
+            >
+              غير مستحق للزكاة
+            </Badge>
+          </div>
+
+          <div className="text-sm text-muted-foreground">
+            عدد الحالات: {cases?.length || 0}
           </div>
         </div>
 
