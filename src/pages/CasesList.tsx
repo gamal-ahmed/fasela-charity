@@ -58,8 +58,11 @@ const CasesList = () => {
   const totalCollected = cases?.reduce((sum, caseItem) => sum + (caseItem.total_secured_money || 0), 0) || 0;
   const progressPercentage = totalNeeded > 0 ? (totalCollected / totalNeeded) * 100 : 0;
 
-  // Calculate completed cases
-  const completedCases = allCases?.filter(caseItem => caseItem.status === 'complete').length || 0;
+  // Get statistics from database
+  const sponsoredFamilies = programStats?.find(stat => stat.key === 'sponsored_families')?.value || (allCases?.length || 0).toString();
+  const sponsoredOrphans = programStats?.find(stat => stat.key === 'sponsored_orphans')?.value || '0';
+  const childrenEducated = programStats?.find(stat => stat.key === 'children_educated')?.value || '0';
+  const completedCases = programStats?.find(stat => stat.key === 'completed_cases')?.value || allCases?.filter(caseItem => caseItem.status === 'complete').length.toString() || '0';
 
   if (isLoading) {
     return (
@@ -130,7 +133,7 @@ const CasesList = () => {
               <div className="text-center">
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg hover:bg-white/15 transition-all">
                   <div className="text-3xl mb-2">👨‍👩‍👧‍👦</div>
-                  <div className="text-3xl font-bold text-white mb-1">{allCases?.length || 0}</div>
+                  <div className="text-3xl font-bold text-white mb-1">{sponsoredFamilies}</div>
                   <div className="text-sm text-white/80">الأسر المكفولة</div>
                 </div>
               </div>
@@ -139,7 +142,7 @@ const CasesList = () => {
               <div className="text-center">
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg hover:bg-white/15 transition-all">
                   <div className="text-3xl mb-2">👶</div>
-                  <div className="text-3xl font-bold text-white mb-1">{programStats?.find(stat => stat.key === 'sponsored_orphans')?.value || '0'}</div>
+                  <div className="text-3xl font-bold text-white mb-1">{sponsoredOrphans}</div>
                   <div className="text-sm text-white/80">الأيتام المكفولين</div>
                 </div>
               </div>
@@ -148,7 +151,7 @@ const CasesList = () => {
               <div className="text-center">
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg hover:bg-white/15 transition-all">
                   <div className="text-3xl mb-2">📚</div>
-                  <div className="text-3xl font-bold text-white mb-1">{programStats?.find(stat => stat.key === 'children_educated')?.value || '0'}</div>
+                  <div className="text-3xl font-bold text-white mb-1">{childrenEducated}</div>
                   <div className="text-sm text-white/80">الأطفال المتعلمين</div>
                 </div>
               </div>
