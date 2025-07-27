@@ -54,6 +54,8 @@ export const DonationsManagement = () => {
 
   const confirmDonationMutation = useMutation({
     mutationFn: async ({ id, paymentRef, notes }: { id: string; paymentRef: string; notes: string }) => {
+      console.log("Confirming donation:", { id, paymentRef, notes });
+      
       const { error } = await supabase
         .from("donations")
         .update({
@@ -65,7 +67,11 @@ export const DonationsManagement = () => {
         })
         .eq("id", id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error confirming donation:", error);
+        throw error;
+      }
+      console.log("Donation confirmed successfully");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-donations"] });
