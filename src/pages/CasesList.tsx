@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { MapPin, Users, Calendar, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -23,6 +24,11 @@ const CasesList = () => {
       return data;
     }
   });
+
+  // Calculate total needed and collected money
+  const totalNeeded = cases?.reduce((sum, caseItem) => sum + (caseItem.monthly_cost * caseItem.months_needed), 0) || 0;
+  const totalCollected = cases?.reduce((sum, caseItem) => sum + (caseItem.total_secured_money || 0), 0) || 0;
+  const progressPercentage = totalNeeded > 0 ? (totalCollected / totalNeeded) * 100 : 0;
 
   if (isLoading) {
     return (
@@ -85,6 +91,29 @@ const CasesList = () => {
           <p className="text-xl md:text-2xl opacity-90 max-w-3xl mx-auto leading-relaxed">
             اختر الأسرة التي تود كفالتها واتبع رحلتها الشهرية بشفافية كاملة
           </p>
+          
+          {/* Progress Section */}
+          <div className="mt-12 max-w-2xl mx-auto">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold mb-2">إجمالي التقدم في جمع التبرعات</h3>
+                <div className="flex justify-between items-center text-sm opacity-90">
+                  <span>المجمع: {totalCollected.toLocaleString()} جنيه</span>
+                  <span>المطلوب: {totalNeeded.toLocaleString()} جنيه</span>
+                </div>
+              </div>
+              <Progress 
+                value={progressPercentage} 
+                className="h-3 bg-white/20"
+              />
+              <div className="text-center mt-2">
+                <span className="text-lg font-bold">
+                  {Math.round(progressPercentage)}%
+                </span>
+              </div>
+            </div>
+          </div>
+          
           <div className="mt-8 flex justify-center">
             <div className="w-24 h-1 bg-white/30 rounded-full"></div>
           </div>
