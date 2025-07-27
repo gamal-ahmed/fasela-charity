@@ -74,14 +74,20 @@ const CasesList = () => {
       </header>
       
       {/* Hero Section */}
-      <div className="gradient-hero text-white py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">
+      <div className="relative gradient-hero text-white py-20 overflow-hidden">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+        <div className="relative container mx-auto px-4 text-center">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-b from-white to-white/90 bg-clip-text text-transparent">
             جميع الحالات المحتاجة
           </h1>
-          <p className="text-xl md:text-2xl opacity-90 max-w-2xl mx-auto">
-            اختر الحالة التي تريد مساعدتها وكن جزءاً من قصة نجاح
+          <p className="text-xl md:text-2xl opacity-90 max-w-3xl mx-auto leading-relaxed">
+            اختر الأسرة التي تود كفالتها واتبع رحلتها الشهرية بشفافية كاملة
           </p>
+          <div className="mt-8 flex justify-center">
+            <div className="w-24 h-1 bg-white/30 rounded-full"></div>
+          </div>
         </div>
       </div>
 
