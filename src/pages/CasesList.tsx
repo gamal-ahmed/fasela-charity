@@ -126,21 +126,29 @@ const CasesList = () => {
           {cases?.map((caseItem) => (
             <Card key={caseItem.id} className="overflow-hidden shadow-soft hover:shadow-lg transition-shadow">
               {caseItem.photo_url && (
-                <div className="relative h-48 bg-gray-100">
-                  <img 
-                    src={caseItem.photo_url} 
-                    alt={caseItem.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-4 right-4">
-                    <Badge 
-                      variant={caseItem.status === 'active' ? 'default' : 'secondary'}
-                      className="bg-white/90 text-gray-800"
-                    >
-                      {caseItem.status === 'active' ? 'نشطة' : 'مكتملة'}
-                    </Badge>
+                  <div className="relative h-48 bg-gray-100">
+                    <img 
+                      src={caseItem.photo_url} 
+                      alt={caseItem.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-4 right-4 flex gap-2">
+                      <Badge 
+                        variant={caseItem.status === 'active' ? 'default' : 'secondary'}
+                        className="bg-white/90 text-gray-800"
+                      >
+                        {caseItem.status === 'active' ? 'نشطة' : 'مكتملة'}
+                      </Badge>
+                      {caseItem.deserve_zakkah && (
+                        <Badge 
+                          variant="outline"
+                          className="bg-green-500/90 text-white border-green-600"
+                        >
+                          مستحق للزكاة
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                </div>
               )}
               
               <CardHeader>
