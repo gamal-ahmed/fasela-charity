@@ -240,6 +240,8 @@ const CaseDetails = () => {
               caseStatus={caseData.status}
               monthsCovered={caseData.months_covered}
               monthsNeeded={caseData.months_needed}
+              paymentCode={caseData.payment_code}
+              caseTitle={caseData.title_ar || caseData.title}
             />
             
             {/* معلومات إضافية */}

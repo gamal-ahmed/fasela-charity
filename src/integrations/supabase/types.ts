@@ -260,6 +260,7 @@ export type Database = {
           monthly_cost: number
           months_covered: number
           months_needed: number
+          payment_code: string | null
           photo_url: string | null
           short_description: string
           short_description_ar: string
@@ -280,6 +281,7 @@ export type Database = {
           monthly_cost: number
           months_covered?: number
           months_needed: number
+          payment_code?: string | null
           photo_url?: string | null
           short_description: string
           short_description_ar: string
@@ -300,6 +302,7 @@ export type Database = {
           monthly_cost?: number
           months_covered?: number
           months_needed?: number
+          payment_code?: string | null
           photo_url?: string | null
           short_description?: string
           short_description_ar?: string
@@ -1261,6 +1264,10 @@ export type Database = {
       create_default_categories: {
         Args: { user_uuid: string }
         Returns: undefined
+      }
+      generate_payment_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       get_action_counts: {
         Args: Record<PropertyKey, never>

@@ -4,17 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Heart, Calendar, Gift, CheckCircle } from "lucide-react";
+import { PaymentConfirmationDialog } from "./PaymentConfirmationDialog";
 
 interface DonationSectionProps {
   monthlyNeed: number;
   caseStatus?: string;
   monthsCovered?: number;
   monthsNeeded?: number;
+  paymentCode?: string;
+  caseTitle?: string;
 }
 
-export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, monthsNeeded = 1 }: DonationSectionProps) => {
+export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, monthsNeeded = 1, paymentCode, caseTitle }: DonationSectionProps) => {
   const [selectedMonths, setSelectedMonths] = useState([3]);
   const [donationType, setDonationType] = useState<'monthly' | 'custom'>('monthly');
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
   const months = selectedMonths[0];
   const totalAmount = donationType === 'monthly' ? monthlyNeed * months : selectedMonths[0];
@@ -30,6 +34,16 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
     { months: 6, label: "6 أشهر", popular: false },
     { months: 12, label: "سنة كاملة", popular: false },
   ];
+
+  const handleDonateClick = () => {
+    if (!paymentCode || !caseTitle) return;
+    setShowPaymentDialog(true);
+  };
+
+  const handlePaymentConfirm = () => {
+    setShowPaymentDialog(false);
+    window.open('https://ipn.eg/S/asayedrb/instapay/2c0Zdf', '_blank');
+  };
 
   return (
     <Card className="p-8 shadow-soft">
@@ -193,6 +207,7 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
           size="lg" 
           className={`w-full text-lg py-6 ${isDonationDisabled ? 'opacity-50 cursor-not-allowed' : 'btn-charity'}`}
           disabled={isDonationDisabled}
+          onClick={handleDonateClick}
         >
           <Heart className="w-5 h-5 ml-2" />
           {isDonationDisabled 
@@ -205,6 +220,15 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
           سيتم إرسال تقارير شهرية عن استخدام التبرع وأحوال العائلة
         </p>
       </div>
+
+      <PaymentConfirmationDialog
+        open={showPaymentDialog}
+        onOpenChange={setShowPaymentDialog}
+        paymentCode={paymentCode || ''}
+        amount={totalAmount}
+        caseTitle={caseTitle || ''}
+        onConfirm={handlePaymentConfirm}
+      />
     </Card>
   );
 };
