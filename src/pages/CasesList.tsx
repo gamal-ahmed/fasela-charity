@@ -163,7 +163,9 @@ const CasesList = () => {
           <Badge 
             variant={zakahFilter === "true" ? "default" : "outline"}
             className="cursor-pointer"
-            onClick={() => setZakahFilter("true")}
+            onClick={() => {
+              setZakahFilter(zakahFilter === "true" ? "all" : "true");
+            }}
           >
             مستحق للزكاة
           </Badge>
