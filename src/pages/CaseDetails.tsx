@@ -235,7 +235,12 @@ const CaseDetails = () => {
 
           {/* العمود الأيمن - قسم التبرع */}
           <div className="space-y-6">
-            <DonationSection monthlyNeed={totalMonthlyNeed} />
+            <DonationSection 
+              monthlyNeed={totalMonthlyNeed} 
+              caseStatus={caseData.status}
+              monthsCovered={caseData.months_covered}
+              monthsNeeded={caseData.months_needed}
+            />
             
             {/* معلومات إضافية */}
             <Card className="p-6 shadow-soft">
