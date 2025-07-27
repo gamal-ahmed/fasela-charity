@@ -268,6 +268,7 @@ export type Database = {
           title: string
           title_ar: string
           total_secured_money: number | null
+          updated_at: string | null
         }
         Insert: {
           area?: string | null
@@ -289,6 +290,7 @@ export type Database = {
           title: string
           title_ar: string
           total_secured_money?: number | null
+          updated_at?: string | null
         }
         Update: {
           area?: string | null
@@ -310,6 +312,7 @@ export type Database = {
           title?: string
           title_ar?: string
           total_secured_money?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
