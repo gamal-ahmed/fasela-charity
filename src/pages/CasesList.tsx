@@ -59,10 +59,10 @@ const CasesList = () => {
   const progressPercentage = totalNeeded > 0 ? (totalCollected / totalNeeded) * 100 : 0;
 
   // Get statistics from database
-  const sponsoredFamilies = programStats?.find(stat => stat.key === 'sponsored_families')?.value || (allCases?.length || 0).toString();
-  const sponsoredOrphans = programStats?.find(stat => stat.key === 'sponsored_orphans')?.value || '0';
-  const childrenEducated = programStats?.find(stat => stat.key === 'children_educated')?.value || '0';
-  const completedCases = programStats?.find(stat => stat.key === 'completed_cases')?.value || allCases?.filter(caseItem => caseItem.status === 'complete').length.toString() || '0';
+  const sponsoredFamilies = programStats?.find(stat => stat.key === 'cases')?.value || (allCases?.length || 0).toString();
+  const sponsoredOrphans = programStats?.find(stat => stat.key === 'cohorts')?.value || '0';
+  const childrenEducated = programStats?.find(stat => stat.key === 'learners')?.value || '0';
+  const completedCases = programStats?.find(stat => stat.key === 'cases')?.value || allCases?.filter(caseItem => caseItem.status === 'complete').length.toString() || '0';
 
   if (isLoading) {
     return (
