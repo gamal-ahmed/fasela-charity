@@ -247,7 +247,8 @@ const CasesList = () => {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {cases?.map((caseItem) => (
-            <Card key={caseItem.id} className="overflow-hidden shadow-soft hover:shadow-lg transition-shadow">
+            <Link key={caseItem.id} to={`/case/${caseItem.id}`} className="block">
+              <Card className="overflow-hidden shadow-soft hover:shadow-lg transition-shadow cursor-pointer hover:scale-105 transform transition-transform">
               {caseItem.photo_url && (
                   <div className="relative h-48 bg-gray-100">
                     <img 
@@ -320,15 +321,9 @@ const CasesList = () => {
                   </div>
                 </div>
 
-                <div className="pt-4">
-                  <Button asChild className="w-full">
-                    <Link to={`/case/${caseItem.id}`}>
-                      عرض التفاصيل والتبرع
-                    </Link>
-                  </Button>
-                </div>
               </CardContent>
-            </Card>
+              </Card>
+            </Link>
           ))}
         </div>
 
