@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,84 +35,13 @@ interface MonthlyNeed {
   color: string;
 }
 
-interface CaseFormProps {
-  caseId?: string;
-}
-
-const CaseForm = ({ caseId }: CaseFormProps) => {
+const CaseForm = () => {
   const [loading, setLoading] = useState(false);
   const [monthlyNeeds, setMonthlyNeeds] = useState<MonthlyNeed[]>([
     { category: "", amount: 0, description: "", icon: "💰", color: "bg-blue-500" }
   ]);
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<CaseFormData>();
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const isEditMode = !!caseId;
-
-  // Load case data for editing
-  useEffect(() => {
-    if (isEditMode && caseId) {
-      loadCaseData(caseId);
-    }
-  }, [caseId, isEditMode]);
-
-  const loadCaseData = async (id: string) => {
-    try {
-      setLoading(true);
-      
-      // Load case data
-      const { data: caseData, error: caseError } = await supabase
-        .from("cases")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (caseError) throw caseError;
-
-      // Populate form fields
-      setValue("title_ar", caseData.title_ar);
-      setValue("title", caseData.title || "");
-      setValue("short_description_ar", caseData.short_description_ar);
-      setValue("short_description", caseData.short_description || "");
-      setValue("description_ar", caseData.description_ar);
-      setValue("description", caseData.description || "");
-      setValue("monthly_cost", caseData.monthly_cost);
-      setValue("months_needed", caseData.months_needed);
-      setValue("photo_url", caseData.photo_url || "");
-      setValue("is_published", caseData.is_published);
-      setValue("city", caseData.city || "");
-      setValue("area", caseData.area || "");
-      setValue("deserve_zakkah", caseData.deserve_zakkah);
-
-      // Load monthly needs
-      const { data: needsData, error: needsError } = await supabase
-        .from("monthly_needs")
-        .select("*")
-        .eq("case_id", id);
-
-      if (needsError) throw needsError;
-
-      if (needsData && needsData.length > 0) {
-        setMonthlyNeeds(needsData.map(need => ({
-          category: need.category,
-          amount: need.amount,
-          description: need.description || "",
-          icon: need.icon || "💰",
-          color: need.color || "bg-blue-500"
-        })));
-      }
-
-    } catch (error) {
-      console.error("Error loading case data:", error);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء تحميل بيانات الحالة",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getDefaultImage = () => {
     return "/images/default-case-image.jpg";
@@ -145,123 +73,64 @@ const CaseForm = ({ caseId }: CaseFormProps) => {
     setLoading(true);
     
     try {
-      if (isEditMode && caseId) {
-        // Update existing case
-        const { error: caseError } = await supabase
-          .from("cases")
-          .update({
-            title_ar: data.title_ar,
-            title: data.title || "",
-            short_description_ar: data.short_description_ar,
-            short_description: data.short_description || "",
-            description_ar: data.description_ar,
-            description: data.description || "",
-            monthly_cost: data.monthly_cost,
-            months_needed: data.months_needed,
-            photo_url: data.photo_url || getDefaultImage(),
-            is_published: data.is_published,
-            city: data.city || null,
-            area: data.area || null,
-            deserve_zakkah: data.deserve_zakkah || false,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", caseId);
+      // Insert case
+      const { data: caseData, error: caseError } = await supabase
+        .from("cases")
+        .insert({
+          title_ar: data.title_ar,
+          title: data.title || "",
+          short_description_ar: data.short_description_ar,
+          short_description: data.short_description || "",
+          description_ar: data.description_ar,
+          description: data.description || "",
+          monthly_cost: data.monthly_cost,
+          months_needed: data.months_needed,
+          photo_url: data.photo_url || getDefaultImage(),
+          is_published: data.is_published,
+          city: data.city || null,
+          area: data.area || null,
+          deserve_zakkah: data.deserve_zakkah || false,
+          months_covered: 0,
+          total_secured_money: 0
+        })
+        .select()
+        .single();
 
-        if (caseError) throw caseError;
+      if (caseError) throw caseError;
 
-        // Delete existing monthly needs and insert new ones
-        await supabase
+      // Insert monthly needs
+      if (caseData && monthlyNeeds.some(need => need.category.trim())) {
+        const validNeeds = monthlyNeeds.filter(need => need.category.trim());
+        const needsToInsert = validNeeds.map(need => ({
+          case_id: caseData.id,
+          category: need.category,
+          amount: need.amount,
+          description: need.description,
+          icon: need.icon,
+          color: need.color
+        }));
+
+        const { error: needsError } = await supabase
           .from("monthly_needs")
-          .delete()
-          .eq("case_id", caseId);
+          .insert(needsToInsert);
 
-        // Insert updated monthly needs
-        if (monthlyNeeds.some(need => need.category.trim())) {
-          const validNeeds = monthlyNeeds.filter(need => need.category.trim());
-          const needsToInsert = validNeeds.map(need => ({
-            case_id: caseId,
-            category: need.category,
-            amount: need.amount,
-            description: need.description,
-            icon: need.icon,
-            color: need.color
-          }));
-
-          const { error: needsError } = await supabase
-            .from("monthly_needs")
-            .insert(needsToInsert);
-
-          if (needsError) throw needsError;
-        }
-
-        toast({
-          title: "تم بنجاح",
-          description: "تم تحديث الحالة والاحتياجات الشهرية بنجاح",
-        });
-
-        // Navigate back to cases list
-        navigate("/admin");
-
-      } else {
-        // Create new case
-        const { data: caseData, error: caseError } = await supabase
-          .from("cases")
-          .insert({
-            title_ar: data.title_ar,
-            title: data.title || "",
-            short_description_ar: data.short_description_ar,
-            short_description: data.short_description || "",
-            description_ar: data.description_ar,
-            description: data.description || "",
-            monthly_cost: data.monthly_cost,
-            months_needed: data.months_needed,
-            photo_url: data.photo_url || getDefaultImage(),
-            is_published: data.is_published,
-            city: data.city || null,
-            area: data.area || null,
-            deserve_zakkah: data.deserve_zakkah || false,
-            months_covered: 0,
-            total_secured_money: 0
-          })
-          .select()
-          .single();
-
-        if (caseError) throw caseError;
-
-        // Insert monthly needs
-        if (caseData && monthlyNeeds.some(need => need.category.trim())) {
-          const validNeeds = monthlyNeeds.filter(need => need.category.trim());
-          const needsToInsert = validNeeds.map(need => ({
-            case_id: caseData.id,
-            category: need.category,
-            amount: need.amount,
-            description: need.description,
-            icon: need.icon,
-            color: need.color
-          }));
-
-          const { error: needsError } = await supabase
-            .from("monthly_needs")
-            .insert(needsToInsert);
-
-          if (needsError) throw needsError;
-        }
-
-        toast({
-          title: "تم بنجاح",
-          description: "تم إضافة الحالة والاحتياجات الشهرية بنجاح",
-        });
-
-        // Reset form
-        reset();
-        setMonthlyNeeds([{ category: "", amount: 0, description: "", icon: "💰", color: "bg-blue-500" }]);
+        if (needsError) throw needsError;
       }
 
+      toast({
+        title: "تم بنجاح",
+        description: "تم إضافة الحالة والاحتياجات الشهرية بنجاح",
+      });
+
+      // Reset form
+      reset();
+      setMonthlyNeeds([{ category: "", amount: 0, description: "", icon: "💰", color: "bg-blue-500" }]);
+
     } catch (error) {
-      console.error("Error saving case:", error);
+      console.error("Error creating case:", error);
       toast({
         title: "خطأ",
-        description: isEditMode ? "حدث خطأ أثناء تحديث الحالة" : "حدث خطأ أثناء إضافة الحالة",
+        description: "حدث خطأ أثناء إضافة الحالة",
         variant: "destructive",
       });
     } finally {
@@ -569,7 +438,7 @@ const CaseForm = ({ caseId }: CaseFormProps) => {
 
       <div className="flex justify-end">
         <Button type="submit" disabled={loading} size="lg">
-          {loading ? "جار الحفظ..." : isEditMode ? "تحديث الحالة" : "حفظ الحالة"}
+          {loading ? "جار الحفظ..." : "حفظ الحالة"}
         </Button>
       </div>
     </form>

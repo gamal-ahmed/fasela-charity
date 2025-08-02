@@ -154,13 +154,6 @@ const CasesList = () => {
                     عرض
                   </Link>
                 </Button>
-
-                <Button size="sm" variant="outline" asChild>
-                  <Link to={`/admin?edit=${caseItem.id}`}>
-                    <Edit className="w-4 h-4 ml-1" />
-                    تعديل
-                  </Link>
-                </Button>
                 
                 <Button 
                   size="sm" 

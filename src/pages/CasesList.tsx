@@ -5,15 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Users, Calendar, Heart, Filter, Edit } from "lucide-react";
+import { MapPin, Users, Calendar, Heart, Filter } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Navigation from "@/components/Navigation";
 
 const CasesList = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [zakahFilter, setZakahFilter] = useState<string>("all");
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   const { data: allCases, isLoading } = useQuery({
     queryKey: ["cases"],
@@ -58,24 +57,6 @@ const CasesList = () => {
   const totalNeeded = cases?.reduce((sum, caseItem) => sum + (caseItem.monthly_cost * caseItem.months_needed), 0) || 0;
   const totalCollected = cases?.reduce((sum, caseItem) => sum + (caseItem.total_secured_money || 0), 0) || 0;
   const progressPercentage = totalNeeded > 0 ? (totalCollected / totalNeeded) * 100 : 0;
-
-  // Check admin status
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id);
-        
-        const hasAdminRole = data?.some(role => role.role === "admin") || false;
-        setIsAdmin(hasAdminRole);
-      }
-    };
-    
-    checkAdminStatus();
-  }, []);
 
   // Get statistics from database
   const sponsoredFamilies = programStats?.find(stat => stat.key === 'cared_cases')?.value || (allCases?.length || 0).toString();
@@ -266,65 +247,36 @@ const CasesList = () => {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {cases?.map((caseItem) => (
-            <Card key={caseItem.id} className="overflow-hidden shadow-soft hover:shadow-lg transition-shadow relative">
+            <Link key={caseItem.id} to={`/case/${caseItem.id}`} className="block">
+              <Card className="overflow-hidden shadow-soft hover:shadow-lg transition-shadow cursor-pointer hover:scale-105 transform transition-transform">
               {caseItem.photo_url && (
-                <div className="relative h-48 bg-gray-100">
-                  <img 
-                    src={caseItem.photo_url} 
-                    alt={caseItem.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-4 right-4 flex gap-2">
-                    <Badge 
-                      variant={caseItem.status === 'active' ? 'default' : 'secondary'}
-                      className="bg-white/90 text-gray-800"
-                    >
-                      {caseItem.status === 'active' ? 'نشطة' : 'مكتملة'}
-                    </Badge>
-                    {caseItem.deserve_zakkah && (
+                  <div className="relative h-48 bg-gray-100">
+                    <img 
+                      src={caseItem.photo_url} 
+                      alt={caseItem.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-4 right-4 flex gap-2">
                       <Badge 
-                        variant="outline"
-                        className="bg-green-500/90 text-white border-green-600"
+                        variant={caseItem.status === 'active' ? 'default' : 'secondary'}
+                        className="bg-white/90 text-gray-800"
                       >
-                        مستحق للزكاة
+                        {caseItem.status === 'active' ? 'نشطة' : 'مكتملة'}
                       </Badge>
-                    )}
-                  </div>
-                  {isAdmin && (
-                    <div className="absolute top-4 left-4">
-                      <Button
-                        asChild
-                        size="sm"
-                        variant="secondary"
-                        className="bg-white/90 hover:bg-white text-gray-800"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Link to={`/admin?edit=${caseItem.id}`}>
-                          <Edit className="w-4 h-4 mr-1" />
-                          تعديل
-                        </Link>
-                      </Button>
+                      {caseItem.deserve_zakkah && (
+                        <Badge 
+                          variant="outline"
+                          className="bg-green-500/90 text-white border-green-600"
+                        >
+                          مستحق للزكاة
+                        </Badge>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </div>
               )}
               
               <CardHeader>
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-xl">{caseItem.title_ar || caseItem.title}</CardTitle>
-                  {isAdmin && !caseItem.photo_url && (
-                    <Button
-                      asChild
-                      size="sm"
-                      variant="outline"
-                    >
-                      <Link to={`/admin?edit=${caseItem.id}`}>
-                        <Edit className="w-4 h-4 mr-1" />
-                        تعديل
-                      </Link>
-                    </Button>
-                  )}
-                </div>
+                <CardTitle className="text-xl">{caseItem.title_ar || caseItem.title}</CardTitle>
               </CardHeader>
               
               <CardContent className="space-y-4">
@@ -369,17 +321,9 @@ const CasesList = () => {
                   </div>
                 </div>
 
-                {/* Action buttons */}
-                <div className="pt-4 space-y-2">
-                  <Button asChild className="w-full">
-                    <Link to={`/case/${caseItem.id}`}>
-                      عرض التفاصيل والتبرع
-                    </Link>
-                  </Button>
-                </div>
-
               </CardContent>
-            </Card>
+              </Card>
+            </Link>
           ))}
         </div>
 
