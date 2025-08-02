@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Check, X, Eye, CreditCard, Calendar, User } from "lucide-react";
+import { Check, X, Eye, CreditCard, Calendar, User, CheckCircle2, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Donation {
@@ -18,7 +18,7 @@ interface Donation {
   amount: number;
   months_pledged: number;
   payment_code: string;
-  status: 'pending' | 'confirmed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'cancelled' | 'redeemed';
   donation_type: 'monthly' | 'custom';
   payment_reference: string | null;
   admin_notes: string | null;
@@ -31,6 +31,7 @@ interface Donation {
 
 export const DonationsManagement = () => {
   const [selectedDonation, setSelectedDonation] = useState<Donation | null>(null);
+  const [selectedDonations, setSelectedDonations] = useState<Set<string>>(new Set());
   const [paymentReference, setPaymentReference] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
   const { toast } = useToast();
@@ -92,6 +93,63 @@ export const DonationsManagement = () => {
     }
   });
 
+  const redeemDonationMutation = useMutation({
+    mutationFn: async ({ id, notes }: { id: string; notes: string }) => {
+      const { error } = await supabase
+        .from("donations")
+        .update({
+          status: "redeemed",
+          admin_notes: notes
+        })
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-donations"] });
+      toast({
+        title: "تم تسليم التبرع",
+        description: "تم تسليم التبرع للعائلة بنجاح."
+      });
+      setSelectedDonation(null);
+      setAdminNotes("");
+    },
+    onError: () => {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ في تسليم التبرع",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const bulkRedeemMutation = useMutation({
+    mutationFn: async (donationIds: string[]) => {
+      const { error } = await supabase
+        .from("donations")
+        .update({ status: "redeemed" })
+        .in("id", donationIds)
+        .eq("status", "confirmed");
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-donations"] });
+      toast({
+        title: "تم تسليم التبرعات",
+        description: `تم تسليم ${selectedDonations.size} تبرعات بنجاح.`
+      });
+      setSelectedDonations(new Set());
+    },
+    onError: () => {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ في تسليم التبرعات",
+        variant: "destructive"
+      });
+    }
+  });
+
   const cancelDonationMutation = useMutation({
     mutationFn: async ({ id, notes }: { id: string; notes: string }) => {
       const { error } = await supabase
@@ -131,6 +189,29 @@ export const DonationsManagement = () => {
     });
   };
 
+  const handleRedeemDonation = () => {
+    if (!selectedDonation) return;
+    redeemDonationMutation.mutate({
+      id: selectedDonation.id,
+      notes: adminNotes
+    });
+  };
+
+  const handleBulkRedeem = () => {
+    if (selectedDonations.size === 0) return;
+    bulkRedeemMutation.mutate(Array.from(selectedDonations));
+  };
+
+  const toggleDonationSelection = (donationId: string) => {
+    const newSelected = new Set(selectedDonations);
+    if (newSelected.has(donationId)) {
+      newSelected.delete(donationId);
+    } else {
+      newSelected.add(donationId);
+    }
+    setSelectedDonations(newSelected);
+  };
+
   const handleCancelDonation = () => {
     if (!selectedDonation) return;
     cancelDonationMutation.mutate({
@@ -147,6 +228,8 @@ export const DonationsManagement = () => {
         return <Badge variant="outline" className="bg-green-50 text-green-700">مؤكد</Badge>;
       case 'cancelled':
         return <Badge variant="outline" className="bg-red-50 text-red-700">ملغي</Badge>;
+      case 'redeemed':
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700">تم التسليم</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -154,6 +237,7 @@ export const DonationsManagement = () => {
 
   const pendingDonations = donations?.filter(d => d.status === 'pending') || [];
   const confirmedDonations = donations?.filter(d => d.status === 'confirmed') || [];
+  const redeemedDonations = donations?.filter(d => d.status === 'redeemed') || [];
   const cancelledDonations = donations?.filter(d => d.status === 'cancelled') || [];
 
   if (isLoading) {
@@ -172,6 +256,10 @@ export const DonationsManagement = () => {
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-green-200 rounded-full"></div>
             <span>مؤكدة: {confirmedDonations.length}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-blue-200 rounded-full"></div>
+            <span>تم التسليم: {redeemedDonations.length}</span>
           </div>
         </div>
       </div>
@@ -237,13 +325,72 @@ export const DonationsManagement = () => {
 
       {/* التبرعات المؤكدة */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4 text-green-700">التبرعات المؤكدة ({confirmedDonations.length})</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-green-700">التبرعات المؤكدة ({confirmedDonations.length})</h3>
+          {selectedDonations.size > 0 && (
+            <Button 
+              onClick={handleBulkRedeem}
+              disabled={bulkRedeemMutation.isPending}
+              size="sm"
+            >
+              <Package className="w-4 h-4 ml-1" />
+              تسليم ({selectedDonations.size})
+            </Button>
+          )}
+        </div>
         {confirmedDonations.length === 0 ? (
           <p className="text-muted-foreground">لا توجد تبرعات مؤكدة</p>
         ) : (
           <div className="space-y-3">
             {confirmedDonations.slice(0, 5).map((donation) => (
               <div key={donation.id} className="border rounded-lg p-3 bg-green-50/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedDonations.has(donation.id)}
+                      onChange={() => toggleDonationSelection(donation.id)}
+                      className="w-4 h-4 text-primary rounded"
+                    />
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-medium">
+                          {donation.cases.title_ar || donation.cases.title}
+                        </span>
+                        {getStatusBadge(donation.status)}
+                      </div>
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        {donation.donor_name && (
+                          <div className="flex items-center gap-1">
+                            <User className="w-3 h-3" />
+                            <span>المتبرع: {donation.donor_name}</span>
+                          </div>
+                        )}
+                        <div>{donation.amount.toLocaleString()} جنيه - {new Date(donation.created_at).toLocaleDateString('ar-SA')}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {confirmedDonations.length > 5 && (
+              <p className="text-sm text-muted-foreground text-center">
+                وعدد {confirmedDonations.length - 5} تبرعات أخرى...
+              </p>
+            )}
+          </div>
+        )}
+      </Card>
+
+      {/* التبرعات المسلمة */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold mb-4 text-blue-700">التبرعات المسلمة ({redeemedDonations.length})</h3>
+        {redeemedDonations.length === 0 ? (
+          <p className="text-muted-foreground">لا توجد تبرعات مسلمة</p>
+        ) : (
+          <div className="space-y-3">
+            {redeemedDonations.slice(0, 5).map((donation) => (
+              <div key={donation.id} className="border rounded-lg p-3 bg-blue-50/50">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 text-sm">
@@ -265,9 +412,9 @@ export const DonationsManagement = () => {
                 </div>
               </div>
             ))}
-            {confirmedDonations.length > 5 && (
+            {redeemedDonations.length > 5 && (
               <p className="text-sm text-muted-foreground text-center">
-                وعدد {confirmedDonations.length - 5} تبرعات أخرى...
+                وعدد {redeemedDonations.length - 5} تبرعات أخرى...
               </p>
             )}
           </div>
@@ -336,21 +483,34 @@ export const DonationsManagement = () => {
             <Button variant="outline" onClick={() => setSelectedDonation(null)}>
               إلغاء
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleCancelDonation}
-              disabled={cancelDonationMutation.isPending}
-            >
-              <X className="w-4 h-4 ml-1" />
-              رفض
-            </Button>
-            <Button 
-              onClick={handleConfirmDonation}
-              disabled={confirmDonationMutation.isPending || !paymentReference.trim()}
-            >
-              <Check className="w-4 h-4 ml-1" />
-              تأكيد
-            </Button>
+            {selectedDonation?.status === 'pending' && (
+              <>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleCancelDonation}
+                  disabled={cancelDonationMutation.isPending}
+                >
+                  <X className="w-4 h-4 ml-1" />
+                  رفض
+                </Button>
+                <Button 
+                  onClick={handleConfirmDonation}
+                  disabled={confirmDonationMutation.isPending || !paymentReference.trim()}
+                >
+                  <Check className="w-4 h-4 ml-1" />
+                  تأكيد
+                </Button>
+              </>
+            )}
+            {selectedDonation?.status === 'confirmed' && (
+              <Button 
+                onClick={handleRedeemDonation}
+                disabled={redeemDonationMutation.isPending}
+              >
+                <Package className="w-4 h-4 ml-1" />
+                تسليم للعائلة
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
