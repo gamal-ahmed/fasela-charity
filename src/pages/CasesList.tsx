@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Users, Calendar, Heart, Filter } from "lucide-react";
+import { MapPin, Users, Calendar, Heart, Filter, Home, Baby, BookOpen, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import Navigation from "@/components/Navigation";
@@ -127,12 +127,14 @@ const CasesList = () => {
           </p>
           
           {/* Statistics Section */}
-          <div className="mt-10 mb-8">
+          <div className="mt-10">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
               {/* Number of sponsored families */}
               <div className="text-center">
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg hover:bg-white/15 transition-all">
-                  <div className="text-3xl mb-2">👨‍👩‍👧‍👦</div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg hover:bg-white/15 transition-all hover-scale">
+                  <div className="flex justify-center mb-3">
+                    <Home className="w-8 h-8 text-white" />
+                  </div>
                   <div className="text-3xl font-bold text-white mb-1">{sponsoredFamilies}</div>
                   <div className="text-sm text-white/80">الأسر المكفولة</div>
                 </div>
@@ -140,8 +142,10 @@ const CasesList = () => {
               
               {/* Number of sponsored orphan children - admin configurable */}
               <div className="text-center">
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg hover:bg-white/15 transition-all">
-                  <div className="text-3xl mb-2">👶</div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg hover:bg-white/15 transition-all hover-scale">
+                  <div className="flex justify-center mb-3">
+                    <Baby className="w-8 h-8 text-white" />
+                  </div>
                   <div className="text-3xl font-bold text-white mb-1">{sponsoredOrphans}</div>
                   <div className="text-sm text-white/80">الأيتام المكفولين</div>
                 </div>
@@ -149,8 +153,10 @@ const CasesList = () => {
               
               {/* Number of children taught Quran, Sunnah and electronics - admin configurable */}
               <div className="text-center">
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg hover:bg-white/15 transition-all">
-                  <div className="text-3xl mb-2">📚</div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg hover:bg-white/15 transition-all hover-scale">
+                  <div className="flex justify-center mb-3">
+                    <BookOpen className="w-8 h-8 text-white" />
+                  </div>
                   <div className="text-3xl font-bold text-white mb-1">{childrenEducated}</div>
                   <div className="text-sm text-white/80">الأطفال المتعلمين</div>
                 </div>
@@ -158,8 +164,10 @@ const CasesList = () => {
               
               {/* Number of cases we helped - calculated */}
               <div className="text-center">
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg hover:bg-white/15 transition-all">
-                  <div className="text-3xl mb-2">✅</div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg hover:bg-white/15 transition-all hover-scale">
+                  <div className="flex justify-center mb-3">
+                    <CheckCircle2 className="w-8 h-8 text-white" />
+                  </div>
                   <div className="text-3xl font-bold text-white mb-1">{completedCases}</div>
                   <div className="text-sm text-white/80">مجمل الحالات</div>
                 </div>
@@ -167,41 +175,6 @@ const CasesList = () => {
             </div>
           </div>
           
-          {/* Progress Section */}
-          <div className="mt-12 max-w-2xl mx-auto">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 border border-white/20 shadow-lg">
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-semibold mb-3 text-white">إجمالي التقدم في جمع التبرعات</h3>
-                <div className="flex justify-between items-center text-sm opacity-90 mb-4">
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-white">{totalCollected.toLocaleString()}</div>
-                    <div className="text-xs text-white/80">المجمع (جنيه)</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-white">{totalNeeded.toLocaleString()}</div>
-                    <div className="text-xs text-white/80">المطلوب (جنيه)</div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Enhanced Progress Bar */}
-              <div className="relative">
-                <div className="w-full bg-white/20 rounded-full h-4 overflow-hidden shadow-inner">
-                  <div 
-                    className="h-full bg-gradient-to-r from-white to-white/90 rounded-full transition-all duration-1000 ease-out animate-scale-in relative overflow-hidden"
-                    style={{ width: `${Math.min(progressPercentage, 100)}%` }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
-                  </div>
-                </div>
-                <div className="text-center mt-3">
-                  <span className="text-2xl font-bold text-white drop-shadow-lg">
-                    {Math.round(progressPercentage)}%
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
           
           <div className="mt-8 flex justify-center">
             <div className="w-24 h-1 bg-white/30 rounded-full"></div>
