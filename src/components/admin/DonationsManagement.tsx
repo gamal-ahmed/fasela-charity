@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Check, X, Eye, CreditCard, Calendar } from "lucide-react";
+import { Check, X, Eye, CreditCard, Calendar, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Donation {
@@ -195,6 +195,12 @@ export const DonationsManagement = () => {
                       {getStatusBadge(donation.status)}
                     </div>
                     <div className="text-sm text-muted-foreground space-y-1">
+                      {donation.donor_name && (
+                        <div className="flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          <span>المتبرع: {donation.donor_name}</span>
+                        </div>
+                      )}
                       <div>المبلغ: {donation.amount.toLocaleString()} جنيه</div>
                       <div className="flex items-center gap-4">
                         <span>كود الدفع: {donation.payment_code}</span>
@@ -246,8 +252,14 @@ export const DonationsManagement = () => {
                       </span>
                       {getStatusBadge(donation.status)}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {donation.amount.toLocaleString()} جنيه - {new Date(donation.created_at).toLocaleDateString('ar-SA')}
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      {donation.donor_name && (
+                        <div className="flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          <span>المتبرع: {donation.donor_name}</span>
+                        </div>
+                      )}
+                      <div>{donation.amount.toLocaleString()} جنيه - {new Date(donation.created_at).toLocaleDateString('ar-SA')}</div>
                     </div>
                   </div>
                 </div>
@@ -287,6 +299,11 @@ export const DonationsManagement = () => {
                 {selectedDonation.donation_type === 'monthly' && (
                   <div className="text-sm">
                     <span className="font-medium">عدد الأشهر:</span> {selectedDonation.months_pledged}
+                  </div>
+                )}
+                {selectedDonation.donor_name && (
+                  <div className="text-sm">
+                    <span className="font-medium">اسم المتبرع:</span> {selectedDonation.donor_name}
                   </div>
                 )}
                 <div className="text-sm">
