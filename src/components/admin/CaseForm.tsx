@@ -37,9 +37,10 @@ interface MonthlyNeed {
 
 interface CaseFormProps {
   caseId?: string;
+  onSuccess?: () => void;
 }
 
-const CaseForm = ({ caseId }: CaseFormProps) => {
+const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
   const [loading, setLoading] = useState(false);
   const [loadingCase, setLoadingCase] = useState(false);
   const [monthlyNeeds, setMonthlyNeeds] = useState<MonthlyNeed[]>([
@@ -204,6 +205,9 @@ const CaseForm = ({ caseId }: CaseFormProps) => {
           description: "تم تحديث الحالة والاحتياجات الشهرية بنجاح",
         });
 
+        // Call onSuccess callback if provided
+        onSuccess?.();
+
       } else {
         // Create new case
         const { data: caseData, error: caseError } = await supabase
@@ -257,6 +261,9 @@ const CaseForm = ({ caseId }: CaseFormProps) => {
         // Reset form only for new cases
         reset();
         setMonthlyNeeds([{ category: "", amount: 0, description: "", icon: "💰", color: "bg-blue-500" }]);
+        
+        // Call onSuccess callback if provided
+        onSuccess?.();
       }
 
     } catch (error) {

@@ -4,12 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Eye, Edit, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+import CaseForm from "./CaseForm";
 
 const CasesList = () => {
   const [loading, setLoading] = useState<string | null>(null);
+  const [editingCase, setEditingCase] = useState<string | null>(null);
   const { toast } = useToast();
 
   const { data: cases, refetch } = useQuery({
@@ -155,12 +158,26 @@ const CasesList = () => {
                   </Link>
                 </Button>
 
-                <Button size="sm" variant="outline" asChild>
-                  <Link to={`/admin?edit=${caseItem.id}`}>
-                    <Edit className="w-4 h-4 ml-1" />
-                    تعديل
-                  </Link>
-                </Button>
+                <Dialog open={editingCase === caseItem.id} onOpenChange={(open) => setEditingCase(open ? caseItem.id : null)}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="outline">
+                      <Edit className="w-4 h-4 ml-1" />
+                      تعديل
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>تعديل الحالة</DialogTitle>
+                    </DialogHeader>
+                    <CaseForm 
+                      caseId={caseItem.id} 
+                      onSuccess={() => {
+                        setEditingCase(null);
+                        refetch();
+                      }} 
+                    />
+                  </DialogContent>
+                </Dialog>
                 
                 <Button 
                   size="sm" 
