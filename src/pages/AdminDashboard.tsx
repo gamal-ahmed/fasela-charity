@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,10 @@ const AdminDashboard = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  
+  const editCaseId = searchParams.get("edit");
+  const defaultTab = editCaseId ? "add-case" : "overview";
 
   useEffect(() => {
     // Set up auth state listener
@@ -131,7 +135,7 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs defaultValue={defaultTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
@@ -151,7 +155,7 @@ const AdminDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="add-case" className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
-              إضافة حالة
+              {editCaseId ? "تعديل الحالة" : "إضافة حالة"}
             </TabsTrigger>
           </TabsList>
 
@@ -212,8 +216,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="add-case">
             <div className="max-w-2xl">
-              <h2 className="text-2xl font-bold mb-6">إضافة حالة جديدة</h2>
-              <CaseForm />
+              <h2 className="text-2xl font-bold mb-6">
+                {editCaseId ? "تعديل الحالة" : "إضافة حالة جديدة"}
+              </h2>
+              <CaseForm caseId={editCaseId || undefined} />
             </div>
           </TabsContent>
         </Tabs>
