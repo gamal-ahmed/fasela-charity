@@ -69,7 +69,7 @@ const CaseDetails = () => {
   // بيانات العائلة من قاعدة البيانات
   const familyData = {
     familyName: caseData?.title_ar || caseData?.title || "عائلة محتاجة",
-    location: "المملكة العربية السعودية", // يمكن إضافة حقل location في قاعدة البيانات
+    location: caseData?.city ? `${caseData.city}, مصر` : "القاهرة, مصر", // استخدام المحافظة من قاعدة البيانات أو القاهرة كافتراضي
     familySize: 5, // يمكن إضافة حقل family_size في قاعدة البيانات
     members: [
       // يمكن إنشاء جدول منفصل لأعضاء العائلة
