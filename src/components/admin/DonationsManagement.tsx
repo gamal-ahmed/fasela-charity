@@ -26,7 +26,7 @@ interface Donation {
   cases: {
     title: string;
     title_ar: string;
-  };
+  } | null;
 }
 
 export const DonationsManagement = () => {
@@ -44,7 +44,7 @@ export const DonationsManagement = () => {
         .from("donations")
         .select(`
           *,
-          cases!inner(title, title_ar)
+          cases(title, title_ar)
         `)
         .order("created_at", { ascending: false });
 
@@ -278,7 +278,7 @@ export const DonationsManagement = () => {
                     <div className="flex items-center gap-2">
                       <CreditCard className="w-4 h-4" />
                       <span className="font-medium">
-                        {donation.cases.title_ar || donation.cases.title}
+                        {donation.cases?.title_ar || donation.cases?.title || 'حالة غير محددة'}
                       </span>
                       {getStatusBadge(donation.status)}
                     </div>
@@ -355,7 +355,7 @@ export const DonationsManagement = () => {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-sm">
                         <span className="font-medium">
-                          {donation.cases.title_ar || donation.cases.title}
+                          {donation.cases?.title_ar || donation.cases?.title || 'حالة غير محددة'}
                         </span>
                         {getStatusBadge(donation.status)}
                       </div>
@@ -395,7 +395,7 @@ export const DonationsManagement = () => {
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 text-sm">
                       <span className="font-medium">
-                        {donation.cases.title_ar || donation.cases.title}
+                        {donation.cases?.title_ar || donation.cases?.title || 'حالة غير محددة'}
                       </span>
                       {getStatusBadge(donation.status)}
                     </div>
@@ -435,7 +435,7 @@ export const DonationsManagement = () => {
             <div className="space-y-4">
               <div className="space-y-2">
                 <div className="text-sm">
-                  <span className="font-medium">الحالة:</span> {selectedDonation.cases.title_ar || selectedDonation.cases.title}
+                  <span className="font-medium">الحالة:</span> {selectedDonation.cases?.title_ar || selectedDonation.cases?.title || 'حالة غير محددة'}
                 </div>
                 <div className="text-sm">
                   <span className="font-medium">المبلغ:</span> {selectedDonation.amount.toLocaleString()} جنيه
