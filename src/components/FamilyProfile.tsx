@@ -92,7 +92,7 @@ export const FamilyProfile = ({
           {story && (
             <div>
               <h3 className="text-xl font-semibold mb-4">قصة العائلة</h3>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
                 {story}
               </p>
             </div>
