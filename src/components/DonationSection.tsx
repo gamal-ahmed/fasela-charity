@@ -32,12 +32,15 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
   const isFullyFunded = monthsCovered >= monthsNeeded;
   const isDonationDisabled = isCaseClosed || isFullyFunded;
 
+  // Calculate remaining months needed
+  const remainingMonths = Math.max(0, monthsNeeded - monthsCovered);
+  
   const predefinedOptions = [
     { months: 1, label: "شهر واحد", popular: false },
     { months: 3, label: "3 أشهر", popular: true },
     { months: 6, label: "6 أشهر", popular: false },
     { months: 12, label: "سنة كاملة", popular: false },
-  ];
+  ].filter(option => option.months <= remainingMonths);
 
   const handleDonateClick = () => {
     if (!paymentCode || !caseTitle) return;
@@ -172,7 +175,7 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
               <Slider
                 value={selectedMonths}
                 onValueChange={setSelectedMonths}
-                max={24}
+                max={remainingMonths}
                 min={1}
                 step={1}
                 className="w-full"
@@ -180,7 +183,7 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
               
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>شهر واحد</span>
-                <span>24 شهر</span>
+                <span>{remainingMonths} شهر</span>
               </div>
             </div>
           </>
