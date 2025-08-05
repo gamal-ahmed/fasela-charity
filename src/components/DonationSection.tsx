@@ -94,10 +94,10 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
   };
 
   return (
-    <Card className="p-8 shadow-soft">
-      <div className="text-center mb-8">
-        <h3 className="text-2xl font-bold mb-2">ساهم في كفالة هذه العائلة</h3>
-        <p className="text-muted-foreground">
+    <Card className="p-4 sm:p-6 lg:p-8 shadow-soft">
+      <div className="text-center mb-6 sm:mb-8">
+        <h3 className="text-xl sm:text-2xl font-bold mb-2">ساهم في كفالة هذه العائلة</h3>
+        <p className="text-muted-foreground text-sm sm:text-base">
           اختر المدة التي تريد كفالة العائلة فيها أو تبرع بمبلغ مخصص
         </p>
       </div>
@@ -114,11 +114,11 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
 
         {/* نوع التبرع */}
         {!isDonationDisabled && (
-          <div className="flex gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Button
               variant={donationType === 'monthly' ? 'default' : 'outline'}
               onClick={() => setDonationType('monthly')}
-              className="flex-1 max-w-xs"
+              className="flex-1 max-w-xs text-sm sm:text-base"
             >
               <Calendar className="w-4 h-4 ml-2" />
               كفالة شهرية
@@ -126,7 +126,7 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
             <Button
               variant={donationType === 'custom' ? 'default' : 'outline'}
               onClick={() => setDonationType('custom')}
-              className="flex-1 max-w-xs"
+              className="flex-1 max-w-xs text-sm sm:text-base"
             >
               <Gift className="w-4 h-4 ml-2" />
               مبلغ مخصص
@@ -137,11 +137,11 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
         {!isDonationDisabled && donationType === 'monthly' && (
           <>
             {/* خيارات سريعة */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {predefinedOptions.map((option) => (
                 <div
                   key={option.months}
-                  className={`relative p-4 border-2 rounded-lg cursor-pointer transition-all
+                  className={`relative p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition-all
                     ${months === option.months 
                       ? 'border-primary bg-primary/5' 
                       : 'border-border hover:border-primary/50'
@@ -157,8 +157,8 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
                     </Badge>
                   )}
                   <div className="text-center">
-                    <div className="text-lg font-semibold">{option.label}</div>
-                    <div className="text-sm text-muted-foreground mt-1">
+                    <div className="text-base sm:text-lg font-semibold">{option.label}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground mt-1">
                       {(monthlyNeed * option.months).toLocaleString()} جنيه
                     </div>
                   </div>
@@ -219,10 +219,10 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
 
         {/* ملخص التبرع */}
         {!isDonationDisabled && (
-          <div className="bg-accent/30 p-6 rounded-lg">
+          <div className="bg-accent/30 p-4 sm:p-6 rounded-lg">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-lg font-medium">ملخص تبرعك</span>
-              <CheckCircle className="w-5 h-5 text-primary" />
+              <span className="text-base sm:text-lg font-medium">ملخص تبرعك</span>
+              <CheckCircle className="w-5 h-5 text-primary flex-shrink-0" />
             </div>
             
             <div className="space-y-2">
@@ -257,11 +257,11 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
         {/* زر التبرع */}
         <Button 
           size="lg" 
-          className={`w-full text-lg py-6 ${isDonationDisabled ? 'opacity-50 cursor-not-allowed' : 'btn-charity'}`}
+          className={`w-full text-base sm:text-lg py-4 sm:py-6 ${isDonationDisabled ? 'opacity-50 cursor-not-allowed' : 'btn-charity'}`}
           disabled={isDonationDisabled}
           onClick={handleDonateClick}
         >
-          <Heart className="w-5 h-5 ml-2" />
+          <Heart className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
           {isDonationDisabled 
             ? (isFullyFunded ? 'تم اكتمال التمويل' : 'الحالة مغلقة')
             : `تبرع الآن - ${totalAmount.toLocaleString()} جنيه`

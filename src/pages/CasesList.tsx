@@ -114,62 +114,62 @@ const CasesList = () => {
       </header>
       
       {/* Hero Section */}
-      <div className="relative gradient-hero text-white py-20 overflow-hidden">
+      <div className="relative gradient-hero text-white py-12 sm:py-16 lg:py-20 overflow-hidden">
         <div className="absolute inset-0 bg-black/10"></div>
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 sm:w-64 sm:h-64 bg-white/5 rounded-full -translate-y-16 sm:-translate-y-32 translate-x-16 sm:translate-x-32"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 sm:w-48 sm:h-48 bg-white/5 rounded-full translate-y-12 sm:translate-y-24 -translate-x-12 sm:-translate-x-24"></div>
         <div className="relative container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-b from-white to-white/90 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 bg-gradient-to-b from-white to-white/90 bg-clip-text text-transparent">
             جميع الحالات المحتاجة
           </h1>
-          <p className="text-xl md:text-2xl opacity-90 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg sm:text-xl md:text-2xl opacity-90 max-w-3xl mx-auto leading-relaxed">
             اختر الأسرة التي تود كفالتها واتبع رحلتها الشهرية بشفافية كاملة
           </p>
           
           {/* Statistics Section */}
-          <div className="mt-10">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          <div className="mt-8 sm:mt-10">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl mx-auto">
               {/* Number of sponsored families */}
               <div className="text-center">
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg hover:bg-white/15 transition-all hover-scale">
-                  <div className="flex justify-center mb-3">
-                    <Home className="w-8 h-8 text-white" />
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20 shadow-lg hover:bg-white/15 transition-all hover-scale">
+                  <div className="flex justify-center mb-2 sm:mb-3">
+                    <Home className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                   </div>
-                  <div className="text-3xl font-bold text-white mb-1">{sponsoredFamilies}</div>
-                  <div className="text-sm text-white/80">الأسر المكفولة</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-white mb-1">{sponsoredFamilies}</div>
+                  <div className="text-xs sm:text-sm text-white/80">الأسر المكفولة</div>
                 </div>
               </div>
               
               {/* Number of sponsored orphan children - admin configurable */}
               <div className="text-center">
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg hover:bg-white/15 transition-all hover-scale">
-                  <div className="flex justify-center mb-3">
-                    <Baby className="w-8 h-8 text-white" />
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20 shadow-lg hover:bg-white/15 transition-all hover-scale">
+                  <div className="flex justify-center mb-2 sm:mb-3">
+                    <Baby className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                   </div>
-                  <div className="text-3xl font-bold text-white mb-1">{sponsoredOrphans}</div>
-                  <div className="text-sm text-white/80">الأيتام المكفولين</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-white mb-1">{sponsoredOrphans}</div>
+                  <div className="text-xs sm:text-sm text-white/80">الأيتام المكفولين</div>
                 </div>
               </div>
               
               {/* Number of children taught Quran, Sunnah and electronics - admin configurable */}
               <div className="text-center">
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg hover:bg-white/15 transition-all hover-scale">
-                  <div className="flex justify-center mb-3">
-                    <BookOpen className="w-8 h-8 text-white" />
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20 shadow-lg hover:bg-white/15 transition-all hover-scale">
+                  <div className="flex justify-center mb-2 sm:mb-3">
+                    <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                   </div>
-                  <div className="text-3xl font-bold text-white mb-1">{childrenEducated}</div>
-                  <div className="text-sm text-white/80">الأطفال المتعلمين</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-white mb-1">{childrenEducated}</div>
+                  <div className="text-xs sm:text-sm text-white/80">الأطفال المتعلمين</div>
                 </div>
               </div>
               
               {/* Number of cases we helped - calculated */}
               <div className="text-center">
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg hover:bg-white/15 transition-all hover-scale">
-                  <div className="flex justify-center mb-3">
-                    <CheckCircle2 className="w-8 h-8 text-white" />
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20 shadow-lg hover:bg-white/15 transition-all hover-scale">
+                  <div className="flex justify-center mb-2 sm:mb-3">
+                    <CheckCircle2 className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                   </div>
-                  <div className="text-3xl font-bold text-white mb-1">{completedCases}</div>
-                  <div className="text-sm text-white/80">مجمل الحالات</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-white mb-1">{completedCases}</div>
+                  <div className="text-xs sm:text-sm text-white/80">مجمل الحالات</div>
                 </div>
               </div>
             </div>
@@ -183,7 +183,7 @@ const CasesList = () => {
       </div>
 
       {/* قائمة الحالات */}
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-8 sm:py-12">
         {/* الفلاتر البسيطة */}
         <div className="mb-6 flex flex-wrap gap-2 justify-center">
           <Badge 
@@ -218,28 +218,28 @@ const CasesList = () => {
           </Badge>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {cases?.map((caseItem) => (
             <Link key={caseItem.id} to={`/case/${caseItem.id}`} className="block">
               <Card className="overflow-hidden shadow-soft hover:shadow-lg transition-shadow cursor-pointer hover:scale-105 transform transition-transform">
               {caseItem.photo_url && (
-                  <div className="relative h-48 bg-gray-100">
+                  <div className="relative h-40 sm:h-48 bg-gray-100">
                     <img 
                       src={caseItem.photo_url} 
                       alt={caseItem.title}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute top-4 right-4 flex gap-2">
+                    <div className="absolute top-2 sm:top-4 right-2 sm:right-4 flex flex-col sm:flex-row gap-2">
                       <Badge 
                         variant={caseItem.status === 'active' ? 'default' : 'secondary'}
-                        className="bg-white/90 text-gray-800"
+                        className="bg-white/90 text-gray-800 text-xs"
                       >
                         {caseItem.status === 'active' ? 'نشطة' : 'مكتملة'}
                       </Badge>
                       {caseItem.deserve_zakkah && (
                         <Badge 
                           variant="outline"
-                          className="bg-green-500/90 text-white border-green-600"
+                          className="bg-green-500/90 text-white border-green-600 text-xs"
                         >
                           مستحق للزكاة
                         </Badge>
@@ -248,12 +248,12 @@ const CasesList = () => {
                   </div>
               )}
               
-              <CardHeader>
-                <CardTitle className="text-xl">{caseItem.title_ar || caseItem.title}</CardTitle>
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-lg sm:text-xl">{caseItem.title_ar || caseItem.title}</CardTitle>
               </CardHeader>
               
-              <CardContent className="space-y-4">
-                <p className="text-muted-foreground line-clamp-3">
+              <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
+                <p className="text-muted-foreground line-clamp-3 text-sm sm:text-base">
                   {caseItem.short_description_ar || caseItem.short_description}
                 </p>
                 

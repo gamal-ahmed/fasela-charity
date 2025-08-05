@@ -34,10 +34,10 @@ const categoryLabels = {
 
 export const MonthlyUpdates = ({ updates }: MonthlyUpdatesProps) => {
   return (
-    <Card className="p-8 shadow-soft">
-      <div className="text-center mb-8">
-        <h3 className="text-2xl font-bold mb-2">التقارير الشهرية</h3>
-        <p className="text-muted-foreground">
+    <Card className="p-4 sm:p-6 lg:p-8 shadow-soft">
+      <div className="text-center mb-6 sm:mb-8">
+        <h3 className="text-xl sm:text-2xl font-bold mb-2">التقارير الشهرية</h3>
+        <p className="text-muted-foreground text-sm sm:text-base">
           متابعة دورية لأحوال العائلة واستخدام التبرعات
         </p>
       </div>
@@ -50,34 +50,34 @@ export const MonthlyUpdates = ({ updates }: MonthlyUpdatesProps) => {
               <div className="absolute right-6 top-12 w-0.5 h-20 bg-border" />
             )}
             
-            <div className="flex gap-4">
+            <div className="flex gap-3 sm:gap-4">
               {/* أيقونة الحالة */}
-              <div className="relative">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center
+              <div className="relative flex-shrink-0">
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center
                   ${update.status === 'completed' 
                     ? 'bg-primary text-primary-foreground' 
                     : 'bg-muted text-muted-foreground'
                   }`}
                 >
                   {update.status === 'completed' ? (
-                    <CheckCircle className="w-6 h-6" />
+                    <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />
                   ) : (
-                    <Clock className="w-6 h-6" />
+                    <Clock className="w-5 h-5 sm:w-6 sm:h-6" />
                   )}
                 </div>
               </div>
 
               {/* محتوى التحديث */}
-              <div className="flex-1 space-y-3">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h4 className="text-lg font-semibold">{update.title}</h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Calendar className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">{update.date}</span>
+              <div className="flex-1 space-y-3 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-base sm:text-lg font-semibold">{update.title}</h4>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-xs sm:text-sm text-muted-foreground">{update.date}</span>
                       <Badge 
                         variant="secondary" 
-                        className={categoryColors[update.category]}
+                        className={`${categoryColors[update.category]} text-xs`}
                       >
                         {categoryLabels[update.category]}
                       </Badge>
@@ -86,27 +86,27 @@ export const MonthlyUpdates = ({ updates }: MonthlyUpdatesProps) => {
                   
                   <Badge 
                     variant={update.status === 'completed' ? 'default' : 'secondary'}
-                    className={update.status === 'completed' ? 'bg-primary' : ''}
+                    className={`${update.status === 'completed' ? 'bg-primary' : ''} text-xs flex-shrink-0`}
                   >
                     {update.status === 'completed' ? 'مكتمل' : 'قيد التنفيذ'}
                   </Badge>
                 </div>
 
-                <p className="text-muted-foreground leading-relaxed">
+                <p className="text-muted-foreground leading-relaxed text-sm sm:text-base">
                   {update.description}
                 </p>
 
                 {/* الصور إن وجدت */}
                 {update.images && update.images.length > 0 && (
                   <div className="flex gap-2">
-                    <Image className="w-4 h-4 text-muted-foreground mt-1" />
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <Image className="w-4 h-4 text-muted-foreground mt-1 flex-shrink-0" />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                       {update.images.map((image, imgIndex) => (
                         <img
                           key={imgIndex}
                           src={image}
                           alt={`صورة ${imgIndex + 1} من التحديث`}
-                          className="w-20 h-20 object-cover rounded-lg border"
+                          className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border"
                         />
                       ))}
                     </div>

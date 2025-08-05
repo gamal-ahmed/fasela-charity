@@ -95,21 +95,21 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* الرأس */}
-      <div className="gradient-hero text-white py-16">
+      <div className="gradient-hero text-white py-12 md:py-16">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4">
             كفالة الأسر المحتاجة
           </h1>
-          <p className="text-xl md:text-2xl opacity-90 max-w-2xl mx-auto mb-8">
+          <p className="text-lg sm:text-xl md:text-2xl opacity-90 max-w-2xl mx-auto mb-8">
             ساهم في تغيير حياة عائلة محتاجة من خلال نظام شفاف للكفالة والمتابعة الشهرية
           </p>
-          <div className="flex gap-4 justify-center">
-            <Button asChild size="lg" className="text-lg px-8 py-4">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-lg mx-auto">
+            <Button asChild size="lg" className="text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 w-full sm:w-auto">
               <Link to="/cases">
                 تصفح جميع الحالات
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="text-lg px-8 py-4 text-white border-white hover:bg-white hover:text-primary">
+            <Button asChild size="lg" variant="outline" className="text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 text-white border-white hover:bg-white hover:text-primary w-full sm:w-auto">
               <Link to="/auth">
                 لوحة التحكم
               </Link>
@@ -119,11 +119,11 @@ const Index = () => {
       </div>
 
       {/* المحتوى الرئيسي */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid lg:grid-cols-3 gap-8">
+      <div className="container mx-auto px-4 py-8 md:py-12">
+        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
           
           {/* العمود الأيسر - معلومات العائلة */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-6 lg:space-y-8">
             <FamilyProfile {...familyData} />
             <MonthlyNeeds totalMonthlyNeed={totalMonthlyNeed} needs={monthlyNeeds} />
             <MonthlyUpdates updates={monthlyUpdates} />
@@ -134,23 +134,23 @@ const Index = () => {
             <DonationSection monthlyNeed={totalMonthlyNeed} />
             
             {/* معلومات إضافية */}
-            <Card className="p-6 shadow-soft">
-              <h4 className="font-semibold mb-4">لماذا تختار كفالة الأسر؟</h4>
+            <Card className="p-4 sm:p-6 shadow-soft">
+              <h4 className="font-semibold mb-4 text-base sm:text-lg">لماذا تختار كفالة الأسر؟</h4>
               <div className="space-y-3 text-sm text-muted-foreground">
                 <div className="flex items-start gap-2">
-                  <Shield className="w-4 h-4 mt-0.5 text-primary" />
+                  <Shield className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
                   <span>شفافية كاملة في استخدام التبرعات</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <Eye className="w-4 h-4 mt-0.5 text-primary" />
+                  <Eye className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
                   <span>تقارير شهرية مفصلة بالصور</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <Heart className="w-4 h-4 mt-0.5 text-primary" />
+                  <Heart className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
                   <span>أثر مباشر وملموس على حياة الأسرة</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <Users className="w-4 h-4 mt-0.5 text-primary" />
+                  <Users className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
                   <span>متابعة مستمرة من قبل فريقنا</span>
                 </div>
               </div>

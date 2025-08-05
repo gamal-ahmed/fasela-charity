@@ -62,7 +62,7 @@ const Navigation = () => {
   };
   
   return (
-    <nav className="flex items-center gap-6">
+    <nav className="flex items-center gap-3 sm:gap-6">
       <Link 
         to="/" 
         className={`flex items-center gap-2 text-white/80 hover:text-white transition-colors ${
@@ -70,7 +70,7 @@ const Navigation = () => {
         }`}
       >
         <Home className="w-4 h-4" />
-        <span className="hidden md:inline">الرئيسية</span>
+        <span className="hidden sm:inline">الرئيسية</span>
       </Link>
       
       
@@ -83,7 +83,7 @@ const Navigation = () => {
           }`}
         >
           <Heart className="w-4 h-4" />
-          <span className="hidden md:inline">تسجيل الدخول</span>
+          <span className="hidden sm:inline">تسجيل الدخول</span>
         </Link>
       )}
       
@@ -95,7 +95,7 @@ const Navigation = () => {
           }`}
         >
           <Settings className="w-4 h-4" />
-          <span className="hidden md:inline">لوحة التحكم</span>
+          <span className="hidden sm:inline">لوحة التحكم</span>
         </Link>
       )}
     </nav>

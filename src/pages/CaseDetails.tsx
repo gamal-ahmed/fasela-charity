@@ -129,21 +129,22 @@ const CaseDetails = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* الرأس */}
-      <div className="gradient-hero text-white py-16">
+      <div className="gradient-hero text-white py-12 md:py-16">
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-4 mb-6">
-            <Button variant="outline" size="sm" asChild className="text-white border-white hover:bg-white hover:text-primary">
+            <Button variant="outline" size="sm" asChild className="text-white border-white hover:bg-white hover:text-primary text-sm">
               <Link to="/cases">
                 <ArrowLeft className="w-4 h-4 ml-2" />
-                العودة إلى القائمة
+                <span className="hidden sm:inline">العودة إلى القائمة</span>
+                <span className="sm:hidden">عودة</span>
               </Link>
             </Button>
           </div>
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-4">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold mb-4">
               {caseData.title_ar || caseData.title}
             </h1>
-            <p className="text-xl md:text-2xl opacity-90 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl opacity-90 max-w-2xl mx-auto">
               {caseData.short_description_ar || caseData.short_description}
             </p>
           </div>
@@ -151,11 +152,11 @@ const CaseDetails = () => {
       </div>
 
       {/* المحتوى الرئيسي */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid lg:grid-cols-3 gap-8">
+      <div className="container mx-auto px-4 py-8 md:py-12">
+        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
           
           {/* العمود الأيسر - معلومات العائلة */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-6 lg:space-y-8">
             <FamilyProfile {...familyData} />
             <MonthlyNeeds totalMonthlyNeed={totalMonthlyNeed} needs={monthlyNeeds} />
             <MonthlyUpdates updates={monthlyUpdates} />
@@ -164,9 +165,9 @@ const CaseDetails = () => {
           {/* العمود الأيمن - قسم التبرع */}
           <div className="space-y-6">
             {/* شريط التقدم المالي */}
-            <Card className="p-6 shadow-soft bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-bold mb-2">التقدم المالي للحالة</h3>
+            <Card className="p-4 sm:p-6 shadow-soft bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+              <div className="text-center mb-4 sm:mb-6">
+                <h3 className="text-lg sm:text-xl font-bold mb-2">التقدم المالي للحالة</h3>
                 <p className="text-muted-foreground text-sm">
                   المبلغ المجمع من إجمالي المطلوب
                 </p>
@@ -187,16 +188,16 @@ const CaseDetails = () => {
                 
                 <div className="flex justify-between items-center text-sm">
                   <div className="text-center">
-                    <div className="font-bold text-primary text-lg">
+                    <div className="font-bold text-primary text-base sm:text-lg">
                       {(caseData.total_secured_money || 0).toLocaleString()}
                     </div>
-                    <div className="text-muted-foreground">المجمع</div>
+                    <div className="text-muted-foreground text-xs sm:text-sm">المجمع</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-bold text-muted-foreground text-lg">
+                    <div className="font-bold text-muted-foreground text-base sm:text-lg">
                       {(caseData.monthly_cost * caseData.months_needed).toLocaleString()}
                     </div>
-                    <div className="text-muted-foreground">المطلوب</div>
+                    <div className="text-muted-foreground text-xs sm:text-sm">المطلوب</div>
                   </div>
                 </div>
                 
@@ -222,23 +223,23 @@ const CaseDetails = () => {
             />
             
             {/* معلومات إضافية */}
-            <Card className="p-6 shadow-soft">
-              <h4 className="font-semibold mb-4">لماذا تختار كفالة الأسر؟</h4>
+            <Card className="p-4 sm:p-6 shadow-soft">
+              <h4 className="font-semibold mb-4 text-base sm:text-lg">لماذا تختار كفالة الأسر؟</h4>
               <div className="space-y-3 text-sm text-muted-foreground">
                 <div className="flex items-start gap-2">
-                  <Shield className="w-4 h-4 mt-0.5 text-primary" />
+                  <Shield className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
                   <span>شفافية كاملة في استخدام التبرعات</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <Eye className="w-4 h-4 mt-0.5 text-primary" />
+                  <Eye className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
                   <span>تقارير شهرية مفصلة بالصور</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <Heart className="w-4 h-4 mt-0.5 text-primary" />
+                  <Heart className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
                   <span>أثر مباشر وملموس على حياة الأسرة</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <Users className="w-4 h-4 mt-0.5 text-primary" />
+                  <Users className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
                   <span>متابعة مستمرة من قبل فريقنا</span>
                 </div>
               </div>

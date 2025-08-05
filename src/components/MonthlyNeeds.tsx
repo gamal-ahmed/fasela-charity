@@ -28,19 +28,19 @@ export const MonthlyNeeds = ({ totalMonthlyNeed, needs }: MonthlyNeedsProps) => 
   }
 
   return (
-    <Card className="p-8 shadow-soft">
-      <div className="text-center mb-8">
-        <h3 className="text-2xl font-bold mb-2">الاحتياجات الشهرية</h3>
-        <p className="text-muted-foreground">تفاصيل المصروفات الشهرية المطلوبة للعائلة</p>
+    <Card className="p-4 sm:p-6 lg:p-8 shadow-soft">
+      <div className="text-center mb-6 sm:mb-8">
+        <h3 className="text-xl sm:text-2xl font-bold mb-2">الاحتياجات الشهرية</h3>
+        <p className="text-muted-foreground text-sm sm:text-base">تفاصيل المصروفات الشهرية المطلوبة للعائلة</p>
       </div>
 
       {totalMonthlyNeed > 0 && (
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8">
           <div className="inline-flex items-baseline gap-2">
-            <span className="text-4xl font-bold text-gradient">{totalMonthlyNeed}</span>
-            <span className="text-xl text-muted-foreground">جنيه مصري</span>
+            <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gradient">{totalMonthlyNeed}</span>
+            <span className="text-lg sm:text-xl text-muted-foreground">جنيه مصري</span>
           </div>
-          <p className="text-sm text-muted-foreground mt-2">إجمالي الاحتياجات الشهرية</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-2">إجمالي الاحتياجات الشهرية</p>
         </div>
       )}
 
@@ -51,19 +51,19 @@ export const MonthlyNeeds = ({ totalMonthlyNeed, needs }: MonthlyNeedsProps) => 
             
             return (
               <div key={index} className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0">
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${need.color}`}>
+                    <div className={`p-2 rounded-lg ${need.color} flex-shrink-0`}>
                       {need.icon}
                     </div>
-                    <div>
-                      <h4 className="font-medium">{need.category}</h4>
-                      <p className="text-sm text-muted-foreground">{need.description}</p>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-medium text-sm sm:text-base">{need.category}</h4>
+                      <p className="text-xs sm:text-sm text-muted-foreground">{need.description}</p>
                     </div>
                   </div>
-                  <div className="text-left">
-                    <span className="text-lg font-semibold">{need.amount}</span>
-                    <span className="text-sm text-muted-foreground mr-1">جنيه</span>
+                  <div className="text-left sm:text-right">
+                    <span className="text-base sm:text-lg font-semibold">{need.amount}</span>
+                    <span className="text-xs sm:text-sm text-muted-foreground mr-1">جنيه</span>
                   </div>
                 </div>
                 
