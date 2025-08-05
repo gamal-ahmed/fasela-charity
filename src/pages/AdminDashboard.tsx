@@ -118,67 +118,75 @@ const AdminDashboard = () => {
       {/* Header */}
       <header className="bg-white border-b shadow-sm">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-4">
+            {/* Top row - Logo and brand */}
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Heart className="w-8 h-8 text-primary" />
-                <span className="text-xl font-bold">فَسِيلَة خير</span>
+                <Heart className="w-6 h-6 sm:w-8 sm:h-8 text-primary flex-shrink-0" />
+                <span className="text-lg sm:text-xl font-bold">فَسِيلَة خير</span>
               </div>
-              <nav className="flex items-center gap-4">
+              <Button variant="outline" onClick={handleSignOut} size="sm" className="text-xs sm:text-sm">
+                <LogOut className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
+                <span className="hidden xs:inline">خروج</span>
+                <span className="xs:hidden">خروج</span>
+              </Button>
+            </div>
+            
+            {/* Second row - Navigation and user info */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <nav className="flex items-center gap-2 sm:gap-4">
                 <Button variant="ghost" size="sm" asChild>
-                  <Link to="/" className="flex items-center gap-2">
-                    <Home className="w-4 h-4" />
-                    الرئيسية
+                  <Link to="/" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                    <Home className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">الرئيسية</span>
+                    <span className="sm:hidden">الرئيسية</span>
                   </Link>
                 </Button>
               </nav>
-            </div>
-            <div className="flex items-center gap-4">
               <div className="text-right">
-                <h1 className="text-lg font-semibold">لوحة تحكم المتطوعين</h1>
-                <p className="text-sm text-muted-foreground">{user.email}</p>
+                <h1 className="text-base sm:text-lg font-semibold">لوحة تحكم المتطوعين</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate max-w-[200px] sm:max-w-none">{user.email}</p>
               </div>
-              <Button variant="outline" onClick={handleSignOut} className="text-sm">
-                <LogOut className="w-4 h-4 ml-2" />
-                خروج
-              </Button>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-6 sm:py-8">
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
-            <TabsTrigger value="overview" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-              <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">نظرة عامة</span>
-              <span className="sm:hidden">عامة</span>
-            </TabsTrigger>
-            <TabsTrigger value="cases" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-              <Users className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">إدارة الحالات</span>
-              <span className="sm:hidden">الحالات</span>
-            </TabsTrigger>
-            <TabsTrigger value="donations" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-              <CreditCard className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">التبرعات</span>
-              <span className="sm:hidden">تبرعات</span>
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-              <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">التقارير</span>
-              <span className="sm:hidden">تقارير</span>
-            </TabsTrigger>
-            <TabsTrigger value="add-case" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm col-span-2 sm:col-span-1">
-              <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">إضافة حالة</span>
-              <span className="sm:hidden">إضافة</span>
-            </TabsTrigger>
-          </TabsList>
+      <div className="container mx-auto px-4 py-4 sm:py-6 lg:py-8">
+        <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
+          {/* Mobile-optimized TabsList */}
+          <div className="w-full overflow-x-auto">
+            <TabsList className="grid w-full min-w-[600px] sm:min-w-0 grid-cols-5 gap-1 h-auto p-1">
+              <TabsTrigger value="overview" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm py-2 sm:py-3 px-2 sm:px-4">
+                <BarChart3 className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">نظرة عامة</span>
+                <span className="sm:hidden text-[10px] leading-tight">عامة</span>
+              </TabsTrigger>
+              <TabsTrigger value="cases" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm py-2 sm:py-3 px-2 sm:px-4">
+                <Users className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">إدارة الحالات</span>
+                <span className="sm:hidden text-[10px] leading-tight">الحالات</span>
+              </TabsTrigger>
+              <TabsTrigger value="donations" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm py-2 sm:py-3 px-2 sm:px-4">
+                <CreditCard className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">التبرعات</span>
+                <span className="sm:hidden text-[10px] leading-tight">تبرعات</span>
+              </TabsTrigger>
+              <TabsTrigger value="reports" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm py-2 sm:py-3 px-2 sm:px-4">
+                <FileText className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">التقارير</span>
+                <span className="sm:hidden text-[10px] leading-tight">تقارير</span>
+              </TabsTrigger>
+              <TabsTrigger value="add-case" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm py-2 sm:py-3 px-2 sm:px-4">
+                <Plus className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">إضافة حالة</span>
+                <span className="sm:hidden text-[10px] leading-tight">إضافة</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-          <TabsContent value="overview" className="space-y-6">
+          <TabsContent value="overview" className="space-y-4 sm:space-y-6">
             <StatsOverview />
           </TabsContent>
 
@@ -191,9 +199,9 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="reports">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">التقارير الشهرية</h2>
+            <div className="space-y-4 sm:space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <h2 className="text-xl sm:text-2xl font-bold">التقارير الشهرية</h2>
                 <ReportForm />
               </div>
               <ReportsList />
@@ -201,7 +209,7 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="add-case">
-            <div className="max-w-2xl">
+            <div className="max-w-full lg:max-w-2xl mx-auto">
               <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">إضافة حالة جديدة</h2>
               <CaseForm />
             </div>
@@ -253,47 +261,47 @@ const StatsOverview = () => {
   const monthlyReports = reports?.length || 0;
 
   return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">إجمالي الحالات</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-xs sm:text-sm font-medium">إجمالي الحالات</CardTitle>
+          <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{totalCases}</div>
+          <div className="text-xl sm:text-2xl font-bold">{totalCases}</div>
           <p className="text-xs text-muted-foreground">جميع الحالات المسجلة</p>
         </CardContent>
       </Card>
       
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">الحالات النشطة</CardTitle>
-          <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-xs sm:text-sm font-medium">الحالات النشطة</CardTitle>
+          <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{activeCases}</div>
+          <div className="text-xl sm:text-2xl font-bold">{activeCases}</div>
           <p className="text-xs text-muted-foreground">{totalCases > 0 ? Math.round((activeCases / totalCases) * 100) : 0}% من إجمالي الحالات</p>
         </CardContent>
       </Card>
       
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">إجمالي التبرعات</CardTitle>
-          <CreditCard className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-xs sm:text-sm font-medium">إجمالي التبرعات</CardTitle>
+          <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{totalDonations.toLocaleString()}</div>
+          <div className="text-xl sm:text-2xl font-bold">{totalDonations.toLocaleString()}</div>
           <p className="text-xs text-muted-foreground">جنيه مصري</p>
         </CardContent>
       </Card>
       
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">التقارير هذا الشهر</CardTitle>
-          <FileText className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-xs sm:text-sm font-medium">التقارير هذا الشهر</CardTitle>
+          <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{monthlyReports}</div>
+          <div className="text-xl sm:text-2xl font-bold">{monthlyReports}</div>
           <p className="text-xs text-muted-foreground">تقرير شهري</p>
         </CardContent>
       </Card>
