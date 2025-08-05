@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Copy, ExternalLink, CreditCard, User, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -102,8 +103,8 @@ export const PaymentConfirmationDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md" dir="rtl">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col" dir="rtl">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="w-5 h-5" />
             {getDialogTitle()}
@@ -113,7 +114,8 @@ export const PaymentConfirmationDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <ScrollArea className="flex-1 max-h-[60vh] pr-4">
+          <div className="space-y-4 pb-4">
           {step === 1 ? (
             <>
               {/* معلومات المتبرع */}
@@ -255,9 +257,10 @@ export const PaymentConfirmationDialog = ({
               )}
             </>
           )}
-        </div>
+          </div>
+        </ScrollArea>
 
-        <DialogFooter className="flex-col gap-2 sm:flex-row">
+        <DialogFooter className="flex-col gap-2 sm:flex-row flex-shrink-0 pt-4 border-t">
           {step === 1 ? (
             <>
               <Button variant="outline" onClick={handleClose}>
