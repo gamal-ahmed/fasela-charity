@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import { Heart, Calendar, Gift, CheckCircle } from "lucide-react";
 import { PaymentConfirmationDialog } from "./PaymentConfirmationDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,12 +21,13 @@ interface DonationSectionProps {
 
 export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, monthsNeeded = 1, paymentCode, caseTitle, caseId }: DonationSectionProps) => {
   const [selectedMonths, setSelectedMonths] = useState([1]);
+  const [customAmount, setCustomAmount] = useState("");
   const [donationType, setDonationType] = useState<'monthly' | 'custom'>('monthly');
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const { toast } = useToast();
 
   const months = selectedMonths[0];
-  const totalAmount = donationType === 'monthly' ? monthlyNeed * months : selectedMonths[0];
+  const totalAmount = donationType === 'monthly' ? monthlyNeed * months : Number(customAmount) || 0;
   
   // Check if case is closed or fully funded
   const isCaseClosed = caseStatus !== 'active';
@@ -195,18 +197,22 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
               <span className="text-sm text-muted-foreground">اختر المبلغ المناسب لك</span>
             </div>
             
-            <Slider
-              value={selectedMonths}
-              onValueChange={setSelectedMonths}
-              max={monthlyNeed * 12}
-              min={100}
-              step={50}
-              className="w-full"
-            />
-            
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>100 جنيه</span>
-              <span>{(monthlyNeed * 12).toLocaleString()} جنيه</span>
+            <div className="space-y-2">
+              <label htmlFor="customAmount" className="text-sm font-medium">
+                المبلغ بالجنيه المصري
+              </label>
+              <Input
+                id="customAmount"
+                type="number"
+                placeholder="أدخل المبلغ"
+                value={customAmount}
+                onChange={(e) => setCustomAmount(e.target.value)}
+                min="100"
+                className="text-lg text-center"
+              />
+              <p className="text-xs text-muted-foreground text-center">
+                الحد الأدنى للتبرع: 100 جنيه
+              </p>
             </div>
           </div>
         )}
@@ -234,7 +240,7 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
               ) : (
                 <div className="flex justify-between">
                   <span>مبلغ التبرع:</span>
-                  <span className="font-medium">{selectedMonths[0].toLocaleString()} جنيه</span>
+                  <span className="font-medium">{Number(customAmount).toLocaleString() || 0} جنيه</span>
                 </div>
               )}
               
