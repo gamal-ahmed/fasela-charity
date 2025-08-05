@@ -284,10 +284,14 @@ const CasesList = () => {
                       {Math.round((caseItem.months_covered / caseItem.months_needed) * 100)}%
                     </span>
                   </div>
-                  <Progress 
-                    value={Math.min((caseItem.months_covered / caseItem.months_needed) * 100, 100)} 
-                    className="w-full h-2"
-                  />
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-primary to-primary-glow h-2 rounded-full transition-all"
+                      style={{ 
+                        width: `${Math.min((caseItem.months_covered / caseItem.months_needed) * 100, 100)}%` 
+                      }}
+                    ></div>
+                  </div>
                 </div>
 
               </CardContent>
