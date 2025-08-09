@@ -240,6 +240,12 @@ export const DonationsManagement = () => {
   const redeemedDonations = donations?.filter(d => d.status === 'redeemed') || [];
   const cancelledDonations = donations?.filter(d => d.status === 'cancelled') || [];
 
+  // Calculate sums for each status
+  const pendingSum = pendingDonations.reduce((sum, d) => sum + d.amount, 0);
+  const confirmedSum = confirmedDonations.reduce((sum, d) => sum + d.amount, 0);
+  const redeemedSum = redeemedDonations.reduce((sum, d) => sum + d.amount, 0);
+  const cancelledSum = cancelledDonations.reduce((sum, d) => sum + d.amount, 0);
+
   if (isLoading) {
     return <div className="text-center py-8">جار التحميل...</div>;
   }
@@ -248,25 +254,51 @@ export const DonationsManagement = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">إدارة التبرعات</h2>
-        <div className="flex gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-yellow-200 rounded-full"></div>
-            <span>في الانتظار: {pendingDonations.length}</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+          <div className="flex items-center gap-2 p-3 bg-yellow-50 rounded-lg">
+            <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+            <div>
+              <div className="font-medium">في الانتظار</div>
+              <div className="text-xs text-muted-foreground">
+                {pendingDonations.length} تبرع • {pendingSum.toLocaleString()} جنيه
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-200 rounded-full"></div>
-            <span>مؤكدة: {confirmedDonations.length}</span>
+          <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
+            <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+            <div>
+              <div className="font-medium">مؤكدة</div>
+              <div className="text-xs text-muted-foreground">
+                {confirmedDonations.length} تبرع • {confirmedSum.toLocaleString()} جنيه
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-200 rounded-full"></div>
-            <span>تم التسليم: {redeemedDonations.length}</span>
+          <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
+            <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+            <div>
+              <div className="font-medium">تم التسليم</div>
+              <div className="text-xs text-muted-foreground">
+                {redeemedDonations.length} تبرع • {redeemedSum.toLocaleString()} جنيه
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 p-3 bg-red-50 rounded-lg">
+            <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+            <div>
+              <div className="font-medium">ملغية</div>
+              <div className="text-xs text-muted-foreground">
+                {cancelledDonations.length} تبرع • {cancelledSum.toLocaleString()} جنيه
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* التبرعات المعلقة */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4 text-yellow-700">التبرعات في الانتظار ({pendingDonations.length})</h3>
+        <h3 className="text-lg font-semibold mb-4 text-yellow-700">
+          التبرعات في الانتظار ({pendingDonations.length}) - {pendingSum.toLocaleString()} جنيه
+        </h3>
         {pendingDonations.length === 0 ? (
           <p className="text-muted-foreground">لا توجد تبرعات في الانتظار</p>
         ) : (
@@ -326,7 +358,9 @@ export const DonationsManagement = () => {
       {/* التبرعات المؤكدة */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-green-700">التبرعات المؤكدة ({confirmedDonations.length})</h3>
+          <h3 className="text-lg font-semibold text-green-700">
+            التبرعات المؤكدة ({confirmedDonations.length}) - {confirmedSum.toLocaleString()} جنيه
+          </h3>
           {selectedDonations.size > 0 && (
             <Button 
               onClick={handleBulkRedeem}
@@ -384,7 +418,9 @@ export const DonationsManagement = () => {
 
       {/* التبرعات المسلمة */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4 text-blue-700">التبرعات المسلمة ({redeemedDonations.length})</h3>
+        <h3 className="text-lg font-semibold mb-4 text-blue-700">
+          التبرعات المسلمة ({redeemedDonations.length}) - {redeemedSum.toLocaleString()} جنيه
+        </h3>
         {redeemedDonations.length === 0 ? (
           <p className="text-muted-foreground">لا توجد تبرعات مسلمة</p>
         ) : (
