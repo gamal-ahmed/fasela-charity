@@ -83,6 +83,15 @@ export const PaymentConfirmationDialog = ({
     onOpenChange(false);
   };
 
+  // Reset form data when dialog opens to prevent caching
+  const handleOpenChange = (open: boolean) => {
+    if (open) {
+      resetDialog();
+    } else {
+      handleClose();
+    }
+  };
+
   const getDialogTitle = () => {
     switch (step) {
       case 1: return "بيانات المتبرع";
@@ -102,7 +111,7 @@ export const PaymentConfirmationDialog = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col p-3" dir="rtl">
         <DialogHeader className="flex-shrink-0 pb-1">
           <DialogTitle className="flex items-center gap-2 text-base">
