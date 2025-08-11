@@ -35,6 +35,14 @@ interface MonthlyNeed {
   color: string;
 }
 
+interface Kid {
+  id?: string;
+  name: string;
+  age: number;
+  gender: 'male' | 'female';
+  description: string;
+}
+
 interface CaseFormProps {
   caseId?: string;
   onSuccess?: () => void;
@@ -45,6 +53,9 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
   const [loadingCase, setLoadingCase] = useState(false);
   const [monthlyNeeds, setMonthlyNeeds] = useState<MonthlyNeed[]>([
     { category: "", amount: 0, description: "", icon: "💰", color: "bg-blue-500" }
+  ]);
+  const [kids, setKids] = useState<Kid[]>([
+    { name: "", age: 0, gender: 'male', description: "" }
   ]);
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<CaseFormData>();
   const { toast } = useToast();
@@ -79,6 +90,14 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
 
       if (needsError) throw needsError;
 
+      // Load kids data
+      const { data: kidsData, error: kidsError } = await supabase
+        .from("case_kids")
+        .select("*")
+        .eq("case_id", caseId);
+
+      if (kidsError) throw kidsError;
+
       // Populate form fields
       if (caseData) {
         setValue("title_ar", caseData.title_ar);
@@ -104,6 +123,17 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
           description: need.description || "",
           icon: need.icon || "💰",
           color: need.color || "bg-blue-500"
+        })));
+      }
+
+      // Populate kids data
+      if (kidsData && kidsData.length > 0) {
+        setKids(kidsData.map(kid => ({
+          id: kid.id,
+          name: kid.name,
+          age: kid.age,
+          gender: kid.gender as 'male' | 'female',
+          description: kid.description || ""
         })));
       }
 
@@ -143,6 +173,22 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
     const updated = [...monthlyNeeds];
     updated[index] = { ...updated[index], [field]: value };
     setMonthlyNeeds(updated);
+  };
+
+  const addKid = () => {
+    setKids([...kids, { name: "", age: 0, gender: 'male', description: "" }]);
+  };
+
+  const removeKid = (index: number) => {
+    if (kids.length > 1) {
+      setKids(kids.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateKid = (index: number, field: keyof Kid, value: string | number) => {
+    const updated = [...kids];
+    updated[index] = { ...updated[index], [field]: value };
+    setKids(updated);
   };
 
   const onSubmit = async (data: CaseFormData) => {
@@ -200,9 +246,35 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
           if (needsError) throw needsError;
         }
 
+        // Delete existing kids and insert new ones
+        const { error: deleteKidsError } = await supabase
+          .from("case_kids")
+          .delete()
+          .eq("case_id", caseId);
+
+        if (deleteKidsError) throw deleteKidsError;
+
+        // Insert updated kids data
+        if (kids.some(kid => kid.name.trim())) {
+          const validKids = kids.filter(kid => kid.name.trim());
+          const kidsToInsert = validKids.map(kid => ({
+            case_id: caseId,
+            name: kid.name,
+            age: kid.age,
+            gender: kid.gender,
+            description: kid.description
+          }));
+
+          const { error: kidsError } = await supabase
+            .from("case_kids")
+            .insert(kidsToInsert);
+
+          if (kidsError) throw kidsError;
+        }
+
         toast({
           title: "تم بنجاح",
-          description: "تم تحديث الحالة والاحتياجات الشهرية بنجاح",
+          description: "تم تحديث الحالة والاحتياجات الشهرية وبيانات الأطفال بنجاح",
         });
 
         // Call onSuccess callback if provided
@@ -253,14 +325,33 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
           if (needsError) throw needsError;
         }
 
+        // Insert kids data
+        if (caseData && kids.some(kid => kid.name.trim())) {
+          const validKids = kids.filter(kid => kid.name.trim());
+          const kidsToInsert = validKids.map(kid => ({
+            case_id: caseData.id,
+            name: kid.name,
+            age: kid.age,
+            gender: kid.gender,
+            description: kid.description
+          }));
+
+          const { error: kidsError } = await supabase
+            .from("case_kids")
+            .insert(kidsToInsert);
+
+          if (kidsError) throw kidsError;
+        }
+
         toast({
           title: "تم بنجاح",
-          description: "تم إضافة الحالة والاحتياجات الشهرية بنجاح",
+          description: "تم إضافة الحالة والاحتياجات الشهرية وبيانات الأطفال بنجاح",
         });
 
         // Reset form only for new cases
         reset();
         setMonthlyNeeds([{ category: "", amount: 0, description: "", icon: "💰", color: "bg-blue-500" }]);
+        setKids([{ name: "", age: 0, gender: 'male', description: "" }]);
         
         // Call onSuccess callback if provided
         onSuccess?.();
@@ -580,6 +671,83 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
                     <option value="bg-pink-500">وردي</option>
                   </select>
                 </div>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            بيانات الأطفال
+            <Button type="button" onClick={addKid} size="sm">
+              <Plus className="w-4 h-4 ml-1" />
+              إضافة طفل
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {kids.map((kid, index) => (
+            <div key={index} className="p-4 border rounded-lg space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium">طفل {index + 1}</h4>
+                {kids.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeKid(index)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>اسم الطفل</Label>
+                  <Input
+                    value={kid.name}
+                    onChange={(e) => updateKid(index, "name", e.target.value)}
+                    placeholder="أحمد محمد"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>العمر</Label>
+                  <Input
+                    type="number"
+                    value={kid.age}
+                    onChange={(e) => updateKid(index, "age", Number(e.target.value))}
+                    placeholder="8"
+                    min="0"
+                    max="18"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>الجنس</Label>
+                  <Select onValueChange={(value) => updateKid(index, "gender", value)} value={kid.gender}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر الجنس" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">ذكر</SelectItem>
+                      <SelectItem value="female">أنثى</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>وصف إضافي</Label>
+                <Textarea
+                  value={kid.description}
+                  onChange={(e) => updateKid(index, "description", e.target.value)}
+                  placeholder="معلومات إضافية عن الطفل (الصف الدراسي، حالة صحية خاصة، إلخ)"
+                  rows={2}
+                />
               </div>
             </div>
           ))}

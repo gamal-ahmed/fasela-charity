@@ -185,6 +185,39 @@ export type Database = {
           },
         ]
       }
+      case_kids: {
+        Row: {
+          age: number
+          case_id: string
+          created_at: string
+          description: string | null
+          gender: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          age: number
+          case_id: string
+          created_at?: string
+          description?: string | null
+          gender: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          age?: number
+          case_id?: string
+          created_at?: string
+          description?: string | null
+          gender?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       case_private_spending: {
         Row: {
           amount: number
@@ -1101,96 +1134,6 @@ export type Database = {
           label?: string
           updated_at?: string
           value?: string
-        }
-        Relationships: []
-      }
-      soulmate_matching_preferences: {
-        Row: {
-          created_at: string
-          education: string[] | null
-          family_values: string[] | null
-          id: string
-          location: string | null
-          max_age: number | null
-          min_age: number | null
-          religiosity: string[] | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          education?: string[] | null
-          family_values?: string[] | null
-          id?: string
-          location?: string | null
-          max_age?: number | null
-          min_age?: number | null
-          religiosity?: string[] | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          education?: string[] | null
-          family_values?: string[] | null
-          id?: string
-          location?: string | null
-          max_age?: number | null
-          min_age?: number | null
-          religiosity?: string[] | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      soulmate_profile_photos: {
-        Row: {
-          created_at: string
-          id: string
-          is_primary: boolean | null
-          storage_path: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_primary?: boolean | null
-          storage_path: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_primary?: boolean | null
-          storage_path?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      soulmate_user_connections: {
-        Row: {
-          created_at: string
-          id: string
-          liked_user_id: string
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          liked_user_id: string
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          liked_user_id?: string
-          status?: string
-          updated_at?: string
-          user_id?: string
         }
         Relationships: []
       }

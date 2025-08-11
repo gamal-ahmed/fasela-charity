@@ -5,6 +5,7 @@ import { FamilyProfile } from "@/components/FamilyProfile";
 import { MonthlyNeeds } from "@/components/MonthlyNeeds";
 import { DonationSection } from "@/components/DonationSection";
 import { MonthlyUpdates } from "@/components/MonthlyUpdates";
+import { KidsInfo } from "@/components/KidsInfo";
 import { Heart, Shield, Eye, Users, ArrowLeft } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,24 @@ const CaseDetails = () => {
         .select("*")
         .eq("case_id", id)
         .order("amount", { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id
+  });
+
+  // استعلام للحصول على بيانات الأطفال
+  const { data: kidsData } = useQuery({
+    queryKey: ["case-kids", id],
+    queryFn: async () => {
+      if (!id) return null;
+      
+      const { data, error } = await supabase
+        .from("case_kids")
+        .select("*")
+        .eq("case_id", id)
+        .order("age", { ascending: false });
       
       if (error) throw error;
       return data;
@@ -158,6 +177,17 @@ const CaseDetails = () => {
           {/* العمود الأيسر - معلومات العائلة */}
           <div className="lg:col-span-2 space-y-6 lg:space-y-8">
             <FamilyProfile {...familyData} />
+            
+            {kidsData && kidsData.length > 0 && (
+              <KidsInfo kids={kidsData.map(kid => ({
+                id: kid.id,
+                name: kid.name,
+                age: kid.age,
+                gender: kid.gender as 'male' | 'female',
+                description: kid.description || ""
+              }))} />
+            )}
+            
             <MonthlyNeeds totalMonthlyNeed={totalMonthlyNeed} needs={monthlyNeeds} />
             <MonthlyUpdates updates={monthlyUpdates} />
           </div>
