@@ -69,7 +69,7 @@ const Navigation = () => {
           isActive('/') ? 'text-white font-medium' : ''
         }`}
       >
-        <Home className="w-4 h-4" />
+        <img src="/lovable-uploads/1377342f-e772-4165-b1d5-8f6cbc909fa4.png" alt="الشعار" className="w-6 h-6" />
         <span className="hidden sm:inline">الرئيسية</span>
       </Link>
       

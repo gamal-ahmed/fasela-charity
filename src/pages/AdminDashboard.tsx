@@ -123,7 +123,7 @@ const AdminDashboard = () => {
             {/* Top row - Logo and brand */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Heart className="w-6 h-6 sm:w-8 sm:h-8 text-primary flex-shrink-0" />
+                <img src="/lovable-uploads/1377342f-e772-4165-b1d5-8f6cbc909fa4.png" alt="الشعار" className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
                 <span className="text-lg sm:text-xl font-bold">فَسِيلَة خير</span>
               </div>
               <Button variant="outline" onClick={handleSignOut} size="sm" className="text-xs sm:text-sm">
