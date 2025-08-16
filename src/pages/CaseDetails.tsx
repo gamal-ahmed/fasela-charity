@@ -7,7 +7,7 @@ import { DonationSection } from "@/components/DonationSection";
 import { MonthlyUpdates } from "@/components/MonthlyUpdates";
 import { KidsInfo } from "@/components/KidsInfo";
 import { Heart, Shield, Eye, Users, ArrowLeft } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
@@ -177,6 +177,28 @@ const CaseDetails = () => {
           {/* العمود الأيسر - معلومات العائلة */}
           <div className="lg:col-span-2 space-y-6 lg:space-y-8">
             <FamilyProfile {...familyData} />
+            
+            {/* Display description images if available */}
+            {caseData?.description_images && Array.isArray(caseData.description_images) && caseData.description_images.length > 0 && (
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-semibold mb-4">صور إضافية</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {caseData.description_images
+                      .filter((img): img is string => typeof img === 'string')
+                      .map((imageUrl: string, index: number) => (
+                      <div key={index} className="relative group">
+                        <img 
+                          src={imageUrl} 
+                          alt={`صورة إضافية ${index + 1}`}
+                          className="w-full h-48 object-cover rounded-lg border shadow-sm hover:shadow-md transition-shadow"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             
             {kidsData && kidsData.length > 0 && (
               <KidsInfo kids={kidsData.map(kid => ({

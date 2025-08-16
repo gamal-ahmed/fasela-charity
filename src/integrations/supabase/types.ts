@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -287,6 +287,7 @@ export type Database = {
           created_at: string
           description: string
           description_ar: string
+          description_images: Json | null
           deserve_zakkah: boolean | null
           id: string
           is_published: boolean
@@ -309,6 +310,7 @@ export type Database = {
           created_at?: string
           description: string
           description_ar: string
+          description_images?: Json | null
           deserve_zakkah?: boolean | null
           id?: string
           is_published?: boolean
@@ -331,6 +333,7 @@ export type Database = {
           created_at?: string
           description?: string
           description_ar?: string
+          description_images?: Json | null
           deserve_zakkah?: boolean | null
           id?: string
           is_published?: boolean
@@ -1137,6 +1140,44 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          owner_user_id: string
+          permission_level: string
+          shared_with_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          owner_user_id: string
+          permission_level?: string
+          shared_with_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          owner_user_id?: string
+          permission_level?: string
+          shared_with_user_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       soulmate_user_profiles: {
         Row: {
           about_me: string | null
@@ -1274,6 +1315,7 @@ export type Database = {
       }
       transactions: {
         Row: {
+          added_by_user_id: string | null
           amount: number
           category_id: string | null
           created_at: string
@@ -1284,6 +1326,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          added_by_user_id?: string | null
           amount: number
           category_id?: string | null
           created_at?: string
@@ -1294,6 +1337,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          added_by_user_id?: string | null
           amount?: number
           category_id?: string | null
           created_at?: string
@@ -1555,6 +1599,39 @@ export type Database = {
         }
         Relationships: []
       }
+      wise_user_partners: {
+        Row: {
+          created_at: string
+          id: string
+          partner_email: string
+          partner_name: string
+          partner_user_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          partner_email: string
+          partner_name: string
+          partner_user_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          partner_email?: string
+          partner_name?: string
+          partner_user_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       worker_listings: {
         Row: {
           availability_end: string | null
@@ -1698,6 +1775,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: undefined
       }
+      create_wise_partnership: {
+        Args: { partner_email: string; partner_name: string }
+        Returns: string
+      }
       generate_payment_code: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1712,21 +1793,21 @@ export type Database = {
       get_daily_signups: {
         Args: { days_back: number }
         Returns: {
-          date: string
           count: number
+          date: string
         }[]
       }
       get_gender_distribution: {
         Args: Record<PropertyKey, never>
         Returns: {
-          gender: string
           count: number
+          gender: string
         }[]
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
@@ -1743,7 +1824,7 @@ export type Database = {
         Returns: boolean
       }
       track_user_action: {
-        Args: { action_type: string; action_details: Json }
+        Args: { action_details: Json; action_type: string }
         Returns: undefined
       }
     }

@@ -21,6 +21,7 @@ interface CaseFormData {
   monthly_cost: number;
   months_needed: number;
   photo_url?: string;
+  description_images?: string[];
   is_published: boolean;
   city?: string;
   area?: string;
@@ -52,7 +53,9 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
   const [loading, setLoading] = useState(false);
   const [loadingCase, setLoadingCase] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingDescriptionImage, setUploadingDescriptionImage] = useState(false);
   const [currentImageUrl, setCurrentImageUrl] = useState<string>("");
+  const [descriptionImages, setDescriptionImages] = useState<string[]>([]);
   const [monthlyNeeds, setMonthlyNeeds] = useState<MonthlyNeed[]>([
     { category: "", amount: 0, description: "", icon: "💰", color: "bg-blue-500" }
   ]);
@@ -118,6 +121,14 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
         
         // Set current image URL
         setCurrentImageUrl(caseData.photo_url || "");
+        
+        // Set description images
+        const images = caseData.description_images;
+        if (Array.isArray(images)) {
+          setDescriptionImages(images.filter((img): img is string => typeof img === 'string'));
+        } else {
+          setDescriptionImages([]);
+        }
       }
 
       // Populate monthly needs
@@ -224,6 +235,72 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
     setValue('photo_url', "");
   };
 
+  const handleDescriptionImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "خطأ",
+        description: "يرجى اختيار صورة صالحة (JPEG, PNG, WebP)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "خطأ",
+        description: "حجم الصورة يجب أن يكون أقل من 5 ميجابايت",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingDescriptionImage(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `desc_${Date.now()}.${fileExt}`;
+
+      const { data, error } = await supabase.storage
+        .from('case-images')
+        .upload(fileName, file);
+
+      if (error) {
+        throw error;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('case-images')
+        .getPublicUrl(fileName);
+
+      const newImages = [...descriptionImages, publicUrl];
+      setDescriptionImages(newImages);
+
+      toast({
+        title: "تم رفع الصورة بنجاح",
+        description: "تم إضافة صورة للوصف بنجاح",
+      });
+    } catch (error) {
+      console.error("Error uploading description image:", error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء رفع الصورة",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingDescriptionImage(false);
+    }
+  };
+
+  const removeDescriptionImage = (index: number) => {
+    const newImages = descriptionImages.filter((_, i) => i !== index);
+    setDescriptionImages(newImages);
+  };
+
   const addMonthlyNeed = () => {
     setMonthlyNeeds([...monthlyNeeds, { 
       category: "", 
@@ -279,7 +356,8 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
             description: data.description || "",
             monthly_cost: data.monthly_cost,
             months_needed: data.months_needed,
-            photo_url: data.photo_url || getDefaultImage(),
+            photo_url: currentImageUrl || null,
+            description_images: descriptionImages,
             is_published: data.is_published,
             city: data.city || null,
             area: data.area || null,
@@ -364,7 +442,8 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
             description: data.description || "",
             monthly_cost: data.monthly_cost,
             months_needed: data.months_needed,
-            photo_url: data.photo_url || getDefaultImage(),
+            photo_url: currentImageUrl || null,
+            description_images: descriptionImages,
             is_published: data.is_published,
             city: data.city || null,
             area: data.area || null,
@@ -421,6 +500,8 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
 
         // Reset form only for new cases
         reset();
+        setCurrentImageUrl("");
+        setDescriptionImages([]);
         setMonthlyNeeds([{ category: "", amount: 0, description: "", icon: "💰", color: "bg-blue-500" }]);
         setKids([{ name: "", age: 0, gender: 'male', description: "" }]);
         
@@ -529,6 +610,66 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
               />
             </div>
           </div>
+
+          {/* Description Images Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>صور إضافية للوصف</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Display existing description images */}
+              {descriptionImages.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {descriptionImages.map((imageUrl, index) => (
+                    <div key={index} className="relative group">
+                      <img 
+                        src={imageUrl} 
+                        alt={`صورة وصف ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-1 right-1 p-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removeDescriptionImage(index)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload new description image */}
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleDescriptionImageUpload}
+                  disabled={uploadingDescriptionImage}
+                  className="hidden"
+                  id="description-image-upload"
+                />
+                <Label 
+                  htmlFor="description-image-upload" 
+                  className="cursor-pointer"
+                >
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    disabled={uploadingDescriptionImage}
+                    asChild
+                  >
+                    <span className="flex items-center gap-2">
+                      <Upload className="h-4 w-4" />
+                      {uploadingDescriptionImage ? "جاري الرفع..." : "إضافة صورة للوصف"}
+                    </span>
+                  </Button>
+                </Label>
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="grid md:grid-cols-3 gap-4">
             <div className="space-y-2">
