@@ -1,10 +1,15 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, User, Calendar, CreditCard } from "lucide-react";
+import { ChevronDown, User, Calendar, CreditCard, Check, X, Package, Eye } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -43,6 +48,11 @@ interface CaseWithDonations {
 
 export const DonationsByCaseView = () => {
   const [openCases, setOpenCases] = useState<Set<string>>(new Set());
+  const [selectedDonation, setSelectedDonation] = useState<Donation | null>(null);
+  const [paymentReference, setPaymentReference] = useState("");
+  const [adminNotes, setAdminNotes] = useState("");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: casesWithDonations, isLoading } = useQuery({
     queryKey: ["donations-by-case"],
@@ -74,6 +84,125 @@ export const DonationsByCaseView = () => {
       return casesWithDonations;
     }
   });
+
+  const confirmDonationMutation = useMutation({
+    mutationFn: async ({ id, paymentRef, notes }: { id: string; paymentRef: string; notes: string }) => {
+      const { error } = await supabase
+        .from("donations")
+        .update({
+          status: "confirmed",
+          payment_reference: paymentRef,
+          admin_notes: notes,
+          confirmed_at: new Date().toISOString(),
+          confirmed_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["donations-by-case"] });
+      toast({
+        title: "تم تأكيد التبرع",
+        description: "تم تأكيد التبرع بنجاح وتحديث إجمالي الحالة."
+      });
+      setSelectedDonation(null);
+      setPaymentReference("");
+      setAdminNotes("");
+    },
+    onError: () => {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ في تأكيد التبرع",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const redeemDonationMutation = useMutation({
+    mutationFn: async ({ id, notes }: { id: string; notes: string }) => {
+      const { error } = await supabase
+        .from("donations")
+        .update({
+          status: "redeemed",
+          admin_notes: notes
+        })
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["donations-by-case"] });
+      toast({
+        title: "تم تسليم التبرع",
+        description: "تم تسليم التبرع للعائلة بنجاح."
+      });
+      setSelectedDonation(null);
+      setAdminNotes("");
+    },
+    onError: () => {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ في تسليم التبرع",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const cancelDonationMutation = useMutation({
+    mutationFn: async ({ id, notes }: { id: string; notes: string }) => {
+      const { error } = await supabase
+        .from("donations")
+        .update({
+          status: "cancelled",
+          admin_notes: notes
+        })
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["donations-by-case"] });
+      toast({
+        title: "تم إلغاء التبرع",
+        description: "تم إلغاء التبرع بنجاح."
+      });
+      setSelectedDonation(null);
+      setAdminNotes("");
+    },
+    onError: () => {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ في إلغاء التبرع",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleConfirmDonation = () => {
+    if (!selectedDonation) return;
+    confirmDonationMutation.mutate({
+      id: selectedDonation.id,
+      paymentRef: paymentReference,
+      notes: adminNotes
+    });
+  };
+
+  const handleRedeemDonation = () => {
+    if (!selectedDonation) return;
+    redeemDonationMutation.mutate({
+      id: selectedDonation.id,
+      notes: adminNotes
+    });
+  };
+
+  const handleCancelDonation = () => {
+    if (!selectedDonation) return;
+    cancelDonationMutation.mutate({
+      id: selectedDonation.id,
+      notes: adminNotes
+    });
+  };
 
   const toggleCase = (caseId: string) => {
     const newOpenCases = new Set(openCases);
@@ -217,15 +346,16 @@ export const DonationsByCaseView = () => {
                       <div className="overflow-x-auto">
                         <Table>
                           <TableHeader>
-                            <TableRow>
-                              <TableHead className="text-right">المتبرع</TableHead>
-                              <TableHead className="text-right">المبلغ</TableHead>
-                              <TableHead className="text-right">النوع</TableHead>
-                              <TableHead className="text-right">كود الدفع</TableHead>
-                              <TableHead className="text-right">الحالة</TableHead>
-                              <TableHead className="text-right">تاريخ التبرع</TableHead>
-                              <TableHead className="text-right">تاريخ التأكيد</TableHead>
-                            </TableRow>
+                          <TableRow>
+                            <TableHead className="text-right">المتبرع</TableHead>
+                            <TableHead className="text-right">المبلغ</TableHead>
+                            <TableHead className="text-right">النوع</TableHead>
+                            <TableHead className="text-right">كود الدفع</TableHead>
+                            <TableHead className="text-right">الحالة</TableHead>
+                            <TableHead className="text-right">تاريخ التبرع</TableHead>
+                            <TableHead className="text-right">تاريخ التأكيد</TableHead>
+                            <TableHead className="text-right">إجراءات</TableHead>
+                          </TableRow>
                           </TableHeader>
                           <TableBody>
                             {caseItem.donations.map((donation) => (
@@ -273,12 +403,67 @@ export const DonationsByCaseView = () => {
                                 <TableCell>
                                   {new Date(donation.created_at).toLocaleDateString('ar-SA')}
                                 </TableCell>
-                                <TableCell>
-                                  {donation.confirmed_at 
-                                    ? new Date(donation.confirmed_at).toLocaleDateString('ar-SA')
-                                    : '-'
-                                  }
-                                </TableCell>
+                              <TableCell>
+                                {donation.confirmed_at 
+                                  ? new Date(donation.confirmed_at).toLocaleDateString('ar-SA')
+                                  : '-'
+                                }
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedDonation(donation);
+                                      setPaymentReference(donation.payment_reference || "");
+                                      setAdminNotes(donation.admin_notes || "");
+                                    }}
+                                  >
+                                    <Eye className="w-3 h-3" />
+                                  </Button>
+                                  {donation.status === 'pending' && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-green-600 hover:text-green-700"
+                                      onClick={() => {
+                                        setSelectedDonation(donation);
+                                        setPaymentReference("");
+                                        setAdminNotes("");
+                                      }}
+                                    >
+                                      <Check className="w-3 h-3" />
+                                    </Button>
+                                  )}
+                                  {donation.status === 'confirmed' && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-blue-600 hover:text-blue-700"
+                                      onClick={() => {
+                                        setSelectedDonation(donation);
+                                        setAdminNotes("");
+                                      }}
+                                    >
+                                      <Package className="w-3 h-3" />
+                                    </Button>
+                                  )}
+                                  {(donation.status === 'pending' || donation.status === 'confirmed') && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-red-600 hover:text-red-700"
+                                      onClick={() => {
+                                        setSelectedDonation(donation);
+                                        setAdminNotes("");
+                                      }}
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -292,6 +477,96 @@ export const DonationsByCaseView = () => {
           );
         })}
       </div>
+
+      {/* Management Dialog */}
+      <Dialog open={!!selectedDonation} onOpenChange={(open) => !open && setSelectedDonation(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>إدارة التبرع</DialogTitle>
+            <DialogDescription>
+              {selectedDonation && (
+                <div className="space-y-2 mt-4">
+                  <div>المتبرع: {selectedDonation.donor_name || 'متبرع مجهول'}</div>
+                  <div>المبلغ: {selectedDonation.amount.toLocaleString()} ج.م</div>
+                  <div>كود الدفع: {selectedDonation.payment_code}</div>
+                  <div>الحالة الحالية: {getStatusBadge(selectedDonation.status)}</div>
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {selectedDonation?.status === 'pending' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">مرجع الدفع</label>
+                <Input
+                  value={paymentReference}
+                  onChange={(e) => setPaymentReference(e.target.value)}
+                  placeholder="أدخل مرجع الدفع"
+                />
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">ملاحظات الإدارة</label>
+              <Textarea
+                value={adminNotes}
+                onChange={(e) => setAdminNotes(e.target.value)}
+                placeholder="أضف ملاحظات..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            {selectedDonation?.status === 'pending' && (
+              <>
+                <Button
+                  onClick={handleConfirmDonation}
+                  disabled={confirmDonationMutation.isPending || !paymentReference.trim()}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Check className="w-4 h-4 ml-1" />
+                  تأكيد
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleCancelDonation}
+                  disabled={cancelDonationMutation.isPending}
+                >
+                  <X className="w-4 h-4 ml-1" />
+                  إلغاء
+                </Button>
+              </>
+            )}
+            
+            {selectedDonation?.status === 'confirmed' && (
+              <>
+                <Button
+                  onClick={handleRedeemDonation}
+                  disabled={redeemDonationMutation.isPending}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Package className="w-4 h-4 ml-1" />
+                  تسليم للعائلة
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleCancelDonation}
+                  disabled={cancelDonationMutation.isPending}
+                >
+                  <X className="w-4 h-4 ml-1" />
+                  إلغاء
+                </Button>
+              </>
+            )}
+            
+            <Button variant="outline" onClick={() => setSelectedDonation(null)}>
+              إغلاق
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
