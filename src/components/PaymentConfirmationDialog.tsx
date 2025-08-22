@@ -79,21 +79,20 @@ export const PaymentConfirmationDialog = ({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col p-4" dir="rtl">
-        <DialogHeader className="flex-shrink-0 pb-2">
+        <DialogHeader className="flex-shrink-0 pb-3">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <CreditCard className="w-5 h-5" />
             تأكيد التبرع
           </DialogTitle>
-          <DialogDescription className="text-sm">
-            أدخل بياناتك واتبع تعليمات الدفع
+          <DialogDescription className="text-sm text-muted-foreground">
+            احصل على كود دفع → احول المبلغ → اكتب الكود في البيان → سيتم التأكيد
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto min-h-0 space-y-4">
+        <div className="flex-1 overflow-y-auto min-h-0 space-y-3">
           {/* معلومات المتبرع */}
           <div className="space-y-2">
-            <Label htmlFor="donor-name" className="flex items-center gap-2 text-sm font-medium">
-              <User className="w-4 h-4" />
+            <Label htmlFor="donor-name" className="text-sm font-medium">
               الاسم الكريم
             </Label>
             <Input
@@ -105,58 +104,38 @@ export const PaymentConfirmationDialog = ({
             />
           </div>
 
-          {/* ملخص التبرع */}
-          <div className="bg-accent/30 p-3 rounded-lg">
-            <h4 className="font-semibold mb-2 text-sm">ملخص التبرع:</h4>
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span>الحالة:</span>
-                <span className="font-medium">{caseTitle}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>المتبرع:</span>
-                <span className="font-medium">{donorName || "غير محدد"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>المبلغ:</span>
-                <span className="font-medium text-primary">{safeAmount.toLocaleString()} جنيه</span>
-              </div>
+          {/* ملخص مختصر */}
+          <div className="bg-accent/30 p-3 rounded-lg text-sm">
+            <div className="flex justify-between items-center">
+              <span className="font-medium">{caseTitle}</span>
+              <span className="font-bold text-primary">{safeAmount.toLocaleString()} جنيه</span>
             </div>
           </div>
 
-          {/* تعليمات الدفع */}
+          {/* كود الدفع */}
           <div className="border-2 border-primary/20 bg-primary/5 p-3 rounded-lg">
-            <h4 className="font-semibold mb-2 text-primary text-sm">مهم جداً - كود الدفع:</h4>
-            
-            <div className="bg-background p-3 rounded-md border mb-3">
-              <div className="flex items-center justify-between">
-                <Badge variant="outline" className="text-lg font-mono px-3 py-1">
-                  {paymentCode}
-                </Badge>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={copyPaymentCode}
-                  className="h-8 w-8 p-0"
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-semibold text-primary text-sm">كود الدفع:</h4>
+              <Badge variant="outline" className="text-base font-mono px-2 py-1">
+                {paymentCode}
+              </Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={copyPaymentCode}
+                className="h-7 w-7 p-0"
+              >
+                <Copy className="h-3 w-3" />
+              </Button>
             </div>
-
-            <div className="text-sm space-y-2">
-              <p className="text-destructive font-medium">
-                ⚠️ اكتب الكود "{paymentCode}" في خانة البيان
-              </p>
-              <p className="text-muted-foreground">
-                ضروري لربط تبرعك بهذه الحالة
-              </p>
-            </div>
+            <p className="text-xs text-destructive font-medium">
+              ⚠️ اكتب هذا الكود في خانة البيان عند التحويل
+            </p>
           </div>
 
           <div className="bg-green-50 border border-green-200 p-2 rounded">
-            <p className="text-sm text-green-800">
-              ✅ سيتم مراجعة التبرع من الإدارة وتأكيده
+            <p className="text-xs text-green-800">
+              ✅ سيتم مراجعة التبرع وتأكيده من الإدارة
             </p>
           </div>
         </div>
