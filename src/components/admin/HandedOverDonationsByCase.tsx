@@ -27,6 +27,8 @@ interface HandedOverDonation {
   admin_notes: string | null;
   created_at: string;
   confirmed_at: string | null;
+  original_donation_amount?: number;
+  handover_notes?: string | null;
 }
 
 interface CaseWithHandedOverDonations {
@@ -64,21 +66,34 @@ export const HandedOverDonationsByCase = () => {
 
       if (casesError) throw casesError;
 
-      // Then get all handed over (redeemed) donations for these cases
-      const { data: handedOverDonations, error: donationsError } = await supabase
-        .from("donations")
-        .select("*")
-        .eq("status", "redeemed")
+      // Then get all handover records for these cases with donation details
+      const { data: handoverRecords, error: handoversError } = await supabase
+        .from("donation_handovers")
+        .select(`
+          *,
+          donations (
+            donor_name,
+            donor_email,
+            amount,
+            months_pledged,
+            payment_code,
+            donation_type,
+            payment_reference,
+            admin_notes,
+            created_at,
+            confirmed_at
+          )
+        `)
         .in("case_id", cases.map(c => c.id))
-        .order("created_at", { ascending: false });
+        .order("handover_date", { ascending: false });
 
-      if (donationsError) throw donationsError;
+      if (handoversError) throw handoversError;
 
-      // Group donations by month and case
+      // Group handovers by month and case
       const monthlyGroups: { [key: string]: MonthlyData } = {};
 
-      handedOverDonations.forEach(donation => {
-        const date = new Date(donation.created_at);
+      handoverRecords.forEach(handover => {
+        const date = new Date(handover.handover_date);
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         const displayMonth = date.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long' });
         
@@ -92,13 +107,13 @@ export const HandedOverDonationsByCase = () => {
           };
         }
 
-        monthlyGroups[monthKey].totalAmount += donation.amount;
+        monthlyGroups[monthKey].totalAmount += handover.handover_amount;
         monthlyGroups[monthKey].totalDonations += 1;
 
         // Find or create case in this month
-        let caseInMonth = monthlyGroups[monthKey].cases.find(c => c.id === donation.case_id);
+        let caseInMonth = monthlyGroups[monthKey].cases.find(c => c.id === handover.case_id);
         if (!caseInMonth) {
-          const caseData = cases.find(c => c.id === donation.case_id);
+          const caseData = cases.find(c => c.id === handover.case_id);
           if (caseData) {
             caseInMonth = {
               ...caseData,
@@ -109,7 +124,24 @@ export const HandedOverDonationsByCase = () => {
         }
         
         if (caseInMonth) {
-          caseInMonth.handedOverDonations.push(donation);
+          // Transform handover record to match the old structure
+          const handoverWithDonationData = {
+            id: handover.id,
+            case_id: handover.case_id,
+            donor_name: handover.donations?.donor_name || null,
+            donor_email: handover.donations?.donor_email || null,
+            amount: handover.handover_amount, // Use handover amount instead of original donation amount
+            months_pledged: handover.donations?.months_pledged || 0,
+            payment_code: handover.donations?.payment_code || '',
+            donation_type: handover.donations?.donation_type || 'custom',
+            payment_reference: handover.donations?.payment_reference || null,
+            admin_notes: handover.handover_notes || handover.donations?.admin_notes || null,
+            created_at: handover.handover_date, // Use handover date
+            confirmed_at: handover.donations?.confirmed_at || null,
+            original_donation_amount: handover.donations?.amount || 0,
+            handover_notes: handover.handover_notes
+          };
+          caseInMonth.handedOverDonations.push(handoverWithDonationData);
         }
       });
 
@@ -172,18 +204,18 @@ export const HandedOverDonationsByCase = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold">التبرعات المسلمة شهرياً حسب الحالة</h2>
+          <h2 className="text-xl sm:text-2xl font-bold">التبرعات المسلمة فعلياً حسب الحالة (شهرياً)</h2>
           <div className="mt-2 p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
             <div className="text-lg font-bold text-primary">
-              إجمالي التبرعات المسلمة: {overallStats.totalAmount.toLocaleString()} جنيه
+              إجمالي المبالغ المسلمة: {overallStats.totalAmount.toLocaleString()} جنيه
             </div>
             <div className="text-sm text-muted-foreground">
-              من {overallStats.totalDonations} تبرع مسلم خلال {overallStats.totalMonths} شهر
+              من {overallStats.totalDonations} عملية تسليم خلال {overallStats.totalMonths} شهر
             </div>
           </div>
         </div>
         <div className="text-sm text-muted-foreground">
-          {monthlyData?.length || 0} شهر يحتوي على تبرعات مسلمة
+          {monthlyData?.length || 0} شهر يحتوي على عمليات تسليم
         </div>
       </div>
 
@@ -294,8 +326,8 @@ export const HandedOverDonationsByCase = () => {
                                         <TableHead className="text-right">المبلغ</TableHead>
                                         <TableHead className="text-right">النوع</TableHead>
                                         <TableHead className="text-right">كود الدفع</TableHead>
-                                        <TableHead className="text-right">تاريخ التبرع</TableHead>
-                                        <TableHead className="text-right">ملاحظات الإدارة</TableHead>
+                                         <TableHead className="text-right">تاريخ التسليم</TableHead>
+                                         <TableHead className="text-right">ملاحظات التسليم</TableHead>
                                       </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -316,17 +348,22 @@ export const HandedOverDonationsByCase = () => {
                                               </div>
                                             </div>
                                           </TableCell>
-                                          <TableCell>
-                                            <div className="font-medium text-primary">
-                                              {donation.amount.toLocaleString()} ج.م
-                                            </div>
-                                            {donation.donation_type === 'monthly' && (
-                                              <div className="text-xs text-muted-foreground flex items-center gap-1">
-                                                <Calendar className="w-3 h-3" />
-                                                {donation.months_pledged} شهر
-                                              </div>
-                                            )}
-                                          </TableCell>
+                                           <TableCell>
+                                             <div className="font-medium text-primary">
+                                               {donation.amount.toLocaleString()} ج.م مسلم
+                                             </div>
+                                             {donation.original_donation_amount && donation.original_donation_amount !== donation.amount && (
+                                               <div className="text-xs text-muted-foreground">
+                                                 من أصل {donation.original_donation_amount.toLocaleString()} ج.م
+                                               </div>
+                                             )}
+                                             {donation.donation_type === 'monthly' && (
+                                               <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                                 <Calendar className="w-3 h-3" />
+                                                 {donation.months_pledged} شهر
+                                               </div>
+                                             )}
+                                           </TableCell>
                                           <TableCell>
                                             {donation.donation_type === 'monthly' ? 'شهري' : 'مخصص'}
                                           </TableCell>

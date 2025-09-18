@@ -44,66 +44,191 @@ export type Database = {
         }
         Relationships: []
       }
-      brightcove_publications: {
+      assignment_standards: {
         Row: {
-          brightcove_master_url: string | null
-          brightcove_response: Json | null
-          created_at: string
+          assignment_id: string | null
+          created_at: string | null
           id: string
-          is_published: boolean | null
-          model_id: string | null
-          model_name: string
-          session_id: string
-          transcription_url: string | null
-          updated_at: string
-          video_id: string
+          standard_id: string | null
         }
         Insert: {
-          brightcove_master_url?: string | null
-          brightcove_response?: Json | null
-          created_at?: string
+          assignment_id?: string | null
+          created_at?: string | null
           id?: string
-          is_published?: boolean | null
-          model_id?: string | null
-          model_name: string
-          session_id: string
-          transcription_url?: string | null
-          updated_at?: string
-          video_id: string
+          standard_id?: string | null
         }
         Update: {
-          brightcove_master_url?: string | null
-          brightcove_response?: Json | null
-          created_at?: string
+          assignment_id?: string | null
+          created_at?: string | null
           id?: string
-          is_published?: boolean | null
-          model_id?: string | null
-          model_name?: string
-          session_id?: string
-          transcription_url?: string | null
-          updated_at?: string
-          video_id?: string
+          standard_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "brightcove_publications_model_id_fkey"
-            columns: ["model_id"]
+            foreignKeyName: "assignment_standards_assignment_id_fkey"
+            columns: ["assignment_id"]
             isOneToOne: false
-            referencedRelation: "transcription_jobs"
+            referencedRelation: "assignments"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "brightcove_publications_model_id_fkey"
-            columns: ["model_id"]
+            foreignKeyName: "assignment_standards_standard_id_fkey"
+            columns: ["standard_id"]
             isOneToOne: false
-            referencedRelation: "transcriptions"
+            referencedRelation: "curriculum_standards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assignments: {
+        Row: {
+          allow_late_submission: boolean | null
+          assessment_criteria: string | null
+          assessment_criteria_ar: string | null
+          class_id: string | null
+          created_at: string | null
+          description: string
+          description_ar: string | null
+          difficulty: string | null
+          due_date: string
+          estimated_time: string | null
+          grade: string
+          id: string
+          instructions: string
+          instructions_ar: string | null
+          is_group_work: boolean | null
+          max_points: number | null
+          status: string | null
+          subject: string
+          teacher_id: string | null
+          title: string
+          title_ar: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          allow_late_submission?: boolean | null
+          assessment_criteria?: string | null
+          assessment_criteria_ar?: string | null
+          class_id?: string | null
+          created_at?: string | null
+          description: string
+          description_ar?: string | null
+          difficulty?: string | null
+          due_date: string
+          estimated_time?: string | null
+          grade: string
+          id?: string
+          instructions: string
+          instructions_ar?: string | null
+          is_group_work?: boolean | null
+          max_points?: number | null
+          status?: string | null
+          subject: string
+          teacher_id?: string | null
+          title: string
+          title_ar?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          allow_late_submission?: boolean | null
+          assessment_criteria?: string | null
+          assessment_criteria_ar?: string | null
+          class_id?: string | null
+          created_at?: string | null
+          description?: string
+          description_ar?: string | null
+          difficulty?: string | null
+          due_date?: string
+          estimated_time?: string | null
+          grade?: string
+          id?: string
+          instructions?: string
+          instructions_ar?: string | null
+          is_group_work?: boolean | null
+          max_points?: number | null
+          status?: string | null
+          subject?: string
+          teacher_id?: string | null
+          title?: string
+          title_ar?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "brightcove_publications_session_id_fkey"
-            columns: ["session_id"]
+            foreignKeyName: "assignments_teacher_id_fkey"
+            columns: ["teacher_id"]
             isOneToOne: false
-            referencedRelation: "transcription_sessions"
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      basket_items: {
+        Row: {
+          created_at: string | null
+          currency: string
+          experiment_id: string | null
+          experiment_title: string
+          id: string
+          material_image_url: string | null
+          material_name: string
+          quantity: number
+          session_id: string | null
+          total_price: number | null
+          unit_price: number
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string
+          experiment_id?: string | null
+          experiment_title: string
+          id?: string
+          material_image_url?: string | null
+          material_name: string
+          quantity?: number
+          session_id?: string | null
+          total_price?: number | null
+          unit_price?: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string
+          experiment_id?: string | null
+          experiment_title?: string
+          id?: string
+          material_image_url?: string | null
+          material_name?: string
+          quantity?: number
+          session_id?: string | null
+          total_price?: number | null
+          unit_price?: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "basket_items_experiment_id_fkey"
+            columns: ["experiment_id"]
+            isOneToOne: false
+            referencedRelation: "experiment_with_category"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "basket_items_experiment_id_fkey"
+            columns: ["experiment_id"]
+            isOneToOne: false
+            referencedRelation: "experiments"
             referencedColumns: ["id"]
           },
         ]
@@ -144,6 +269,51 @@ export type Database = {
           s3_key?: string
           s3_url?: string
           video_id?: string
+        }
+        Relationships: []
+      }
+      carousel_items: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          description_ar: string | null
+          id: string
+          image_url: string
+          is_active: boolean | null
+          link_url: string | null
+          sort_order: number | null
+          tags: Json | null
+          title: string
+          title_ar: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          description_ar?: string | null
+          id?: string
+          image_url: string
+          is_active?: boolean | null
+          link_url?: string | null
+          sort_order?: number | null
+          tags?: Json | null
+          title: string
+          title_ar?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          description_ar?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean | null
+          link_url?: string | null
+          sort_order?: number | null
+          tags?: Json | null
+          title?: string
+          title_ar?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -397,44 +567,172 @@ export type Database = {
         }
         Relationships: []
       }
-      cloud_storage_accounts: {
+      classes: {
         Row: {
-          access_token: string
-          created_at: string
-          email: string
-          expires_at: string | null
+          academic_year: string
+          created_at: string | null
+          description: string | null
+          description_ar: string | null
+          grade: string
           id: string
-          last_used: string | null
-          name: string | null
-          provider: string
-          refresh_token: string | null
-          user_id: string
+          is_active: boolean | null
+          max_students: number | null
+          name: string
+          name_ar: string | null
+          subject: string
+          teacher_id: string | null
+          updated_at: string | null
         }
         Insert: {
-          access_token: string
-          created_at?: string
-          email: string
-          expires_at?: string | null
+          academic_year: string
+          created_at?: string | null
+          description?: string | null
+          description_ar?: string | null
+          grade: string
           id?: string
-          last_used?: string | null
-          name?: string | null
-          provider: string
-          refresh_token?: string | null
-          user_id: string
+          is_active?: boolean | null
+          max_students?: number | null
+          name: string
+          name_ar?: string | null
+          subject: string
+          teacher_id?: string | null
+          updated_at?: string | null
         }
         Update: {
-          access_token?: string
-          created_at?: string
-          email?: string
-          expires_at?: string | null
+          academic_year?: string
+          created_at?: string | null
+          description?: string | null
+          description_ar?: string | null
+          grade?: string
           id?: string
-          last_used?: string | null
-          name?: string | null
-          provider?: string
-          refresh_token?: string | null
-          user_id?: string
+          is_active?: boolean | null
+          max_students?: number | null
+          name?: string
+          name_ar?: string | null
+          subject?: string
+          teacher_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classes_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      curriculum_standards: {
+        Row: {
+          assessment_methods: Json | null
+          assessment_methods_ar: Json | null
+          code: string
+          created_at: string | null
+          description: string
+          description_ar: string | null
+          grade: string
+          id: string
+          is_active: boolean | null
+          learning_outcomes: Json | null
+          learning_outcomes_ar: Json | null
+          required_resources: Json | null
+          required_resources_ar: Json | null
+          subject: string
+          title: string
+          title_ar: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assessment_methods?: Json | null
+          assessment_methods_ar?: Json | null
+          code: string
+          created_at?: string | null
+          description: string
+          description_ar?: string | null
+          grade: string
+          id?: string
+          is_active?: boolean | null
+          learning_outcomes?: Json | null
+          learning_outcomes_ar?: Json | null
+          required_resources?: Json | null
+          required_resources_ar?: Json | null
+          subject: string
+          title: string
+          title_ar?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assessment_methods?: Json | null
+          assessment_methods_ar?: Json | null
+          code?: string
+          created_at?: string | null
+          description?: string
+          description_ar?: string | null
+          grade?: string
+          id?: string
+          is_active?: boolean | null
+          learning_outcomes?: Json | null
+          learning_outcomes_ar?: Json | null
+          required_resources?: Json | null
+          required_resources_ar?: Json | null
+          subject?: string
+          title?: string
+          title_ar?: string | null
+          updated_at?: string | null
         }
         Relationships: []
+      }
+      donation_handovers: {
+        Row: {
+          case_id: string
+          created_at: string
+          donation_id: string
+          handed_over_by: string | null
+          handover_amount: number
+          handover_date: string
+          handover_notes: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          donation_id: string
+          handed_over_by?: string | null
+          handover_amount: number
+          handover_date?: string
+          handover_notes?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          donation_id?: string
+          handed_over_by?: string | null
+          handover_amount?: number
+          handover_date?: string
+          handover_notes?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donation_handovers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donation_handovers_donation_id_fkey"
+            columns: ["donation_id"]
+            isOneToOne: false
+            referencedRelation: "donations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       donations: {
         Row: {
@@ -447,11 +745,13 @@ export type Database = {
           donation_type: string
           donor_email: string | null
           donor_name: string | null
+          handover_status: string | null
           id: string
           months_pledged: number
           payment_code: string
           payment_reference: string | null
           status: string
+          total_handed_over: number | null
           updated_at: string
         }
         Insert: {
@@ -464,11 +764,13 @@ export type Database = {
           donation_type?: string
           donor_email?: string | null
           donor_name?: string | null
+          handover_status?: string | null
           id?: string
           months_pledged?: number
           payment_code: string
           payment_reference?: string | null
           status?: string
+          total_handed_over?: number | null
           updated_at?: string
         }
         Update: {
@@ -481,11 +783,13 @@ export type Database = {
           donation_type?: string
           donor_email?: string | null
           donor_name?: string | null
+          handover_status?: string | null
           id?: string
           months_pledged?: number
           payment_code?: string
           payment_reference?: string | null
           status?: string
+          total_handed_over?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -531,65 +835,258 @@ export type Database = {
         }
         Relationships: []
       }
-      experiments: {
+      experiment_categories: {
         Row: {
-          age_group: string
-          category: string
-          created_at: string
-          description: string
-          difficulty: string
-          duration: string
+          color: string | null
+          created_at: string | null
+          description: string | null
+          description_ar: string | null
+          icon: string | null
           id: string
-          image_url: string | null
-          material_images: Json | null
-          materials: string[]
-          price: number | null
-          safety_tips: string[]
-          scientific_concepts: string[]
-          step_images: Json | null
-          steps: string[]
-          title: string
+          is_active: boolean | null
+          name: string
+          name_ar: string | null
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          description_ar?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_ar?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          description_ar?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_ar?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      experiment_materials: {
+        Row: {
+          created_at: string
+          experiment_id: string
+          id: string
+          material_id: string
           updated_at: string
         }
         Insert: {
-          age_group: string
-          category: string
           created_at?: string
-          description: string
-          difficulty: string
-          duration: string
+          experiment_id: string
           id?: string
-          image_url?: string | null
-          material_images?: Json | null
-          materials: string[]
-          price?: number | null
-          safety_tips: string[]
-          scientific_concepts: string[]
-          step_images?: Json | null
-          steps: string[]
-          title: string
+          material_id: string
           updated_at?: string
         }
         Update: {
-          age_group?: string
-          category?: string
           created_at?: string
-          description?: string
-          difficulty?: string
-          duration?: string
+          experiment_id?: string
+          id?: string
+          material_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experiment_materials_base_exp_fk"
+            columns: ["experiment_id"]
+            isOneToOne: false
+            referencedRelation: "experiment_with_category"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "experiment_materials_base_exp_fk"
+            columns: ["experiment_id"]
+            isOneToOne: false
+            referencedRelation: "experiments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "experiment_materials_base_mat_fk"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      experiment_tags: {
+        Row: {
+          created_at: string | null
+          experiment_id: string
+          id: string
+          tag_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          experiment_id: string
+          id?: string
+          tag_id: string
+        }
+        Update: {
+          created_at?: string | null
+          experiment_id?: string
+          id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experiment_tags_experiment_id_fkey"
+            columns: ["experiment_id"]
+            isOneToOne: false
+            referencedRelation: "experiment_with_category"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "experiment_tags_experiment_id_fkey"
+            columns: ["experiment_id"]
+            isOneToOne: false
+            referencedRelation: "experiments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "experiment_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      experiments: {
+        Row: {
+          age_group: string | null
+          category: string
+          category_id: string | null
+          created_at: string
+          description: string
+          description_ar: string | null
+          difficulty: string
+          duration: string
+          experiment_method:
+            | Database["public"]["Enums"]["experiment_method_enum"]
+            | null
+          grade_level_id: number | null
+          id: string
+          image_url: string | null
+          material_images: Json | null
+          materials: string[] | null
+          materials_ar: string[] | null
+          materials_count: number | null
+          price: number | null
+          safety_tips: string[]
+          safety_tips_ar: string[] | null
+          scientific_concepts: string[]
+          scientific_concepts_ar: string[] | null
+          shop_button_text: string | null
+          shop_thumbnail_url: string | null
+          shop_url: string | null
+          show_materials: boolean | null
+          show_shop_section: boolean | null
+          step_images: Json | null
+          steps: string[]
+          steps_ar: string[] | null
+          tags: Json | null
+          title: string
+          title_ar: string | null
+          updated_at: string
+        }
+        Insert: {
+          age_group?: string | null
+          category: string
+          category_id?: string | null
+          created_at?: string
+          description: string
+          description_ar?: string | null
+          difficulty: string
+          duration: string
+          experiment_method?:
+            | Database["public"]["Enums"]["experiment_method_enum"]
+            | null
+          grade_level_id?: number | null
           id?: string
           image_url?: string | null
           material_images?: Json | null
-          materials?: string[]
+          materials?: string[] | null
+          materials_ar?: string[] | null
+          materials_count?: number | null
           price?: number | null
-          safety_tips?: string[]
-          scientific_concepts?: string[]
+          safety_tips: string[]
+          safety_tips_ar?: string[] | null
+          scientific_concepts: string[]
+          scientific_concepts_ar?: string[] | null
+          shop_button_text?: string | null
+          shop_thumbnail_url?: string | null
+          shop_url?: string | null
+          show_materials?: boolean | null
+          show_shop_section?: boolean | null
           step_images?: Json | null
-          steps?: string[]
-          title?: string
+          steps: string[]
+          steps_ar?: string[] | null
+          tags?: Json | null
+          title: string
+          title_ar?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Update: {
+          age_group?: string | null
+          category?: string
+          category_id?: string | null
+          created_at?: string
+          description?: string
+          description_ar?: string | null
+          difficulty?: string
+          duration?: string
+          experiment_method?:
+            | Database["public"]["Enums"]["experiment_method_enum"]
+            | null
+          grade_level_id?: number | null
+          id?: string
+          image_url?: string | null
+          material_images?: Json | null
+          materials?: string[] | null
+          materials_ar?: string[] | null
+          materials_count?: number | null
+          price?: number | null
+          safety_tips?: string[]
+          safety_tips_ar?: string[] | null
+          scientific_concepts?: string[]
+          scientific_concepts_ar?: string[] | null
+          shop_button_text?: string | null
+          shop_thumbnail_url?: string | null
+          shop_url?: string | null
+          show_materials?: boolean | null
+          show_shop_section?: boolean | null
+          step_images?: Json | null
+          steps?: string[]
+          steps_ar?: string[] | null
+          tags?: Json | null
+          title?: string
+          title_ar?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experiments_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "experiment_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fasela_program_feedbacks: {
         Row: {
@@ -754,6 +1251,51 @@ export type Database = {
           },
         ]
       }
+      materials: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          description_ar: string | null
+          id: string
+          image_url: string | null
+          is_available: boolean | null
+          name: string
+          name_ar: string | null
+          price: number | null
+          stock_quantity: number | null
+          unit: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          description_ar?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean | null
+          name: string
+          name_ar?: string | null
+          price?: number | null
+          stock_quantity?: number | null
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          description_ar?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean | null
+          name?: string
+          name_ar?: string | null
+          price?: number | null
+          stock_quantity?: number | null
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       monthly_budgets: {
         Row: {
           created_at: string
@@ -864,183 +1406,123 @@ export type Database = {
           },
         ]
       }
-      olive_listings: {
+      order_items: {
         Row: {
           created_at: string
-          custom_olive_type: string | null
-          description: string | null
-          farmer_id: string | null
-          harvest_date: string | null
+          currency: string
+          experiment_category: string | null
+          experiment_id: string | null
+          experiment_title: string | null
           id: string
-          images: string[] | null
-          location: string
-          olive_types: string[]
-          price_per_kg: number
-          quantity_kg: number
-          seller_location: string | null
-          seller_name: string | null
-          seller_phone: string | null
-          status: Database["public"]["Enums"]["listing_status"]
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          custom_olive_type?: string | null
-          description?: string | null
-          farmer_id?: string | null
-          harvest_date?: string | null
-          id?: string
-          images?: string[] | null
-          location: string
-          olive_types?: string[]
-          price_per_kg: number
-          quantity_kg: number
-          seller_location?: string | null
-          seller_name?: string | null
-          seller_phone?: string | null
-          status?: Database["public"]["Enums"]["listing_status"]
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          custom_olive_type?: string | null
-          description?: string | null
-          farmer_id?: string | null
-          harvest_date?: string | null
-          id?: string
-          images?: string[] | null
-          location?: string
-          olive_types?: string[]
-          price_per_kg?: number
-          quantity_kg?: number
-          seller_location?: string | null
-          seller_name?: string | null
-          seller_phone?: string | null
-          status?: Database["public"]["Enums"]["listing_status"]
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "olive_listings_farmer_id_fkey"
-            columns: ["farmer_id"]
-            isOneToOne: false
-            referencedRelation: "olive_user_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      olive_transactions: {
-        Row: {
-          buyer_location: string | null
-          buyer_name: string | null
-          buyer_phone: string | null
-          created_at: string
-          farmer_id: string | null
-          id: string
-          listing_id: string
-          notes: string | null
-          price_per_kg: number
-          quantity_kg: number
-          status: Database["public"]["Enums"]["transaction_status"]
-          total_price: number
-          trader_id: string | null
-          transaction_date: string
-          updated_at: string
-        }
-        Insert: {
-          buyer_location?: string | null
-          buyer_name?: string | null
-          buyer_phone?: string | null
-          created_at?: string
-          farmer_id?: string | null
-          id?: string
-          listing_id: string
-          notes?: string | null
-          price_per_kg: number
-          quantity_kg: number
-          status?: Database["public"]["Enums"]["transaction_status"]
-          total_price: number
-          trader_id?: string | null
-          transaction_date?: string
-          updated_at?: string
-        }
-        Update: {
-          buyer_location?: string | null
-          buyer_name?: string | null
-          buyer_phone?: string | null
-          created_at?: string
-          farmer_id?: string | null
-          id?: string
-          listing_id?: string
-          notes?: string | null
-          price_per_kg?: number
-          quantity_kg?: number
-          status?: Database["public"]["Enums"]["transaction_status"]
-          total_price?: number
-          trader_id?: string | null
-          transaction_date?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "olive_transactions_farmer_id_fkey"
-            columns: ["farmer_id"]
-            isOneToOne: false
-            referencedRelation: "olive_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "olive_transactions_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "olive_listings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "olive_transactions_trader_id_fkey"
-            columns: ["trader_id"]
-            isOneToOne: false
-            referencedRelation: "olive_user_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      olive_user_profiles: {
-        Row: {
-          created_at: string
-          experience_years: number | null
-          id: string
-          location: string
+          image_url: string | null
           name: string
-          phone: string
+          order_id: string
+          quantity: number
+          unit_amount_cents: number
           updated_at: string
-          user_id: string
-          user_type: Database["public"]["Enums"]["user_type"]
         }
         Insert: {
           created_at?: string
-          experience_years?: number | null
+          currency?: string
+          experiment_category?: string | null
+          experiment_id?: string | null
+          experiment_title?: string | null
           id?: string
-          location: string
+          image_url?: string | null
           name: string
-          phone: string
+          order_id: string
+          quantity?: number
+          unit_amount_cents?: number
           updated_at?: string
-          user_id: string
-          user_type: Database["public"]["Enums"]["user_type"]
         }
         Update: {
           created_at?: string
-          experience_years?: number | null
+          currency?: string
+          experiment_category?: string | null
+          experiment_id?: string | null
+          experiment_title?: string | null
           id?: string
-          location?: string
+          image_url?: string | null
           name?: string
-          phone?: string
+          order_id?: string
+          quantity?: number
+          unit_amount_cents?: number
           updated_at?: string
-          user_id?: string
-          user_type?: Database["public"]["Enums"]["user_type"]
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          created_at: string | null
+          currency: string
+          customer_email: string
+          customer_first_name: string
+          customer_last_name: string
+          customer_phone: string
+          id: string
+          newsletter_subscription: boolean | null
+          order_number: string
+          order_status: string
+          payment_method: string
+          payment_status: string
+          shipping_address: string
+          shipping_city: string
+          shipping_fee: number
+          shipping_postal_code: string
+          special_instructions: string | null
+          subtotal: number
+          tax_amount: number
+          total_amount: number
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string
+          customer_email: string
+          customer_first_name: string
+          customer_last_name: string
+          customer_phone: string
+          id?: string
+          newsletter_subscription?: boolean | null
+          order_number: string
+          order_status?: string
+          payment_method?: string
+          payment_status?: string
+          shipping_address: string
+          shipping_city: string
+          shipping_fee?: number
+          shipping_postal_code: string
+          special_instructions?: string | null
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string
+          customer_email?: string
+          customer_first_name?: string
+          customer_last_name?: string
+          customer_phone?: string
+          id?: string
+          newsletter_subscription?: boolean | null
+          order_number?: string
+          order_status?: string
+          payment_method?: string
+          payment_status?: string
+          shipping_address?: string
+          shipping_city?: string
+          shipping_fee?: number
+          shipping_postal_code?: string
+          special_instructions?: string | null
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1178,53 +1660,187 @@ export type Database = {
           },
         ]
       }
-      soulmate_user_profiles: {
+      student_assignments: {
         Row: {
-          about_me: string | null
-          age: number
-          created_at: string
-          education: string | null
-          family_values: string | null
-          gender: string
+          assignment_id: string | null
+          created_at: string | null
+          feedback: string | null
+          feedback_ar: string | null
           id: string
-          location: string
-          name: string
-          occupation: string | null
-          religiosity: string | null
-          updated_at: string
-          user_id: string
+          is_late: boolean | null
+          max_score: number | null
+          score: number | null
+          status: string | null
+          student_id: string | null
+          submitted_at: string | null
+          updated_at: string | null
         }
         Insert: {
-          about_me?: string | null
-          age: number
-          created_at?: string
-          education?: string | null
-          family_values?: string | null
-          gender: string
+          assignment_id?: string | null
+          created_at?: string | null
+          feedback?: string | null
+          feedback_ar?: string | null
           id?: string
-          location: string
-          name: string
-          occupation?: string | null
-          religiosity?: string | null
-          updated_at?: string
-          user_id: string
+          is_late?: boolean | null
+          max_score?: number | null
+          score?: number | null
+          status?: string | null
+          student_id?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
         }
         Update: {
-          about_me?: string | null
-          age?: number
-          created_at?: string
-          education?: string | null
-          family_values?: string | null
-          gender?: string
+          assignment_id?: string | null
+          created_at?: string | null
+          feedback?: string | null
+          feedback_ar?: string | null
           id?: string
-          location?: string
-          name?: string
-          occupation?: string | null
-          religiosity?: string | null
-          updated_at?: string
-          user_id?: string
+          is_late?: boolean | null
+          max_score?: number | null
+          score?: number | null
+          status?: string | null
+          student_id?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "student_assignments_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_assignments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_progress: {
+        Row: {
+          areas_for_improvement: string[] | null
+          assignments_completed: number | null
+          attendance_percentage: number | null
+          average_score: number | null
+          class_id: string | null
+          created_at: string | null
+          id: string
+          last_activity: string | null
+          overall_progress: number | null
+          participation_score: number | null
+          strengths: string[] | null
+          student_id: string | null
+          total_assignments: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          areas_for_improvement?: string[] | null
+          assignments_completed?: number | null
+          attendance_percentage?: number | null
+          average_score?: number | null
+          class_id?: string | null
+          created_at?: string | null
+          id?: string
+          last_activity?: string | null
+          overall_progress?: number | null
+          participation_score?: number | null
+          strengths?: string[] | null
+          student_id?: string | null
+          total_assignments?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          areas_for_improvement?: string[] | null
+          assignments_completed?: number | null
+          attendance_percentage?: number | null
+          average_score?: number | null
+          class_id?: string | null
+          created_at?: string | null
+          id?: string
+          last_activity?: string | null
+          overall_progress?: number | null
+          participation_score?: number | null
+          strengths?: string[] | null
+          student_id?: string | null
+          total_assignments?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_progress_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_progress_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      students: {
+        Row: {
+          class_id: string | null
+          created_at: string | null
+          email: string | null
+          grade: string
+          id: string
+          is_active: boolean | null
+          name: string
+          name_ar: string | null
+          parent_email: string | null
+          parent_name: string | null
+          parent_phone: string | null
+          student_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          class_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          grade: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_ar?: string | null
+          parent_email?: string | null
+          parent_name?: string | null
+          parent_phone?: string | null
+          student_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          class_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          grade?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_ar?: string | null
+          parent_email?: string | null
+          parent_name?: string | null
+          parent_phone?: string | null
+          student_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "students_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscription_payments: {
         Row: {
@@ -1310,6 +1926,51 @@ export type Database = {
           created_at?: string | null
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      teachers: {
+        Row: {
+          created_at: string | null
+          email: string
+          grade_levels: string[] | null
+          id: string
+          name: string
+          name_ar: string | null
+          phone: string | null
+          school_name: string | null
+          school_name_ar: string | null
+          subject_specialization: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          grade_levels?: string[] | null
+          id?: string
+          name: string
+          name_ar?: string | null
+          phone?: string | null
+          school_name?: string | null
+          school_name_ar?: string | null
+          subject_specialization?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          grade_levels?: string[] | null
+          id?: string
+          name?: string
+          name_ar?: string | null
+          phone?: string | null
+          school_name?: string | null
+          school_name_ar?: string | null
+          subject_specialization?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1709,6 +2370,63 @@ export type Database = {
       }
     }
     Views: {
+      experiment_with_category: {
+        Row: {
+          age_group: string | null
+          category: string | null
+          category_color: string | null
+          category_description: string | null
+          category_description_ar: string | null
+          category_icon: string | null
+          category_id: string | null
+          category_name: string | null
+          category_name_ar: string | null
+          created_at: string | null
+          description: string | null
+          description_ar: string | null
+          difficulty: string | null
+          duration: string | null
+          id: string | null
+          image_url: string | null
+          material_images: Json | null
+          materials: string[] | null
+          materials_ar: string[] | null
+          materials_count: number | null
+          price: number | null
+          safety_tips: string[] | null
+          safety_tips_ar: string[] | null
+          scientific_concepts: string[] | null
+          scientific_concepts_ar: string[] | null
+          step_images: Json | null
+          steps: string[] | null
+          steps_ar: string[] | null
+          title: string | null
+          title_ar: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experiments_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "experiment_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_experiments: {
+        Row: {
+          currency: string | null
+          experiment_category: string | null
+          experiment_id: string | null
+          experiment_title: string | null
+          item_count: number | null
+          order_id: string | null
+          subtotal_cents: number | null
+          total_quantity: number | null
+        }
+        Relationships: []
+      }
       transcription_jobs: {
         Row: {
           created_at: string | null
@@ -1767,6 +2485,18 @@ export type Database = {
       }
     }
     Functions: {
+      add_experiment_steps: {
+        Args: { p_experiment_id: string; p_new_steps: Json }
+        Returns: undefined
+      }
+      cleanup_old_basket_items: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      clear_basket: {
+        Args: { p_session_id?: string; p_user_id?: string }
+        Returns: boolean
+      }
       create_default_categories: {
         Args: { user_uuid: string }
         Returns: undefined
@@ -1774,6 +2504,28 @@ export type Database = {
       create_default_investment_categories: {
         Args: { user_uuid: string }
         Returns: undefined
+      }
+      create_order_with_items: {
+        Args: {
+          p_currency?: string
+          p_customer_email: string
+          p_customer_first_name: string
+          p_customer_last_name: string
+          p_customer_phone: string
+          p_newsletter_subscription?: boolean
+          p_order_number: string
+          p_session_id?: string
+          p_shipping_address: string
+          p_shipping_city: string
+          p_shipping_fee: number
+          p_shipping_postal_code: string
+          p_special_instructions?: string
+          p_subtotal: number
+          p_tax_amount: number
+          p_total_amount: number
+          p_user_id?: string
+        }
+        Returns: string
       }
       create_wise_partnership: {
         Args: { partner_email: string; partner_name: string }
@@ -1790,6 +2542,23 @@ export type Database = {
           count: number
         }[]
       }
+      get_basket_items: {
+        Args: { p_session_id?: string; p_user_id?: string }
+        Returns: {
+          created_at: string
+          currency: string
+          experiment_id: string
+          experiment_title: string
+          id: string
+          material_image_url: string
+          material_index: number
+          material_name: string
+          quantity: number
+          total_price: number
+          unit_price: number
+          updated_at: string
+        }[]
+      }
       get_daily_signups: {
         Args: { days_back: number }
         Returns: {
@@ -1797,11 +2566,20 @@ export type Database = {
           date: string
         }[]
       }
-      get_gender_distribution: {
-        Args: Record<PropertyKey, never>
+      get_experiment_materials: {
+        Args: { experiment_id_param: string }
         Returns: {
-          count: number
-          gender: string
+          description: string
+          description_ar: string
+          experiment_id: string
+          image_url: string
+          is_available: boolean
+          material_id: string
+          name: string
+          name_ar: string
+          price: number
+          stock_quantity: number
+          unit: string
         }[]
       }
       has_role: {
@@ -1823,13 +2601,32 @@ export type Database = {
         Args: { user_email: string }
         Returns: boolean
       }
+      save_basket_item: {
+        Args: {
+          p_currency?: string
+          p_experiment_id: string
+          p_experiment_title: string
+          p_material_image_url?: string
+          p_material_name: string
+          p_quantity?: number
+          p_session_id?: string
+          p_unit_price?: number
+          p_user_id?: string
+        }
+        Returns: string
+      }
       track_user_action: {
         Args: { action_details: Json; action_type: string }
         Returns: undefined
       }
+      update_basket_item_quantity: {
+        Args: { p_item_id: string; p_quantity: number }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "user"
+      experiment_method_enum: "Engineering Design Process" | "Scientific Method"
       listing_status: "active" | "sold" | "cancelled"
       olive_type:
         | "agizy"
@@ -1978,6 +2775,10 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      experiment_method_enum: [
+        "Engineering Design Process",
+        "Scientific Method",
+      ],
       listing_status: ["active", "sold", "cancelled"],
       olive_type: [
         "agizy",
