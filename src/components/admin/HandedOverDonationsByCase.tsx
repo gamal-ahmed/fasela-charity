@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { MonthlyHandoverSummary } from "./MonthlyHandoverSummary";
+import { CaseMonthlyHandoverView } from "./CaseMonthlyHandoverView";
 
 interface HandedOverDonation {
   id: string;
@@ -56,10 +57,14 @@ export const HandedOverDonationsByCase = () => {
   return (
     <div className="space-y-4">
       <Tabs defaultValue="summary" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="summary" className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
             الملخص الشهري
+          </TabsTrigger>
+          <TabsTrigger value="case-monthly" className="flex items-center gap-2">
+            <User className="w-4 h-4" />
+            الحالات شهرياً
           </TabsTrigger>
           <TabsTrigger value="detailed" className="flex items-center gap-2">
             <Package className="w-4 h-4" />
@@ -69,6 +74,10 @@ export const HandedOverDonationsByCase = () => {
         
         <TabsContent value="summary">
           <MonthlyHandoverSummary />
+        </TabsContent>
+        
+        <TabsContent value="case-monthly">
+          <CaseMonthlyHandoverView />
         </TabsContent>
         
         <TabsContent value="detailed">
