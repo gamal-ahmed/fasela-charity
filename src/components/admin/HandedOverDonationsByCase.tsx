@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, User, Calendar, Package } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ChevronDown, User, Calendar, Package, BarChart3 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -13,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { MonthlyHandoverSummary } from "./MonthlyHandoverSummary";
 
 interface HandedOverDonation {
   id: string;
@@ -51,6 +53,33 @@ interface MonthlyData {
 }
 
 export const HandedOverDonationsByCase = () => {
+  return (
+    <div className="space-y-4">
+      <Tabs defaultValue="summary" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="summary" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            الملخص الشهري
+          </TabsTrigger>
+          <TabsTrigger value="detailed" className="flex items-center gap-2">
+            <Package className="w-4 h-4" />
+            التفاصيل بالحالات
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="summary">
+          <MonthlyHandoverSummary />
+        </TabsContent>
+        
+        <TabsContent value="detailed">
+          <HandedOverDonationsByCase_Detailed />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+const HandedOverDonationsByCase_Detailed = () => {
   const [openMonths, setOpenMonths] = useState<Set<string>>(new Set());
   const [openCases, setOpenCases] = useState<Set<string>>(new Set());
 
