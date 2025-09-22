@@ -16,16 +16,29 @@ export const MonthlyHandoverSummary = () => {
   const { data: monthlyData, isLoading } = useQuery({
     queryKey: ["monthly-handover-summary"],
     queryFn: async () => {
-      const { data: handovers, error } = await supabase
+      // Get new partial handovers
+      const { data: handovers, error: handoversError } = await supabase
         .from("donation_handovers")
         .select("handover_amount, handover_date, case_id")
         .order("handover_date", { ascending: false });
 
-      if (error) throw error;
+      if (handoversError) throw handoversError;
+
+      // Get legacy handed over donations (redeemed status)
+      const { data: legacyDonations, error: legacyError } = await supabase
+        .from("donations")
+        .select("amount, confirmed_at, case_id")
+        .eq("status", "redeemed")
+        .not("confirmed_at", "is", null)
+        .order("confirmed_at", { ascending: false });
+
+      if (legacyError) throw legacyError;
 
       // Group by month
       const monthlyGroups: { [key: string]: MonthlyHandoverData } = {};
+      const casesPerMonth: { [key: string]: Set<string> } = {};
 
+      // Process new handovers
       handovers.forEach(handover => {
         const date = new Date(handover.handover_date);
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -37,24 +50,42 @@ export const MonthlyHandoverSummary = () => {
             displayMonth,
             totalAmount: 0,
             totalHandovers: 0,
-            uniqueCases: new Set().size
+            uniqueCases: 0
           };
+        }
+
+        if (!casesPerMonth[monthKey]) {
+          casesPerMonth[monthKey] = new Set();
         }
 
         monthlyGroups[monthKey].totalAmount += handover.handover_amount;
         monthlyGroups[monthKey].totalHandovers += 1;
+        casesPerMonth[monthKey].add(handover.case_id);
       });
 
-      // Calculate unique cases for each month
-      const casesPerMonth: { [key: string]: Set<string> } = {};
-      handovers.forEach(handover => {
-        const date = new Date(handover.handover_date);
+      // Process legacy donations (redeemed ones are considered fully handed over)
+      legacyDonations.forEach(donation => {
+        const date = new Date(donation.confirmed_at);
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const displayMonth = date.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long' });
         
+        if (!monthlyGroups[monthKey]) {
+          monthlyGroups[monthKey] = {
+            month: monthKey,
+            displayMonth,
+            totalAmount: 0,
+            totalHandovers: 0,
+            uniqueCases: 0
+          };
+        }
+
         if (!casesPerMonth[monthKey]) {
           casesPerMonth[monthKey] = new Set();
         }
-        casesPerMonth[monthKey].add(handover.case_id);
+
+        monthlyGroups[monthKey].totalAmount += donation.amount;
+        monthlyGroups[monthKey].totalHandovers += 1;
+        casesPerMonth[monthKey].add(donation.case_id);
       });
 
       // Update unique cases count
