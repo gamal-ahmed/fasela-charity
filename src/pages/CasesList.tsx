@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Users, Calendar, Heart, Filter, Home, Baby, BookOpen, CheckCircle2 } from "lucide-react";
+import { MapPin, Users, Calendar, Heart, Filter, Home, Baby, BookOpen, CheckCircle2, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import Navigation from "@/components/Navigation";
@@ -17,7 +17,8 @@ const CasesList = () => {
   const { data: allCases, isLoading } = useQuery({
     queryKey: ["cases"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First get all cases
+      const { data: cases, error: casesError } = await supabase
         .from("cases")
         .select("*")
         .eq("is_published", true)
@@ -25,8 +26,24 @@ const CasesList = () => {
         .not("description_ar", "is", null)
         .order("created_at", { ascending: false });
       
-      if (error) throw error;
-      return data;
+      if (casesError) throw casesError;
+      
+      // Then get report counts for each case
+      const casesWithReports = await Promise.all(
+        cases.map(async (caseItem) => {
+          const { count } = await supabase
+            .from("monthly_reports")
+            .select("*", { count: "exact", head: true })
+            .eq("case_id", caseItem.id);
+          
+          return {
+            ...caseItem,
+            reports_count: count || 0
+          };
+        })
+      );
+      
+      return casesWithReports;
     }
   });
 
@@ -244,6 +261,13 @@ const CasesList = () => {
                           مستحق للزكاة
                         </Badge>
                       )}
+                      <Badge 
+                        variant="outline"
+                        className="bg-blue-500/90 text-white border-blue-600 text-xs flex items-center gap-1"
+                      >
+                        <FileText className="w-3 h-3" />
+                        {caseItem.reports_count || 0} تقرير
+                      </Badge>
                     </div>
                   </div>
               )}
