@@ -55,6 +55,7 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingDescriptionImage, setUploadingDescriptionImage] = useState(false);
   const [currentImageUrl, setCurrentImageUrl] = useState<string>("");
+  const [imageUrlInput, setImageUrlInput] = useState<string>("");
   const [descriptionImages, setDescriptionImages] = useState<string[]>([]);
   const [monthlyNeeds, setMonthlyNeeds] = useState<MonthlyNeed[]>([
     { category: "", amount: 0, description: "", icon: "💰", color: "bg-blue-500" }
@@ -232,7 +233,15 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
 
   const removeImage = () => {
     setCurrentImageUrl("");
+    setImageUrlInput("");
     setValue('photo_url', "");
+  };
+
+  const handleImageFromUrl = () => {
+    if (imageUrlInput.trim()) {
+      setCurrentImageUrl(imageUrlInput.trim());
+      setImageUrlInput("");
+    }
   };
 
   const handleDescriptionImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -725,31 +734,51 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
                     </Button>
                   </div>
                 )}
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    disabled={uploadingImage}
-                    className="hidden"
-                    id="case-image-upload"
-                  />
-                  <Label 
-                    htmlFor="case-image-upload" 
-                    className="cursor-pointer"
-                  >
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
                       disabled={uploadingImage}
-                      asChild
+                      className="hidden"
+                      id="case-image-upload"
+                    />
+                    <Label 
+                      htmlFor="case-image-upload" 
+                      className="cursor-pointer"
                     >
-                      <span className="flex items-center gap-2">
-                        <Upload className="h-4 w-4" />
-                        {uploadingImage ? "جاري الرفع..." : "رفع صورة"}
-                      </span>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        disabled={uploadingImage}
+                        asChild
+                      >
+                        <span className="flex items-center gap-2">
+                          <Upload className="h-4 w-4" />
+                          {uploadingImage ? "جاري الرفع..." : "رفع صورة"}
+                        </span>
+                      </Button>
+                    </Label>
+                  </div>
+                  <div className="text-sm text-muted-foreground text-center">أو</div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="url"
+                      placeholder="لصق رابط الصورة هنا"
+                      value={imageUrlInput}
+                      onChange={(e) => setImageUrlInput(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleImageFromUrl}
+                      disabled={!imageUrlInput.trim()}
+                    >
+                      إضافة
                     </Button>
-                  </Label>
+                  </div>
                 </div>
               </div>
             </div>
