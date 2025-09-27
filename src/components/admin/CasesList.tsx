@@ -25,27 +25,55 @@ const CasesList = () => {
       
       if (casesError) throw casesError;
       
-      // Get handed over donations for each case
-      const { data: donations, error: donationsError } = await supabase
+      // Get confirmed donations for each case
+      const { data: confirmedDonations, error: confirmedError } = await supabase
+        .from("donations")
+        .select("case_id, amount")
+        .eq("status", "confirmed");
+      
+      if (confirmedError) throw confirmedError;
+      
+      // Get legacy redeemed donations for each case
+      const { data: redeemedDonations, error: redeemedError } = await supabase
         .from("donations")
         .select("case_id, amount")
         .eq("status", "redeemed");
       
-      if (donationsError) throw donationsError;
+      if (redeemedError) throw redeemedError;
       
-      // Calculate handed over amount for each case
-      const casesWithHandedOver = casesData.map(caseItem => {
-        const handedOverAmount = donations
+      // Get new handover amounts from donation_handovers table
+      const { data: handovers, error: handoversError } = await supabase
+        .from("donation_handovers")
+        .select("case_id, handover_amount");
+      
+      if (handoversError) throw handoversError;
+      
+      // Calculate totals for each case
+      const casesWithFinancials = casesData.map(caseItem => {
+        const confirmedAmount = confirmedDonations
           .filter(donation => donation.case_id === caseItem.id)
           .reduce((sum, donation) => sum + donation.amount, 0);
+          
+        const redeemedAmount = redeemedDonations
+          .filter(donation => donation.case_id === caseItem.id)
+          .reduce((sum, donation) => sum + donation.amount, 0);
+          
+        const handoverAmount = handovers
+          .filter(handover => handover.case_id === caseItem.id)
+          .reduce((sum, handover) => sum + handover.handover_amount, 0);
+        
+        const totalHandedOver = redeemedAmount + handoverAmount;
+        const remainingAmount = confirmedAmount - totalHandedOver;
         
         return {
           ...caseItem,
-          handed_over_amount: handedOverAmount
+          confirmed_amount: confirmedAmount,
+          handed_over_amount: totalHandedOver,
+          remaining_amount: remainingAmount
         };
       });
       
-      return casesWithHandedOver;
+      return casesWithFinancials;
     }
   });
 
@@ -153,7 +181,7 @@ const CasesList = () => {
             </CardHeader>
             
             <CardContent>
-              <div className="grid md:grid-cols-4 gap-4 mb-4">
+              <div className="grid md:grid-cols-5 gap-4 mb-4">
                 <div className="text-sm">
                   <span className="font-medium">التكلفة الشهرية:</span>
                   <br />
@@ -165,15 +193,26 @@ const CasesList = () => {
                   {caseItem.months_covered} من {caseItem.months_needed} شهر
                 </div>
                 <div className="text-sm">
-                  <span className="font-medium">المبلغ المجمع:</span>
+                  <span className="font-medium">التبرعات المؤكدة:</span>
                   <br />
-                  {caseItem.total_secured_money?.toLocaleString() || 0} جنيه
+                  <span className="text-green-600 font-semibold">
+                    {caseItem.confirmed_amount?.toLocaleString() || 0} جنيه
+                  </span>
                 </div>
                 <div className="text-sm">
                   <span className="font-medium">المسلم للعائلة:</span>
                   <br />
-                  <span className="text-primary font-semibold">
+                  <span className="text-blue-600 font-semibold">
                     {caseItem.handed_over_amount?.toLocaleString() || 0} جنيه
+                  </span>
+                </div>
+                <div className="text-sm">
+                  <span className="font-medium">المتبقي للتسليم:</span>
+                  <br />
+                  <span className={`font-semibold ${
+                    (caseItem.remaining_amount || 0) > 0 ? 'text-orange-600' : 'text-gray-500'
+                  }`}>
+                    {caseItem.remaining_amount?.toLocaleString() || 0} جنيه
                   </span>
                 </div>
               </div>
