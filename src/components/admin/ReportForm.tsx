@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Upload, X, Link } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ReportFormData {
@@ -23,6 +23,8 @@ interface ReportFormData {
 const ReportForm = () => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [imageUrlInput, setImageUrlInput] = useState("");
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<ReportFormData>();
   const { toast } = useToast();
 
@@ -40,6 +42,56 @@ const ReportForm = () => {
     }
   });
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `case-images/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('case-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('case-images')
+        .getPublicUrl(filePath);
+
+      setUploadedImages(prev => [...prev, publicUrl]);
+
+      toast({
+        title: "تم بنجاح",
+        description: "تم رفع الصورة بنجاح",
+      });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء رفع الصورة",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleImageFromUrl = () => {
+    if (imageUrlInput.trim()) {
+      setUploadedImages(prev => [...prev, imageUrlInput.trim()]);
+      setImageUrlInput("");
+      toast({
+        title: "تم بنجاح",
+        description: "تم إضافة الصورة بنجاح",
+      });
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const onSubmit = async (data: ReportFormData) => {
     setLoading(true);
     
@@ -53,7 +105,7 @@ const ReportForm = () => {
           report_date: data.report_date,
           status: data.status,
           category: data.category,
-          images: []
+          images: uploadedImages
         });
 
       if (error) throw error;
@@ -64,6 +116,8 @@ const ReportForm = () => {
       });
 
       reset();
+      setUploadedImages([]);
+      setImageUrlInput("");
       setOpen(false);
     } catch (error) {
       console.error("Error creating report:", error);
@@ -128,6 +182,76 @@ const ReportForm = () => {
               placeholder="تفاصيل الزيارة والأنشطة المنجزة"
               rows={4}
             />
+          </div>
+
+          {/* صور التقرير */}
+          <div className="space-y-4">
+            <Label>صور التقرير</Label>
+            
+            <div className="space-y-3">
+              {/* أزرار الرفع */}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById('report-image-upload')?.click()}
+                >
+                  <Upload className="w-4 h-4 ml-1" />
+                  رفع صورة
+                </Button>
+                <input
+                  id="report-image-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </div>
+              
+              {/* إدخال رابط الصورة */}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="أو الصق رابط الصورة هنا"
+                  value={imageUrlInput}
+                  onChange={(e) => setImageUrlInput(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleImageFromUrl}
+                  disabled={!imageUrlInput.trim()}
+                >
+                  <Link className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* معاينة الصور المرفوعة */}
+            {uploadedImages.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {uploadedImages.map((imageUrl, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={imageUrl}
+                      alt={`صورة التقرير ${index + 1}`}
+                      className="w-full h-20 object-cover rounded-md border"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute -top-2 -right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => removeImage(index)}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
