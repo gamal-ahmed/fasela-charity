@@ -99,7 +99,8 @@ const KidsList = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {kids?.map((kid) => (
-                <Card key={kid.id} className="hover:shadow-lg transition-shadow">
+                <Link key={kid.id} to={`/kid/${kid.id}`}>
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
@@ -175,6 +176,7 @@ const KidsList = () => {
                     )}
                   </CardContent>
                 </Card>
+                </Link>
               ))}
             </div>
 
