@@ -1,11 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Heart, GraduationCap, BookOpen, Calendar, Award } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Heart, GraduationCap, BookOpen, Calendar, Award, Edit2, Save, Plus, X, TrendingUp } from "lucide-react";
 import { useParams, Link } from "react-router-dom";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface Kid {
   id: string;
@@ -16,9 +21,9 @@ interface Kid {
   health_state?: string;
   current_grade?: string;
   school_name?: string;
-  education_progress?: any[];
-  certificates?: any[];
-  ongoing_courses?: any[];
+  education_progress?: Array<{year: string; description: string; grade?: string}>;
+  certificates?: Array<{name: string; date?: string; issuer?: string}>;
+  ongoing_courses?: Array<{name: string; startDate?: string; description?: string}>;
   case_id: string;
   cases?: {
     title: string;
@@ -28,6 +33,9 @@ interface Kid {
 
 const KidProfile = () => {
   const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedKid, setEditedKid] = useState<Partial<Kid>>({});
 
   const { data: kid, isLoading } = useQuery({
     queryKey: ["kid", id],
@@ -49,7 +57,10 @@ const KidProfile = () => {
 
       return {
         ...data,
-        cases: caseData
+        cases: caseData,
+        education_progress: (data.education_progress || []) as Array<{year: string; description: string; grade?: string}>,
+        certificates: (data.certificates || []) as Array<{name: string; date?: string; issuer?: string}>,
+        ongoing_courses: (data.ongoing_courses || []) as Array<{name: string; startDate?: string; description?: string}>
       } as Kid;
     },
   });
@@ -60,6 +71,71 @@ const KidProfile = () => {
 
   const getGenderText = (gender: string) => {
     return gender === "male" ? "ذكر" : "أنثى";
+  };
+
+  const updateMutation = useMutation({
+    mutationFn: async (updates: Partial<Kid>) => {
+      const { error } = await supabase
+        .from("case_kids")
+        .update(updates)
+        .eq("id", id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kid", id] });
+      toast.success("تم تحديث البيانات بنجاح");
+      setIsEditing(false);
+    },
+    onError: () => {
+      toast.error("حدث خطأ أثناء التحديث");
+    },
+  });
+
+  const handleSave = () => {
+    updateMutation.mutate(editedKid);
+  };
+
+  const handleEdit = () => {
+    setEditedKid({
+      health_state: kid?.health_state || "",
+      current_grade: kid?.current_grade || "",
+      school_name: kid?.school_name || "",
+      education_progress: kid?.education_progress || [],
+      certificates: kid?.certificates || [],
+      ongoing_courses: kid?.ongoing_courses || [],
+    });
+    setIsEditing(true);
+  };
+
+  const addEducationProgress = () => {
+    setEditedKid({
+      ...editedKid,
+      education_progress: [
+        ...(editedKid.education_progress || []),
+        { year: "", description: "", grade: "" }
+      ]
+    });
+  };
+
+  const addCertificate = () => {
+    setEditedKid({
+      ...editedKid,
+      certificates: [
+        ...(editedKid.certificates || []),
+        { name: "", date: "", issuer: "" }
+      ]
+    });
+  };
+
+  const addCourse = () => {
+    setEditedKid({
+      ...editedKid,
+      ongoing_courses: [
+        ...(editedKid.ongoing_courses || []),
+        { name: "", startDate: "", description: "" }
+      ]
+    });
   };
 
   if (isLoading) {
@@ -92,20 +168,40 @@ const KidProfile = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <Navigation />
       
-      <main className="container mx-auto px-4 py-8">
-        <Card className="mb-6">
+      <main className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Header Card */}
+        <Card className="mb-6 animate-fade-in">
           <CardHeader>
-            <div className="flex items-center gap-4">
-              <div className="text-5xl">{getGenderIcon(kid.gender)}</div>
-              <div>
-                <CardTitle className="text-3xl mb-2">{kid.name}</CardTitle>
-                <Link 
-                  to={`/case/${kid.case_id}`}
-                  className="text-sm text-primary hover:underline"
-                >
-                  {kid.cases?.title_ar || kid.cases?.title}
-                </Link>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="text-5xl">{getGenderIcon(kid.gender)}</div>
+                <div>
+                  <CardTitle className="text-3xl mb-2">{kid.name}</CardTitle>
+                  <Link 
+                    to={`/case/${kid.case_id}`}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    {kid.cases?.title_ar || kid.cases?.title}
+                  </Link>
+                </div>
               </div>
+              <Button 
+                onClick={isEditing ? handleSave : handleEdit}
+                variant={isEditing ? "default" : "outline"}
+                size="lg"
+              >
+                {isEditing ? (
+                  <>
+                    <Save className="w-4 h-4 ml-2" />
+                    حفظ
+                  </>
+                ) : (
+                  <>
+                    <Edit2 className="w-4 h-4 ml-2" />
+                    تعديل
+                  </>
+                )}
+              </Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -125,82 +221,378 @@ const KidProfile = () => {
               </div>
             )}
 
-            {kid.health_state && (
-              <div className="flex items-start gap-3 p-4 bg-muted rounded-lg">
-                <Heart className="w-5 h-5 text-red-500 mt-1" />
-                <div>
-                  <h3 className="font-semibold mb-1">الحالة الصحية</h3>
-                  <p className="text-muted-foreground">{kid.health_state}</p>
+            {/* Health Section */}
+            <Card className="border-l-4 border-l-red-500 animate-fade-in">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Heart className="w-5 h-5 text-red-500" />
+                    <CardTitle className="text-lg">الحالة الصحية</CardTitle>
+                  </div>
                 </div>
-              </div>
-            )}
+              </CardHeader>
+              <CardContent>
+                {isEditing ? (
+                  <Textarea
+                    value={editedKid.health_state || ""}
+                    onChange={(e) => setEditedKid({ ...editedKid, health_state: e.target.value })}
+                    placeholder="أدخل الحالة الصحية..."
+                    className="min-h-[100px]"
+                  />
+                ) : (
+                  <p className="text-muted-foreground">
+                    {kid.health_state || "لم يتم إضافة معلومات صحية"}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
 
+            {/* Education Info Section */}
             <div className="grid md:grid-cols-2 gap-4">
-              {kid.current_grade && (
-                <div className="flex items-start gap-3 p-4 bg-muted rounded-lg">
-                  <GraduationCap className="w-5 h-5 text-blue-500 mt-1" />
-                  <div>
-                    <h3 className="font-semibold mb-1">الصف الدراسي</h3>
-                    <p className="text-muted-foreground">{kid.current_grade}</p>
+              <Card className="border-l-4 border-l-blue-500 animate-fade-in">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="w-5 h-5 text-blue-500" />
+                    <CardTitle className="text-lg">الصف الدراسي</CardTitle>
                   </div>
-                </div>
-              )}
+                </CardHeader>
+                <CardContent>
+                  {isEditing ? (
+                    <Input
+                      value={editedKid.current_grade || ""}
+                      onChange={(e) => setEditedKid({ ...editedKid, current_grade: e.target.value })}
+                      placeholder="مثال: الصف الخامس الابتدائي"
+                    />
+                  ) : (
+                    <p className="text-muted-foreground">
+                      {kid.current_grade || "لم يتم تحديد الصف"}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
 
-              {kid.school_name && (
-                <div className="flex items-start gap-3 p-4 bg-muted rounded-lg">
-                  <BookOpen className="w-5 h-5 text-green-500 mt-1" />
-                  <div>
-                    <h3 className="font-semibold mb-1">المدرسة</h3>
-                    <p className="text-muted-foreground">{kid.school_name}</p>
+              <Card className="border-l-4 border-l-green-500 animate-fade-in">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-green-500" />
+                    <CardTitle className="text-lg">المدرسة</CardTitle>
                   </div>
-                </div>
-              )}
+                </CardHeader>
+                <CardContent>
+                  {isEditing ? (
+                    <Input
+                      value={editedKid.school_name || ""}
+                      onChange={(e) => setEditedKid({ ...editedKid, school_name: e.target.value })}
+                      placeholder="اسم المدرسة"
+                    />
+                  ) : (
+                    <p className="text-muted-foreground">
+                      {kid.school_name || "لم يتم تحديد المدرسة"}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
             </div>
 
-            {kid.ongoing_courses && kid.ongoing_courses.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Calendar className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold">الدورات الحالية</h3>
+            {/* Ongoing Courses & Study Needs */}
+            <Card className="border-l-4 border-l-purple-500 animate-fade-in">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-purple-500" />
+                    <CardTitle className="text-lg">الدورات والاحتياجات الدراسية</CardTitle>
+                  </div>
+                  {isEditing && (
+                    <Button onClick={addCourse} size="sm" variant="outline">
+                      <Plus className="w-4 h-4 ml-2" />
+                      إضافة دورة
+                    </Button>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  {kid.ongoing_courses.map((course: any, index: number) => (
-                    <div key={index} className="p-3 bg-muted rounded-lg">
-                      <p className="text-sm">{typeof course === 'string' ? course : course.name || 'دورة'}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              </CardHeader>
+              <CardContent>
+                {isEditing ? (
+                  <div className="space-y-4">
+                    {editedKid.ongoing_courses?.map((course, index) => (
+                      <div key={index} className="p-4 border rounded-lg space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 space-y-3">
+                            <Input
+                              placeholder="اسم الدورة أو الاحتياج"
+                              value={course.name}
+                              onChange={(e) => {
+                                const updated = [...(editedKid.ongoing_courses || [])];
+                                updated[index].name = e.target.value;
+                                setEditedKid({ ...editedKid, ongoing_courses: updated });
+                              }}
+                            />
+                            <Input
+                              placeholder="تاريخ البدء"
+                              type="date"
+                              value={course.startDate}
+                              onChange={(e) => {
+                                const updated = [...(editedKid.ongoing_courses || [])];
+                                updated[index].startDate = e.target.value;
+                                setEditedKid({ ...editedKid, ongoing_courses: updated });
+                              }}
+                            />
+                            <Textarea
+                              placeholder="وصف الدورة أو التفاصيل"
+                              value={course.description}
+                              onChange={(e) => {
+                                const updated = [...(editedKid.ongoing_courses || [])];
+                                updated[index].description = e.target.value;
+                                setEditedKid({ ...editedKid, ongoing_courses: updated });
+                              }}
+                            />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const updated = editedKid.ongoing_courses?.filter((_, i) => i !== index);
+                              setEditedKid({ ...editedKid, ongoing_courses: updated });
+                            }}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {kid.ongoing_courses && kid.ongoing_courses.length > 0 ? (
+                      kid.ongoing_courses.map((course: any, index: number) => (
+                        <div key={index} className="p-4 bg-muted rounded-lg space-y-2">
+                          <h4 className="font-semibold">
+                            {typeof course === 'string' ? course : course.name || 'دورة'}
+                          </h4>
+                          {course.startDate && (
+                            <p className="text-sm text-muted-foreground">
+                              تاريخ البدء: {course.startDate}
+                            </p>
+                          )}
+                          {course.description && (
+                            <p className="text-sm text-muted-foreground">{course.description}</p>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-muted-foreground text-center py-4">
+                        لا توجد دورات أو احتياجات دراسية مسجلة
+                      </p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-            {kid.certificates && kid.certificates.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Award className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold">الشهادات والإنجازات</h3>
+            {/* Certificates & Achievements */}
+            <Card className="border-l-4 border-l-yellow-500 animate-fade-in">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Award className="w-5 h-5 text-yellow-500" />
+                    <CardTitle className="text-lg">الشهادات والإنجازات</CardTitle>
+                  </div>
+                  {isEditing && (
+                    <Button onClick={addCertificate} size="sm" variant="outline">
+                      <Plus className="w-4 h-4 ml-2" />
+                      إضافة شهادة
+                    </Button>
+                  )}
                 </div>
-                <div className="grid gap-2">
-                  {kid.certificates.map((cert: any, index: number) => (
-                    <div key={index} className="p-3 bg-muted rounded-lg">
-                      <p className="text-sm">{typeof cert === 'string' ? cert : cert.name || 'شهادة'}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              </CardHeader>
+              <CardContent>
+                {isEditing ? (
+                  <div className="space-y-4">
+                    {editedKid.certificates?.map((cert, index) => (
+                      <div key={index} className="p-4 border rounded-lg space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 space-y-3">
+                            <Input
+                              placeholder="اسم الشهادة أو الإنجاز"
+                              value={cert.name}
+                              onChange={(e) => {
+                                const updated = [...(editedKid.certificates || [])];
+                                updated[index].name = e.target.value;
+                                setEditedKid({ ...editedKid, certificates: updated });
+                              }}
+                            />
+                            <Input
+                              placeholder="التاريخ"
+                              type="date"
+                              value={cert.date}
+                              onChange={(e) => {
+                                const updated = [...(editedKid.certificates || [])];
+                                updated[index].date = e.target.value;
+                                setEditedKid({ ...editedKid, certificates: updated });
+                              }}
+                            />
+                            <Input
+                              placeholder="الجهة المانحة"
+                              value={cert.issuer}
+                              onChange={(e) => {
+                                const updated = [...(editedKid.certificates || [])];
+                                updated[index].issuer = e.target.value;
+                                setEditedKid({ ...editedKid, certificates: updated });
+                              }}
+                            />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const updated = editedKid.certificates?.filter((_, i) => i !== index);
+                              setEditedKid({ ...editedKid, certificates: updated });
+                            }}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid md:grid-cols-2 gap-3">
+                    {kid.certificates && kid.certificates.length > 0 ? (
+                      kid.certificates.map((cert: any, index: number) => (
+                        <div key={index} className="p-4 bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950 dark:to-orange-950 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                          <div className="flex items-start gap-3">
+                            <Award className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-1" />
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-yellow-900 dark:text-yellow-100">
+                                {typeof cert === 'string' ? cert : cert.name || 'شهادة'}
+                              </h4>
+                              {cert.date && (
+                                <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                                  {cert.date}
+                                </p>
+                              )}
+                              {cert.issuer && (
+                                <p className="text-sm text-yellow-600 dark:text-yellow-400 mt-1">
+                                  {cert.issuer}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-muted-foreground text-center py-4 col-span-2">
+                        لا توجد شهادات مسجلة
+                      </p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-            {kid.education_progress && kid.education_progress.length > 0 && (
-              <div>
-                <h3 className="font-semibold mb-3">التقدم التعليمي</h3>
-                <div className="space-y-3">
-                  {kid.education_progress.map((progress: any, index: number) => (
-                    <div key={index} className="p-3 bg-muted rounded-lg">
-                      <p className="text-sm">{typeof progress === 'string' ? progress : progress.description || 'تقدم'}</p>
-                    </div>
-                  ))}
+            {/* Education Progress Year by Year */}
+            <Card className="border-l-4 border-l-indigo-500 animate-fade-in">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-indigo-500" />
+                    <CardTitle className="text-lg">التقدم التعليمي (سنة بعد سنة)</CardTitle>
+                  </div>
+                  {isEditing && (
+                    <Button onClick={addEducationProgress} size="sm" variant="outline">
+                      <Plus className="w-4 h-4 ml-2" />
+                      إضافة سنة
+                    </Button>
+                  )}
                 </div>
-              </div>
-            )}
+              </CardHeader>
+              <CardContent>
+                {isEditing ? (
+                  <div className="space-y-4">
+                    {editedKid.education_progress?.map((progress, index) => (
+                      <div key={index} className="p-4 border rounded-lg space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 space-y-3">
+                            <Input
+                              placeholder="السنة (مثال: 2023-2024)"
+                              value={progress.year}
+                              onChange={(e) => {
+                                const updated = [...(editedKid.education_progress || [])];
+                                updated[index].year = e.target.value;
+                                setEditedKid({ ...editedKid, education_progress: updated });
+                              }}
+                            />
+                            <Input
+                              placeholder="الدرجة أو التقدير"
+                              value={progress.grade}
+                              onChange={(e) => {
+                                const updated = [...(editedKid.education_progress || [])];
+                                updated[index].grade = e.target.value;
+                                setEditedKid({ ...editedKid, education_progress: updated });
+                              }}
+                            />
+                            <Textarea
+                              placeholder="وصف التقدم والإنجازات"
+                              value={progress.description}
+                              onChange={(e) => {
+                                const updated = [...(editedKid.education_progress || [])];
+                                updated[index].description = e.target.value;
+                                setEditedKid({ ...editedKid, education_progress: updated });
+                              }}
+                            />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const updated = editedKid.education_progress?.filter((_, i) => i !== index);
+                              setEditedKid({ ...editedKid, education_progress: updated });
+                            }}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {kid.education_progress && kid.education_progress.length > 0 ? (
+                      <div className="relative">
+                        {/* Timeline line */}
+                        <div className="absolute right-6 top-0 bottom-0 w-0.5 bg-border" />
+                        
+                        {kid.education_progress.map((progress: any, index: number) => (
+                          <div key={index} className="relative pr-12 pb-8 last:pb-0">
+                            {/* Timeline dot */}
+                            <div className="absolute right-4 top-2 w-4 h-4 rounded-full bg-indigo-500 border-4 border-background" />
+                            
+                            <div className="p-4 bg-muted rounded-lg space-y-2">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-bold text-lg">
+                                  {typeof progress === 'string' ? progress : progress.year || 'سنة دراسية'}
+                                </h4>
+                                {progress.grade && (
+                                  <Badge variant="secondary" className="text-sm">
+                                    {progress.grade}
+                                  </Badge>
+                                )}
+                              </div>
+                              {progress.description && (
+                                <p className="text-sm text-muted-foreground">{progress.description}</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-4">
+                        لم يتم تسجيل تقدم تعليمي
+                      </p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </CardContent>
         </Card>
       </main>
