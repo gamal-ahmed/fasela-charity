@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, ChevronLeft, ChevronRight, Edit2, Plus } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Edit2, Plus, Search } from "lucide-react";
 import { format } from "date-fns";
 
 interface HandoverData {
@@ -21,22 +22,40 @@ interface HandoverData {
 interface CaseHandovers {
   caseId: string;
   caseTitle: string;
+  caseTitleAr: string;
+  monthlyCost: number;
   handoversByMonth: Record<string, HandoverData[]>;
+}
+
+interface Donation {
+  id: string;
+  donor_name: string;
+  amount: number;
+  total_handed_over: number;
+  remaining: number;
 }
 
 export default function CaseHandoverCalendar() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [searchQuery, setSearchQuery] = useState("");
   const [editDialog, setEditDialog] = useState<{
     open: boolean;
     caseId: string;
     caseTitle: string;
+    caseTitleAr: string;
+    monthlyCost: number;
     month: number;
     year: number;
     existingHandover?: HandoverData;
   } | null>(null);
-  const [editForm, setEditForm] = useState({ amount: "", notes: "" });
+  const [editForm, setEditForm] = useState({ 
+    amount: "", 
+    notes: "", 
+    selectedDonationId: "" 
+  });
+  const [availableDonations, setAvailableDonations] = useState<Donation[]>([]);
 
   const months = [
     "January", "February", "March", "April", "May", "June",
@@ -48,7 +67,7 @@ export default function CaseHandoverCalendar() {
     queryFn: async () => {
       const { data: cases, error: casesError } = await supabase
         .from("cases")
-        .select("id, title")
+        .select("id, title, title_ar, monthly_cost")
         .eq("is_published", true)
         .order("title");
 
@@ -88,6 +107,8 @@ export default function CaseHandoverCalendar() {
         return {
           caseId: caseItem.id,
           caseTitle: caseItem.title,
+          caseTitleAr: caseItem.title_ar || caseItem.title,
+          monthlyCost: caseItem.monthly_cost || 0,
           handoversByMonth,
         };
       });
@@ -96,9 +117,37 @@ export default function CaseHandoverCalendar() {
     },
   });
 
+  // Fetch available donations when dialog opens
+  const fetchAvailableDonations = async (caseId: string) => {
+    const { data, error } = await supabase
+      .from("donations")
+      .select("id, donor_name, amount, total_handed_over")
+      .eq("case_id", caseId)
+      .eq("status", "confirmed")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast({
+        title: "خطأ",
+        description: "فشل في تحميل التبرعات المتاحة",
+        variant: "destructive",
+      });
+      return [];
+    }
+
+    return (data || []).map(d => ({
+      id: d.id,
+      donor_name: d.donor_name || "متبرع مجهول",
+      amount: Number(d.amount),
+      total_handed_over: Number(d.total_handed_over || 0),
+      remaining: Number(d.amount) - Number(d.total_handed_over || 0),
+    })).filter(d => d.remaining > 0);
+  };
+
   const saveMutation = useMutation({
     mutationFn: async (data: {
       caseId: string;
+      donationId: string;
       month: number;
       year: number;
       amount: number;
@@ -106,38 +155,27 @@ export default function CaseHandoverCalendar() {
       handoverId?: string;
     }) => {
       const handoverDate = new Date(data.year, data.month, 15);
+      const preciseAmount = Number(Number(data.amount).toFixed(2));
 
       if (data.handoverId) {
         const { error } = await supabase
           .from("donation_handovers")
           .update({
-            handover_amount: data.amount,
+            handover_amount: preciseAmount,
             handover_notes: data.notes,
+            donation_id: data.donationId,
             updated_at: new Date().toISOString(),
           })
           .eq("id", data.handoverId);
 
         if (error) throw error;
       } else {
-        const { data: donations } = await supabase
-          .from("donations")
-          .select("id")
-          .eq("case_id", data.caseId)
-          .eq("status", "confirmed")
-          .limit(1);
-
-        const donationId = donations?.[0]?.id || null;
-
-        if (!donationId) {
-          throw new Error("No confirmed donation found for this case");
-        }
-
         const { error } = await supabase
           .from("donation_handovers")
           .insert({
             case_id: data.caseId,
-            donation_id: donationId,
-            handover_amount: data.amount,
+            donation_id: data.donationId,
+            handover_amount: preciseAmount,
             handover_date: handoverDate.toISOString(),
             handover_notes: data.notes,
           });
@@ -148,11 +186,12 @@ export default function CaseHandoverCalendar() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["case-handover-calendar"] });
       toast({
-        title: "Success",
-        description: "Handover saved successfully",
+        title: "نجح",
+        description: "تم حفظ التسليم بنجاح",
       });
       setEditDialog(null);
-      setEditForm({ amount: "", notes: "" });
+      setEditForm({ amount: "", notes: "", selectedDonationId: "" });
+      setAvailableDonations([]);
     },
     onError: (error: Error) => {
       toast({
@@ -163,21 +202,32 @@ export default function CaseHandoverCalendar() {
     },
   });
 
-  const openEditDialog = (
+  const openEditDialog = async (
     caseId: string,
     caseTitle: string,
+    caseTitleAr: string,
+    monthlyCost: number,
     month: number,
     existingHandovers?: HandoverData[]
   ) => {
     const existingHandover = existingHandovers?.[0];
+    
+    // Fetch available donations
+    const donations = await fetchAvailableDonations(caseId);
+    setAvailableDonations(donations);
+    
     setEditForm({
-      amount: existingHandover?.amount.toString() || "",
+      amount: existingHandover?.amount.toString() || monthlyCost.toString(),
       notes: existingHandover?.notes || "",
+      selectedDonationId: "",
     });
+    
     setEditDialog({
       open: true,
       caseId,
       caseTitle,
+      caseTitleAr,
+      monthlyCost,
       month,
       year: selectedYear,
       existingHandover,
@@ -190,8 +240,27 @@ export default function CaseHandoverCalendar() {
     const amount = parseFloat(editForm.amount);
     if (isNaN(amount) || amount <= 0) {
       toast({
-        title: "Invalid amount",
-        description: "Please enter a valid amount",
+        title: "مبلغ غير صالح",
+        description: "الرجاء إدخال مبلغ صحيح",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!editForm.selectedDonationId) {
+      toast({
+        title: "تبرع غير محدد",
+        description: "الرجاء اختيار التبرع الذي سيتم الخصم منه",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const selectedDonation = availableDonations.find(d => d.id === editForm.selectedDonationId);
+    if (selectedDonation && amount > selectedDonation.remaining) {
+      toast({
+        title: "مبلغ غير صالح",
+        description: `المبلغ المتبقي في التبرع: ${selectedDonation.remaining.toFixed(2)} جنيه`,
         variant: "destructive",
       });
       return;
@@ -199,6 +268,7 @@ export default function CaseHandoverCalendar() {
 
     saveMutation.mutate({
       caseId: editDialog.caseId,
+      donationId: editForm.selectedDonationId,
       month: editDialog.month,
       year: editDialog.year,
       amount,
@@ -209,8 +279,14 @@ export default function CaseHandoverCalendar() {
 
   const getMonthTotal = (handovers?: HandoverData[]) => {
     if (!handovers || handovers.length === 0) return 0;
-    return handovers.reduce((sum, h) => sum + h.amount, 0);
+    return Number(handovers.reduce((sum, h) => sum + Number(h.amount), 0).toFixed(2));
   };
+
+  // Filter cases based on search query
+  const filteredCases = casesWithHandovers?.filter(caseData => 
+    caseData.caseTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    caseData.caseTitleAr.includes(searchQuery)
+  );
 
   if (isLoading) {
     return (
@@ -224,43 +300,68 @@ export default function CaseHandoverCalendar() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Calendar className="w-8 h-8" />
-            Case Handover Calendar
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Track monthly handovers for each case
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setSelectedYear(selectedYear - 1)}
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <div className="text-xl font-semibold min-w-[100px] text-center">
-            {selectedYear}
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Calendar className="w-8 h-8" />
+              تقويم التسليم الشهري
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              تتبع التسليمات الشهرية لكل حالة
+            </p>
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setSelectedYear(selectedYear + 1)}
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setSelectedYear(selectedYear - 1)}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <div className="text-xl font-semibold min-w-[100px] text-center">
+              {selectedYear}
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setSelectedYear(selectedYear + 1)}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+        
+        <div className="relative max-w-md">
+          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input
+            placeholder="ابحث عن حالة..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pr-10"
+          />
         </div>
       </div>
 
       <div className="space-y-6">
-        {casesWithHandovers?.map((caseData) => (
+        {filteredCases && filteredCases.length === 0 && (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground">
+              لا توجد حالات مطابقة لبحثك
+            </CardContent>
+          </Card>
+        )}
+        
+        {filteredCases?.map((caseData) => (
           <Card key={caseData.caseId}>
             <CardHeader>
-              <CardTitle>{caseData.caseTitle}</CardTitle>
-              <CardDescription>Monthly handover tracking</CardDescription>
+              <CardTitle className="flex items-center justify-between">
+                <span>{caseData.caseTitleAr}</span>
+                <span className="text-sm font-normal text-muted-foreground">
+                  التكلفة الشهرية: {caseData.monthlyCost.toLocaleString()} جنيه
+                </span>
+              </CardTitle>
+              <CardDescription>{caseData.caseTitle}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
@@ -278,7 +379,14 @@ export default function CaseHandoverCalendar() {
                           ? "border-green-500 bg-green-50 dark:bg-green-950/20"
                           : "border-border hover:border-primary"
                       }`}
-                      onClick={() => openEditDialog(caseData.caseId, caseData.caseTitle, monthIndex, handovers)}
+                      onClick={() => openEditDialog(
+                        caseData.caseId, 
+                        caseData.caseTitle, 
+                        caseData.caseTitleAr,
+                        caseData.monthlyCost,
+                        monthIndex, 
+                        handovers
+                      )}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="text-sm font-medium">{monthName.slice(0, 3)}</div>
@@ -291,14 +399,14 @@ export default function CaseHandoverCalendar() {
                       {hasHandover ? (
                         <div className="space-y-1">
                           <div className="text-lg font-bold text-green-700 dark:text-green-400">
-                            {total.toLocaleString()} EGP
+                            {total.toFixed(2)} جنيه
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {handovers.length} handover{handovers.length > 1 ? 's' : ''}
+                            {handovers.length} تسليم
                           </div>
                         </div>
                       ) : (
-                        <div className="text-sm text-muted-foreground">No handover</div>
+                        <div className="text-sm text-muted-foreground">لا يوجد تسليم</div>
                       )}
                     </div>
                   );
@@ -309,32 +417,87 @@ export default function CaseHandoverCalendar() {
         ))}
       </div>
 
-      <Dialog open={editDialog?.open || false} onOpenChange={(open) => !open && setEditDialog(null)}>
-        <DialogContent>
+      <Dialog open={editDialog?.open || false} onOpenChange={(open) => {
+        if (!open) {
+          setEditDialog(null);
+          setAvailableDonations([]);
+          setEditForm({ amount: "", notes: "", selectedDonationId: "" });
+        }
+      }}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>
-              {editDialog?.existingHandover ? "Edit" : "Add"} Handover
+            <DialogTitle className="text-xl">
+              {editDialog?.existingHandover ? "تعديل" : "إضافة"} تسليم شهري
             </DialogTitle>
-            <DialogDescription>
-              {editDialog?.caseTitle} - {months[editDialog?.month || 0]} {editDialog?.year}
+            <DialogDescription className="space-y-1">
+              <div className="font-semibold">{editDialog?.caseTitleAr}</div>
+              <div className="text-sm">{months[editDialog?.month || 0]} {editDialog?.year}</div>
+              <div className="text-sm">التكلفة الشهرية: {editDialog?.monthlyCost.toLocaleString()} جنيه</div>
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount (EGP)</Label>
+              <Label htmlFor="donation">اختر التبرع للخصم منه *</Label>
+              <Select 
+                value={editForm.selectedDonationId} 
+                onValueChange={(value) => {
+                  const donation = availableDonations.find(d => d.id === value);
+                  setEditForm({ 
+                    ...editForm, 
+                    selectedDonationId: value,
+                    amount: Math.min(
+                      editDialog?.monthlyCost || 0,
+                      donation?.remaining || 0
+                    ).toString()
+                  });
+                }}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder="اختر تبرعاً..." />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {availableDonations.length === 0 ? (
+                    <div className="p-4 text-center text-muted-foreground">
+                      لا توجد تبرعات متاحة لهذه الحالة
+                    </div>
+                  ) : (
+                    availableDonations.map((donation) => (
+                      <SelectItem key={donation.id} value={donation.id} className="cursor-pointer">
+                        <div className="flex flex-col py-1">
+                          <div className="font-medium">{donation.donor_name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            المتبقي: {donation.remaining.toFixed(2)} من {donation.amount.toFixed(2)} جنيه
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              {editForm.selectedDonationId && (
+                <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
+                  المبلغ المتاح: {availableDonations.find(d => d.id === editForm.selectedDonationId)?.remaining.toFixed(2)} جنيه
+                </div>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="amount">المبلغ (جنيه) *</Label>
               <Input
                 id="amount"
                 type="number"
-                placeholder="Enter amount"
+                step="0.01"
+                placeholder="أدخل المبلغ"
                 value={editForm.amount}
                 onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
               />
             </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes (optional)</Label>
+              <Label htmlFor="notes">ملاحظات (اختياري)</Label>
               <Textarea
                 id="notes"
-                placeholder="Add any notes about this handover"
+                placeholder="أضف أي ملاحظات عن هذا التسليم"
                 value={editForm.notes}
                 onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
                 rows={3}
@@ -342,11 +505,14 @@ export default function CaseHandoverCalendar() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialog(null)}>
-              Cancel
+            <Button variant="outline" onClick={() => {
+              setEditDialog(null);
+              setAvailableDonations([]);
+            }}>
+              إلغاء
             </Button>
             <Button onClick={handleSave} disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? "Saving..." : "Save"}
+              {saveMutation.isPending ? "جاري الحفظ..." : "حفظ"}
             </Button>
           </DialogFooter>
         </DialogContent>
