@@ -6,7 +6,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, LogOut, FileText, Users, BarChart3, CreditCard, Home, Heart } from "lucide-react";
+import { Plus, LogOut, FileText, Users, BarChart3, CreditCard, Home, Heart, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import CaseForm from "@/components/admin/CaseForm";
@@ -140,6 +140,13 @@ const AdminDashboard = () => {
                     <Home className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span className="hidden sm:inline">الرئيسية</span>
                     <span className="sm:hidden">الرئيسية</span>
+                  </Link>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/admin/calendar" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                    <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">تقويم التسليم</span>
+                    <span className="sm:hidden">تقويم</span>
                   </Link>
                 </Button>
               </nav>
