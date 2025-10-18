@@ -4,6 +4,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, parseISO } from "date-fns";
 import { ar } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ChevronDown, ChevronUp, User, Calendar, CreditCard } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+
+interface DonationDetail {
+  id: string;
+  donor_name: string | null;
+  donor_email: string | null;
+  amount: number;
+  total_handed_over: number;
+  remaining: number;
+  confirmed_at: string;
+  case_title: string | null;
+  case_title_ar: string | null;
+  payment_code: string;
+}
 
 interface MonthlyDonationData {
   month: string;
@@ -12,16 +29,44 @@ interface MonthlyDonationData {
   totalHandedOver: number;
   readyToHandover: number;
   confirmedCount: number;
+  donations: DonationDetail[];
 }
 
 export const MonthlyDonationsView = () => {
+  const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
+
+  const toggleMonth = (month: string) => {
+    setExpandedMonths(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(month)) {
+        newSet.delete(month);
+      } else {
+        newSet.add(month);
+      }
+      return newSet;
+    });
+  };
+
   const { data: monthlyData, isLoading } = useQuery({
     queryKey: ["monthly-donations"],
     queryFn: async () => {
-      // Fetch all confirmed donations
+      // Fetch all confirmed donations with case details
       const { data: donations, error: donationsError } = await supabase
         .from("donations")
-        .select("id, amount, confirmed_at, total_handed_over")
+        .select(`
+          id,
+          amount,
+          confirmed_at,
+          total_handed_over,
+          donor_name,
+          donor_email,
+          payment_code,
+          case_id,
+          cases (
+            title,
+            title_ar
+          )
+        `)
         .eq("status", "confirmed")
         .order("confirmed_at", { ascending: false });
 
@@ -45,6 +90,7 @@ export const MonthlyDonationsView = () => {
             totalHandedOver: 0,
             readyToHandover: 0,
             confirmedCount: 0,
+            donations: [],
           };
         }
 
@@ -56,6 +102,20 @@ export const MonthlyDonationsView = () => {
         monthlyGroups[monthKey].totalHandedOver += handedOver;
         monthlyGroups[monthKey].readyToHandover += remaining;
         monthlyGroups[monthKey].confirmedCount += 1;
+        
+        // Add donation details
+        monthlyGroups[monthKey].donations.push({
+          id: donation.id,
+          donor_name: donation.donor_name,
+          donor_email: donation.donor_email,
+          amount,
+          total_handed_over: handedOver,
+          remaining,
+          confirmed_at: donation.confirmed_at,
+          case_title: donation.cases?.[0]?.title || null,
+          case_title_ar: donation.cases?.[0]?.title_ar || null,
+          payment_code: donation.payment_code,
+        });
       });
 
       // Convert to array and sort by month descending
@@ -136,15 +196,30 @@ export const MonthlyDonationsView = () => {
         <h3 className="text-lg font-semibold">التفصيل الشهري</h3>
         {monthlyData.map((month) => {
           const handoverPercentage = (month.totalHandedOver / month.totalDonations) * 100;
+          const isExpanded = expandedMonths.has(month.month);
           
           return (
             <Card key={month.month} className="border-l-4 border-l-primary">
               <CardHeader className="pb-3">
                 <CardTitle className="text-xl flex items-center justify-between">
                   <span>{month.displayMonth}</span>
-                  <span className="text-sm font-normal text-muted-foreground">
-                    {month.confirmedCount} تبرع
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-normal text-muted-foreground">
+                      {month.confirmedCount} تبرع
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleMonth(month.month)}
+                      className="h-8 w-8 p-0"
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -184,6 +259,97 @@ export const MonthlyDonationsView = () => {
                       </p>
                     </div>
                   </div>
+
+                  {/* Expanded Donations List */}
+                  {isExpanded && (
+                    <div className="mt-6 space-y-3 border-t pt-4">
+                      <h4 className="font-semibold text-sm text-muted-foreground mb-3">
+                        تفاصيل التبرعات ({month.donations.length})
+                      </h4>
+                      {month.donations.map((donation) => {
+                        const donationPercentage = (donation.total_handed_over / donation.amount) * 100;
+                        
+                        return (
+                          <Card key={donation.id} className="bg-muted/30">
+                            <CardContent className="pt-4 space-y-3">
+                              {/* Donor Info */}
+                              <div className="flex items-start justify-between">
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <User className="h-4 w-4 text-muted-foreground" />
+                                    <span className="font-medium">
+                                      {donation.donor_name || "متبرع مجهول"}
+                                    </span>
+                                  </div>
+                                  {donation.donor_email && (
+                                    <p className="text-xs text-muted-foreground mr-6">
+                                      {donation.donor_email}
+                                    </p>
+                                  )}
+                                </div>
+                                <Badge variant="outline" className="text-xs">
+                                  {donation.payment_code}
+                                </Badge>
+                              </div>
+
+                              {/* Case Info */}
+                              {donation.case_title_ar && (
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-muted-foreground">الحالة:</span>
+                                  <span className="font-medium">{donation.case_title_ar}</span>
+                                </div>
+                              )}
+
+                              {/* Amount Details */}
+                              <div className="grid grid-cols-3 gap-2 pt-2">
+                                <div className="bg-background rounded p-2 text-center">
+                                  <p className="text-xs text-muted-foreground">المبلغ</p>
+                                  <p className="text-sm font-bold text-primary">
+                                    {donation.amount.toFixed(2)}
+                                  </p>
+                                </div>
+                                <div className="bg-background rounded p-2 text-center">
+                                  <p className="text-xs text-muted-foreground">تم التسليم</p>
+                                  <p className="text-sm font-bold text-green-600">
+                                    {donation.total_handed_over.toFixed(2)}
+                                  </p>
+                                </div>
+                                <div className="bg-background rounded p-2 text-center">
+                                  <p className="text-xs text-muted-foreground">المتبقي</p>
+                                  <p className="text-sm font-bold text-orange-600">
+                                    {donation.remaining.toFixed(2)}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Mini Progress Bar */}
+                              <div className="space-y-1">
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                  <span>نسبة التسليم</span>
+                                  <span>{donationPercentage.toFixed(0)}%</span>
+                                </div>
+                                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-green-500 transition-all duration-300"
+                                    style={{ width: `${donationPercentage}%` }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Date */}
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                                <CreditCard className="h-3 w-3" />
+                                <span>
+                                  تم التأكيد: {format(parseISO(donation.confirmed_at), "dd/MM/yyyy", { locale: ar })}
+                                </span>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
