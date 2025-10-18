@@ -20,6 +20,7 @@ interface DonationDetail {
   case_title: string | null;
   case_title_ar: string | null;
   payment_code: string;
+  admin_notes: string | null;
 }
 
 interface MonthlyDonationData {
@@ -61,6 +62,7 @@ export const MonthlyDonationsView = () => {
           donor_name,
           donor_email,
           payment_code,
+          admin_notes,
           case_id,
           cases (
             title,
@@ -115,6 +117,7 @@ export const MonthlyDonationsView = () => {
           case_title: donation.cases?.[0]?.title || null,
           case_title_ar: donation.cases?.[0]?.title_ar || null,
           payment_code: donation.payment_code,
+          admin_notes: donation.admin_notes,
         });
       });
 
@@ -336,6 +339,16 @@ export const MonthlyDonationsView = () => {
                                   />
                                 </div>
                               </div>
+
+                              {/* Admin Notes */}
+                              {donation.admin_notes && (
+                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-1">
+                                  <p className="text-xs font-semibold text-amber-900">ملاحظات الإدارة:</p>
+                                  <p className="text-sm text-amber-800 whitespace-pre-wrap">
+                                    {donation.admin_notes}
+                                  </p>
+                                </div>
+                              )}
 
                               {/* Date */}
                               <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
