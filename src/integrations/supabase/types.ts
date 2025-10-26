@@ -355,6 +355,50 @@ export type Database = {
           },
         ]
       }
+      case_followups: {
+        Row: {
+          case_id: string
+          created_at: string
+          created_by: string | null
+          followup_date: string
+          followup_type: string
+          id: string
+          next_action: string | null
+          notes: string
+          updated_at: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          created_by?: string | null
+          followup_date: string
+          followup_type: string
+          id?: string
+          next_action?: string | null
+          notes: string
+          updated_at?: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          created_by?: string | null
+          followup_date?: string
+          followup_type?: string
+          id?: string
+          next_action?: string | null
+          notes?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_followups_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       case_kids: {
         Row: {
           age: number
@@ -464,6 +508,78 @@ export type Database = {
             columns: ["tag_id"]
             isOneToOne: false
             referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      case_tasks: {
+        Row: {
+          assigned_to: string
+          case_id: string
+          completed_at: string | null
+          completed_by: string | null
+          completion_notes: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_date: string | null
+          followup_id: string | null
+          id: string
+          priority: string
+          status: string
+          task_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to: string
+          case_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_date?: string | null
+          followup_id?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          task_type: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string
+          case_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_date?: string | null
+          followup_id?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          task_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_tasks_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_tasks_followup_id_fkey"
+            columns: ["followup_id"]
+            isOneToOne: false
+            referencedRelation: "case_followups"
             referencedColumns: ["id"]
           },
         ]
@@ -939,6 +1055,7 @@ export type Database = {
           learning_outcomes: Json | null
           learning_outcomes_ar: Json | null
           price: number
+          scientific_value: Json | null
           show_on_homepage: boolean
           sort_order: number | null
           title: string
@@ -962,6 +1079,7 @@ export type Database = {
           learning_outcomes?: Json | null
           learning_outcomes_ar?: Json | null
           price?: number
+          scientific_value?: Json | null
           show_on_homepage?: boolean
           sort_order?: number | null
           title: string
@@ -985,6 +1103,7 @@ export type Database = {
           learning_outcomes?: Json | null
           learning_outcomes_ar?: Json | null
           price?: number
+          scientific_value?: Json | null
           show_on_homepage?: boolean
           sort_order?: number | null
           title?: string
@@ -1142,6 +1261,7 @@ export type Database = {
           grade_level_id: number | null
           id: string
           image_url: string | null
+          is_in_box: boolean | null
           material_images: Json | null
           materials: string[] | null
           materials_ar: string[] | null
@@ -1179,6 +1299,7 @@ export type Database = {
           grade_level_id?: number | null
           id?: string
           image_url?: string | null
+          is_in_box?: boolean | null
           material_images?: Json | null
           materials?: string[] | null
           materials_ar?: string[] | null
@@ -1216,6 +1337,7 @@ export type Database = {
           grade_level_id?: number | null
           id?: string
           image_url?: string | null
+          is_in_box?: boolean | null
           material_images?: Json | null
           materials?: string[] | null
           materials_ar?: string[] | null
@@ -1410,6 +1532,594 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lab_shop_categories: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          description_ar: string | null
+          icon: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          name_ar: string
+          parent_id: string | null
+          slug: string
+          slug_ar: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          description_ar?: string | null
+          icon?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name: string
+          name_ar: string
+          parent_id?: string | null
+          slug: string
+          slug_ar: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          description_ar?: string | null
+          icon?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string
+          name_ar?: string
+          parent_id?: string | null
+          slug?: string
+          slug_ar?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_shop_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "lab_shop_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lab_shop_order_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          order_id: string
+          product_id: string
+          product_name: string
+          product_name_ar: string
+          product_sku: string | null
+          quantity: number
+          total_price: number
+          unit_price: number
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          order_id: string
+          product_id: string
+          product_name: string
+          product_name_ar: string
+          product_sku?: string | null
+          quantity: number
+          total_price: number
+          unit_price: number
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          order_id?: string
+          product_id?: string
+          product_name?: string
+          product_name_ar?: string
+          product_sku?: string | null
+          quantity?: number
+          total_price?: number
+          unit_price?: number
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_shop_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "lab_shop_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lab_shop_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "lab_shop_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lab_shop_order_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "lab_shop_product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lab_shop_orders: {
+        Row: {
+          billing_address: Json | null
+          created_at: string | null
+          currency: string | null
+          customer_email: string
+          customer_name: string
+          customer_phone: string | null
+          delivered_at: string | null
+          discount_amount: number | null
+          id: string
+          notes: string | null
+          order_number: string
+          payment_method: string | null
+          payment_reference: string | null
+          payment_status: string | null
+          shipped_at: string | null
+          shipping_address: Json | null
+          shipping_amount: number | null
+          status: string | null
+          subtotal: number
+          tax_amount: number | null
+          total_amount: number
+          tracking_number: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          billing_address?: Json | null
+          created_at?: string | null
+          currency?: string | null
+          customer_email: string
+          customer_name: string
+          customer_phone?: string | null
+          delivered_at?: string | null
+          discount_amount?: number | null
+          id?: string
+          notes?: string | null
+          order_number: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
+          shipped_at?: string | null
+          shipping_address?: Json | null
+          shipping_amount?: number | null
+          status?: string | null
+          subtotal: number
+          tax_amount?: number | null
+          total_amount: number
+          tracking_number?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          billing_address?: Json | null
+          created_at?: string | null
+          currency?: string | null
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string | null
+          delivered_at?: string | null
+          discount_amount?: number | null
+          id?: string
+          notes?: string | null
+          order_number?: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
+          shipped_at?: string | null
+          shipping_address?: Json | null
+          shipping_amount?: number | null
+          status?: string | null
+          subtotal?: number
+          tax_amount?: number | null
+          total_amount?: number
+          tracking_number?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      lab_shop_product_reviews: {
+        Row: {
+          comment: string | null
+          comment_ar: string | null
+          created_at: string | null
+          helpful_count: number | null
+          id: string
+          is_approved: boolean | null
+          is_verified_purchase: boolean | null
+          product_id: string
+          rating: number | null
+          reviewer_email: string | null
+          reviewer_name: string
+          title: string | null
+          title_ar: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          comment?: string | null
+          comment_ar?: string | null
+          created_at?: string | null
+          helpful_count?: number | null
+          id?: string
+          is_approved?: boolean | null
+          is_verified_purchase?: boolean | null
+          product_id: string
+          rating?: number | null
+          reviewer_email?: string | null
+          reviewer_name: string
+          title?: string | null
+          title_ar?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          comment?: string | null
+          comment_ar?: string | null
+          created_at?: string | null
+          helpful_count?: number | null
+          id?: string
+          is_approved?: boolean | null
+          is_verified_purchase?: boolean | null
+          product_id?: string
+          rating?: number | null
+          reviewer_email?: string | null
+          reviewer_name?: string
+          title?: string | null
+          title_ar?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_shop_product_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "lab_shop_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lab_shop_product_tags: {
+        Row: {
+          created_at: string | null
+          id: string
+          product_id: string
+          tag_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          product_id: string
+          tag_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_shop_product_tags_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "lab_shop_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lab_shop_product_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "lab_shop_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lab_shop_product_variants: {
+        Row: {
+          attributes: Json | null
+          compare_price: number | null
+          created_at: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          name_ar: string
+          price: number | null
+          product_id: string
+          sku: string | null
+          sort_order: number | null
+          stock_quantity: number | null
+          updated_at: string | null
+          weight: number | null
+        }
+        Insert: {
+          attributes?: Json | null
+          compare_price?: number | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name: string
+          name_ar: string
+          price?: number | null
+          product_id: string
+          sku?: string | null
+          sort_order?: number | null
+          stock_quantity?: number | null
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Update: {
+          attributes?: Json | null
+          compare_price?: number | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string
+          name_ar?: string
+          price?: number | null
+          product_id?: string
+          sku?: string | null
+          sort_order?: number | null
+          stock_quantity?: number | null
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_shop_product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "lab_shop_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lab_shop_products: {
+        Row: {
+          age_max: number | null
+          age_min: number | null
+          category_id: string | null
+          compare_price: number | null
+          cost_price: number | null
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          description_ar: string | null
+          difficulty_level: string | null
+          dimensions: Json | null
+          estimated_duration: number | null
+          gallery: Json | null
+          id: string
+          image_url: string | null
+          instructions_url: string | null
+          is_active: boolean | null
+          is_digital: boolean | null
+          is_featured: boolean | null
+          learning_objectives: Json | null
+          low_stock_threshold: number | null
+          materials_included: Json | null
+          meta_keywords: string | null
+          meta_keywords_ar: string | null
+          name: string
+          name_ar: string
+          price: number
+          requires_shipping: boolean | null
+          safety_notes: string | null
+          safety_notes_ar: string | null
+          seo_description: string | null
+          seo_description_ar: string | null
+          seo_title: string | null
+          seo_title_ar: string | null
+          short_description: string | null
+          short_description_ar: string | null
+          sku: string | null
+          slug: string
+          slug_ar: string
+          sort_order: number | null
+          stock_quantity: number | null
+          updated_at: string | null
+          video_url: string | null
+          weight: number | null
+        }
+        Insert: {
+          age_max?: number | null
+          age_min?: number | null
+          category_id?: string | null
+          compare_price?: number | null
+          cost_price?: number | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          description_ar?: string | null
+          difficulty_level?: string | null
+          dimensions?: Json | null
+          estimated_duration?: number | null
+          gallery?: Json | null
+          id?: string
+          image_url?: string | null
+          instructions_url?: string | null
+          is_active?: boolean | null
+          is_digital?: boolean | null
+          is_featured?: boolean | null
+          learning_objectives?: Json | null
+          low_stock_threshold?: number | null
+          materials_included?: Json | null
+          meta_keywords?: string | null
+          meta_keywords_ar?: string | null
+          name: string
+          name_ar: string
+          price: number
+          requires_shipping?: boolean | null
+          safety_notes?: string | null
+          safety_notes_ar?: string | null
+          seo_description?: string | null
+          seo_description_ar?: string | null
+          seo_title?: string | null
+          seo_title_ar?: string | null
+          short_description?: string | null
+          short_description_ar?: string | null
+          sku?: string | null
+          slug: string
+          slug_ar: string
+          sort_order?: number | null
+          stock_quantity?: number | null
+          updated_at?: string | null
+          video_url?: string | null
+          weight?: number | null
+        }
+        Update: {
+          age_max?: number | null
+          age_min?: number | null
+          category_id?: string | null
+          compare_price?: number | null
+          cost_price?: number | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          description_ar?: string | null
+          difficulty_level?: string | null
+          dimensions?: Json | null
+          estimated_duration?: number | null
+          gallery?: Json | null
+          id?: string
+          image_url?: string | null
+          instructions_url?: string | null
+          is_active?: boolean | null
+          is_digital?: boolean | null
+          is_featured?: boolean | null
+          learning_objectives?: Json | null
+          low_stock_threshold?: number | null
+          materials_included?: Json | null
+          meta_keywords?: string | null
+          meta_keywords_ar?: string | null
+          name?: string
+          name_ar?: string
+          price?: number
+          requires_shipping?: boolean | null
+          safety_notes?: string | null
+          safety_notes_ar?: string | null
+          seo_description?: string | null
+          seo_description_ar?: string | null
+          seo_title?: string | null
+          seo_title_ar?: string | null
+          short_description?: string | null
+          short_description_ar?: string | null
+          sku?: string | null
+          slug?: string
+          slug_ar?: string
+          sort_order?: number | null
+          stock_quantity?: number | null
+          updated_at?: string | null
+          video_url?: string | null
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_shop_products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "lab_shop_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lab_shop_settings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_public: boolean | null
+          key: string
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          key: string
+          updated_at?: string | null
+          value: Json
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          key?: string
+          updated_at?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
+      lab_shop_tags: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          description_ar: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          name_ar: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          description_ar?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_ar: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          description_ar?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_ar?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       materials: {
         Row: {
@@ -2688,10 +3398,7 @@ export type Database = {
         Args: { p_experiment_id: string; p_new_steps: Json }
         Returns: undefined
       }
-      cleanup_old_basket_items: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_old_basket_items: { Args: never; Returns: undefined }
       clear_basket: {
         Args: { p_session_id?: string; p_user_id?: string }
         Returns: boolean
@@ -2730,12 +3437,9 @@ export type Database = {
         Args: { partner_email: string; partner_name: string }
         Returns: string
       }
-      generate_payment_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_payment_code: { Args: never; Returns: string }
       get_action_counts: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           action_type: string
           count: number
@@ -2821,18 +3525,9 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_admin_user: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      make_user_admin: {
-        Args: { user_email: string }
-        Returns: boolean
-      }
+      is_admin: { Args: never; Returns: boolean }
+      is_admin_user: { Args: never; Returns: boolean }
+      make_user_admin: { Args: { user_email: string }; Returns: boolean }
       save_basket_item: {
         Args: {
           p_currency?: string

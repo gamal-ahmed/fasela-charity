@@ -11,6 +11,7 @@ import KidProfile from "./pages/KidProfile";
 import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/AdminDashboard";
 import CaseHandoverCalendar from "./pages/CaseHandoverCalendar";
+import AdminCaseProfile from "./pages/AdminCaseProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/calendar" element={<CaseHandoverCalendar />} />
+          <Route path="/admin/case-profile/:id" element={<AdminCaseProfile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
