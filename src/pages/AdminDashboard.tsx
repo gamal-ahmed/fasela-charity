@@ -6,7 +6,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, LogOut, FileText, Users, BarChart3, CreditCard, Home, Heart, Calendar } from "lucide-react";
+import { Plus, LogOut, FileText, Users, BarChart3, CreditCard, Home, Heart, Calendar, CheckSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import CaseForm from "@/components/admin/CaseForm";
@@ -15,6 +15,7 @@ import ReportForm from "@/components/admin/ReportForm";
 import ReportsList from "@/components/admin/ReportsList";
 import { DonationAuditDelivery } from "@/components/admin/DonationAuditDelivery";
 import { MonthlyDonationsView } from "@/components/admin/MonthlyDonationsView";
+import AdminTasksDashboard from "@/components/admin/AdminTasksDashboard";
 
 const AdminDashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -165,7 +166,7 @@ const AdminDashboard = () => {
         <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
           {/* Mobile-optimized TabsList */}
           <div className="w-full overflow-x-auto">
-            <TabsList className="grid w-full min-w-[720px] sm:min-w-0 grid-cols-6 gap-1 h-auto p-1">
+            <TabsList className="grid w-full min-w-[840px] sm:min-w-0 grid-cols-7 gap-1 h-auto p-1">
               <TabsTrigger value="overview" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm py-2 sm:py-3 px-2 sm:px-4">
                 <BarChart3 className="w-4 h-4 flex-shrink-0" />
                 <span className="hidden sm:inline">نظرة عامة</span>
@@ -185,6 +186,11 @@ const AdminDashboard = () => {
                 <Heart className="w-4 h-4 flex-shrink-0" />
                 <span className="hidden sm:inline">التبرعات الشهرية</span>
                 <span className="sm:hidden text-[10px] leading-tight">شهري</span>
+              </TabsTrigger>
+              <TabsTrigger value="tasks" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm py-2 sm:py-3 px-2 sm:px-4">
+                <CheckSquare className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">المهام والمتابعة</span>
+                <span className="sm:hidden text-[10px] leading-tight">مهام</span>
               </TabsTrigger>
               <TabsTrigger value="reports" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm py-2 sm:py-3 px-2 sm:px-4">
                 <FileText className="w-4 h-4 flex-shrink-0" />
@@ -213,6 +219,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="monthly-donations">
             <MonthlyDonationsView />
+          </TabsContent>
+
+          <TabsContent value="tasks">
+            <AdminTasksDashboard />
           </TabsContent>
 
           <TabsContent value="reports">

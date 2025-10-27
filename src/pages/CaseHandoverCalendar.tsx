@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { User, Session } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, ChevronLeft, ChevronRight, Edit2, Plus, Search } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Edit2, Plus, Search, LogOut, Home, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
+import { Link } from "react-router-dom";
 
 interface HandoverData {
   id?: string;
@@ -38,6 +41,11 @@ interface Donation {
 export default function CaseHandoverCalendar() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [searchQuery, setSearchQuery] = useState("");
   const [editDialog, setEditDialog] = useState<{
@@ -56,6 +64,80 @@ export default function CaseHandoverCalendar() {
     selectedDonationId: "" 
   });
   const [availableDonations, setAvailableDonations] = useState<Donation[]>([]);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (!session?.user) {
+          navigate("/auth");
+        } else {
+          checkUserRole(session.user.id);
+        }
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+      
+      if (!session?.user) {
+        navigate("/auth");
+      } else {
+        checkUserRole(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const checkUserRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+
+      if (error) {
+        console.error("Error checking user role:", error);
+        return;
+      }
+
+      const hasAdminRole = data?.some(role => role.role === "admin") || false;
+      setIsAdmin(hasAdminRole || false);
+      
+      if (!hasAdminRole) {
+        toast({
+          title: "غير مخول",
+          description: "ليس لديك صلاحية للوصول إلى هذه الصفحة",
+          variant: "destructive",
+        });
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("Error checking user role:", error);
+    }
+  };
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تسجيل الخروج",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "تم تسجيل الخروج",
+        description: "تم تسجيل الخروج بنجاح",
+      });
+      navigate("/auth");
+    }
+  };
 
   const months = [
     "January", "February", "March", "April", "May", "June",
@@ -288,18 +370,84 @@ export default function CaseHandoverCalendar() {
     caseData.caseTitleAr.includes(searchQuery)
   );
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-xl">جار التحميل...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) {
+    return null;
+  }
+
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">Loading calendar...</div>
+      <div className="min-h-screen bg-background">
+        <header className="bg-white border-b shadow-sm">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <img src="/lovable-uploads/1377342f-e772-4165-b1d5-8f6cbc909fa4.png" alt="الشعار" className="w-8 h-8" />
+                <span className="text-xl font-bold">فَسِيلَة خير</span>
+              </div>
+            </div>
+          </div>
+        </header>
+        <div className="container mx-auto p-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-lg">جار التحميل...</div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="min-h-screen bg-background">
+      {/* Admin Header */}
+      <header className="bg-white border-b shadow-sm">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <img src="/lovable-uploads/1377342f-e772-4165-b1d5-8f6cbc909fa4.png" alt="الشعار" className="w-8 h-8" />
+                <span className="text-xl font-bold">فَسِيلَة خير</span>
+              </div>
+              <Button variant="outline" onClick={handleSignOut} size="sm">
+                <LogOut className="w-4 h-4 ml-2" />
+                خروج
+              </Button>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <nav className="flex items-center gap-4">
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/" className="flex items-center gap-2">
+                    <Home className="w-4 h-4" />
+                    الرئيسية
+                  </Link>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/admin" className="flex items-center gap-2">
+                    <ArrowLeft className="w-4 h-4" />
+                    لوحة التحكم
+                  </Link>
+                </Button>
+              </nav>
+              <div className="text-right">
+                <h1 className="text-lg font-semibold">تقويم التسليم الشهري</h1>
+                <p className="text-sm text-muted-foreground">{user.email}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto p-6 space-y-6">
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div>
@@ -415,6 +563,7 @@ export default function CaseHandoverCalendar() {
             </CardContent>
           </Card>
         ))}
+      </div>
       </div>
 
       <Dialog open={editDialog?.open || false} onOpenChange={(open) => {
