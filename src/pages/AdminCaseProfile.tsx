@@ -71,6 +71,7 @@ export default function AdminCaseProfile() {
     enabled: !!id,
   });
 
+  // ------ Financial Summary and Handed Over Correction ------
   const { data: financialSummary } = useQuery({
     queryKey: ["case-financial-summary", id],
     queryFn: async () => {
@@ -92,14 +93,17 @@ export default function AdminCaseProfile() {
       if (donationsError) throw donationsError;
       if (handoversError) throw handoversError;
 
+      // Direct confirmed donations amounts
       const totalDirectDonations = donations?.reduce((sum, d) => sum + Number(d.amount), 0) || 0;
+      // Direct "handed over" values on the donations belonging to this case
       const totalHandedOverFromDonations = donations?.reduce((sum, d) => sum + Number(d.total_handed_over), 0) || 0;
+      // All explicit handovers TO this case from other sources, using the donation_handovers table
       const totalHandoversToCase = handovers?.reduce((sum, h) => sum + Number(h.handover_amount), 0) || 0;
-      
-      // Total confirmed for this case includes direct donations + handovers transferred to this case
+
+      // Total donations includes direct donations + received handovers from other cases/users
       const total = totalDirectDonations + totalHandoversToCase;
-      // Total handed over from this case's donations
-      const handedOver = totalHandedOverFromDonations;
+      // Handed over should include both: what was handed over from this case's direct donations PLUS all handovers made to this case from the handovers table
+      const handedOver = totalHandedOverFromDonations + totalHandoversToCase;
       const remaining = total - handedOver;
 
       return {
@@ -111,6 +115,7 @@ export default function AdminCaseProfile() {
     },
     enabled: !!id,
   });
+  // ---------------------------------------------------------
 
   const { data: tasksSummary } = useQuery({
     queryKey: ["case-tasks-summary", id],
