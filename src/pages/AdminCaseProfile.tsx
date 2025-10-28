@@ -33,13 +33,22 @@ export default function AdminCaseProfile() {
   const { data: caseData, isLoading } = useQuery({
     queryKey: ["admin-case-profile", id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch case data
+      const { data: caseInfo, error: caseError } = await supabase
         .from("cases")
-        .select(`
-          *,
-          case_kids (*),
-          monthly_needs (*),
-          donations (
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (caseError) throw caseError;
+
+      // Fetch related data separately
+      const [kidsData, needsData, donationsData] = await Promise.all([
+        supabase.from("case_kids").select("*").eq("case_id", id),
+        supabase.from("monthly_needs").select("*").eq("case_id", id),
+        supabase
+          .from("donations")
+          .select(`
             id,
             amount,
             status,
@@ -48,13 +57,16 @@ export default function AdminCaseProfile() {
             created_at,
             total_handed_over,
             handover_status
-          )
-        `)
-        .eq("id", id)
-        .single();
+          `)
+          .eq("case_id", id),
+      ]);
 
-      if (error) throw error;
-      return data;
+      return {
+        ...caseInfo,
+        case_kids: kidsData.data || [],
+        monthly_needs: needsData.data || [],
+        donations: donationsData.data || [],
+      };
     },
     enabled: !!id,
   });
