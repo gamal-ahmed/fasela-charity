@@ -204,7 +204,7 @@ export default function FollowupActionsDashboard() {
               </Link>
             </Button>
             <Button asChild variant="outline" className="h-auto p-4 flex flex-col items-start">
-              <Link to="/admin/cases">
+              <Link to="/admin">
                 <Plus className="h-5 w-5 mb-2" />
                 <span className="font-medium">إضافة متابعة جديدة</span>
                 <span className="text-sm text-muted-foreground">إنشاء متابعة لحالة معينة</span>
