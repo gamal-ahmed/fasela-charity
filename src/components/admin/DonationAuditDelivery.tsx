@@ -107,7 +107,7 @@ const DonationAuditDelivery = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cases")
-        .select("id, title, title_ar, status")
+        .select("id, title_ar, status")
         .order("title_ar", { ascending: true });
       
       if (error) throw error;
@@ -669,7 +669,7 @@ const DonationAuditDelivery = () => {
                       <SelectItem value="original">الحالة الأصلية</SelectItem>
                       {allCases?.filter(c => c.id !== selectedDonation.case_id).map((caseItem) => (
                         <SelectItem key={caseItem.id} value={caseItem.id}>
-                          {caseItem.title_ar} - {caseItem.title} 
+                          {caseItem.title_ar}
                           {caseItem.status === "active" ? " (نشطة)" : " (مكتملة)"}
                         </SelectItem>
                       ))}

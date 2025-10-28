@@ -15,7 +15,7 @@ import ReportForm from "@/components/admin/ReportForm";
 import ReportsList from "@/components/admin/ReportsList";
 import { DonationAuditDelivery } from "@/components/admin/DonationAuditDelivery";
 import { MonthlyDonationsView } from "@/components/admin/MonthlyDonationsView";
-import AdminTasksDashboard from "@/components/admin/AdminTasksDashboard";
+import FollowupActionsDashboard from "@/components/admin/FollowupActionsDashboard";
 
 const AdminDashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -222,7 +222,7 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="tasks">
-            <AdminTasksDashboard />
+            <FollowupActionsDashboard />
           </TabsContent>
 
           <TabsContent value="reports">
