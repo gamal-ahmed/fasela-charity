@@ -71,46 +71,41 @@ export default function AdminCaseProfile() {
     enabled: !!id,
   });
 
-  // ------ Financial Summary and Handed Over Correction ------
+  // ------ Fixed Financial Summary: match admin case list logic ------
+  // We assume the correct numbers are:
+  // - إجمالي التبرعات: sum of amount of all "confirmed" donations for this case (that are not deleted/ignored)
+  // - المسلم: sum of total_handed_over of all "confirmed" donations for this case (not handover table! just direct field on confirmed donations)
+  // - المتبقي: إجمالي التبرعات - المسلم
+  // - عدد التبرعات: count of all "confirmed" donations
+  // No longer add/consider donation_handovers table in these numbers
+
   const { data: financialSummary } = useQuery({
-    queryKey: ["case-financial-summary", id],
+    queryKey: ["case-financial-summary-SIMPLE", id],
     queryFn: async () => {
-      const [
-        { data: donations, error: donationsError },
-        { data: handovers, error: handoversError }
-      ] = await Promise.all([
-        supabase
-          .from("donations")
-          .select("amount, total_handed_over, status")
-          .eq("case_id", id)
-          .eq("status", "confirmed"),
-        supabase
-          .from("donation_handovers")
-          .select("handover_amount")
-          .eq("case_id", id)
-      ]);
+      // Fetch all confirmed donations for this case
+      const { data: donations, error } = await supabase
+        .from("donations")
+        .select("amount, total_handed_over, status")
+        .eq("case_id", id)
+        .eq("status", "confirmed");
 
-      if (donationsError) throw donationsError;
-      if (handoversError) throw handoversError;
+      if (error) throw error;
 
-      // Direct confirmed donations amounts
-      const totalDirectDonations = donations?.reduce((sum, d) => sum + Number(d.amount), 0) || 0;
-      // Direct "handed over" values on the donations belonging to this case
-      const totalHandedOverFromDonations = donations?.reduce((sum, d) => sum + Number(d.total_handed_over), 0) || 0;
-      // All explicit handovers TO this case from other sources, using the donation_handovers table
-      const totalHandoversToCase = handovers?.reduce((sum, h) => sum + Number(h.handover_amount), 0) || 0;
-
-      // Total donations includes direct donations + received handovers from other cases/users
-      const total = totalDirectDonations + totalHandoversToCase;
-      // Handed over should include both: what was handed over from this case's direct donations PLUS all handovers made to this case from the handovers table
-      const handedOver = totalHandedOverFromDonations + totalHandoversToCase;
-      const remaining = total - handedOver;
-
+      const totalDonations = (donations ?? []).reduce(
+        (sum, d) => sum + Number(d.amount || 0),
+        0
+      );
+      const totalHandedOver = (donations ?? []).reduce(
+        (sum, d) => sum + Number(d.total_handed_over || 0),
+        0
+      );
+      const remaining = totalDonations - totalHandedOver;
+      const donationsCount = donations?.length ?? 0;
       return {
-        totalDonations: total,
-        totalHandedOver: handedOver,
-        remaining: remaining,
-        donationsCount: (donations?.length || 0) + (handovers?.length || 0),
+        totalDonations,
+        totalHandedOver,
+        remaining,
+        donationsCount,
       };
     },
     enabled: !!id,
@@ -217,10 +212,14 @@ export default function AdminCaseProfile() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {financialSummary?.totalDonations.toLocaleString()} ج.م
+                {financialSummary?.totalDonations
+                  ? financialSummary.totalDonations.toLocaleString()
+                  : 0}
+                {" "}
+                ج.م
               </div>
               <p className="text-xs text-muted-foreground">
-                من {financialSummary?.donationsCount} تبرع
+                من {financialSummary?.donationsCount ?? 0} تبرع
               </p>
             </CardContent>
           </Card>
@@ -234,7 +233,11 @@ export default function AdminCaseProfile() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {financialSummary?.totalHandedOver.toLocaleString()} ج.م
+                {financialSummary?.totalHandedOver
+                  ? financialSummary.totalHandedOver.toLocaleString()
+                  : 0}
+                {" "}
+                ج.م
               </div>
             </CardContent>
           </Card>
@@ -248,7 +251,11 @@ export default function AdminCaseProfile() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-orange-600">
-                {financialSummary?.remaining.toLocaleString()} ج.م
+                {financialSummary?.remaining
+                  ? financialSummary.remaining.toLocaleString()
+                  : 0}
+                {" "}
+                ج.م
               </div>
             </CardContent>
           </Card>
