@@ -74,23 +74,39 @@ export default function AdminCaseProfile() {
   const { data: financialSummary } = useQuery({
     queryKey: ["case-financial-summary", id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("donations")
-        .select("amount, total_handed_over, status")
-        .eq("case_id", id)
-        .eq("status", "confirmed");
+      const [
+        { data: donations, error: donationsError },
+        { data: handovers, error: handoversError }
+      ] = await Promise.all([
+        supabase
+          .from("donations")
+          .select("amount, total_handed_over, status")
+          .eq("case_id", id)
+          .eq("status", "confirmed"),
+        supabase
+          .from("donation_handovers")
+          .select("handover_amount")
+          .eq("case_id", id)
+      ]);
 
-      if (error) throw error;
+      if (donationsError) throw donationsError;
+      if (handoversError) throw handoversError;
 
-      const total = data.reduce((sum, d) => sum + Number(d.amount), 0);
-      const handedOver = data.reduce((sum, d) => sum + Number(d.total_handed_over), 0);
+      const totalDirectDonations = donations?.reduce((sum, d) => sum + Number(d.amount), 0) || 0;
+      const totalHandedOverFromDonations = donations?.reduce((sum, d) => sum + Number(d.total_handed_over), 0) || 0;
+      const totalHandoversToCase = handovers?.reduce((sum, h) => sum + Number(h.handover_amount), 0) || 0;
+      
+      // Total confirmed for this case includes direct donations + handovers transferred to this case
+      const total = totalDirectDonations + totalHandoversToCase;
+      // Total handed over from this case's donations
+      const handedOver = totalHandedOverFromDonations;
       const remaining = total - handedOver;
 
       return {
         totalDonations: total,
         totalHandedOver: handedOver,
         remaining: remaining,
-        donationsCount: data.length,
+        donationsCount: (donations?.length || 0) + (handovers?.length || 0),
       };
     },
     enabled: !!id,

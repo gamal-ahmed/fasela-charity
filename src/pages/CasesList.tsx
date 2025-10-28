@@ -28,17 +28,38 @@ const CasesList = () => {
       
       if (casesError) throw casesError;
       
-      // Then get report counts for each case
+      // Then get report counts, confirmed donations, and handovers for each case
       const casesWithReports = await Promise.all(
         cases.map(async (caseItem) => {
-          const { count } = await supabase
-            .from("monthly_reports")
-            .select("*", { count: "exact", head: true })
-            .eq("case_id", caseItem.id);
+          const [
+            { count: reportsCount },
+            { data: donations },
+            { data: handovers }
+          ] = await Promise.all([
+            supabase
+              .from("monthly_reports")
+              .select("*", { count: "exact", head: true })
+              .eq("case_id", caseItem.id),
+            supabase
+              .from("donations")
+              .select("amount")
+              .eq("case_id", caseItem.id)
+              .eq("status", "confirmed"),
+            supabase
+              .from("donation_handovers")
+              .select("handover_amount")
+              .eq("case_id", caseItem.id)
+          ]);
+          
+          // Calculate total from both direct donations and handovers
+          const directDonations = donations?.reduce((sum, d) => sum + Number(d.amount || 0), 0) || 0;
+          const handoverAmounts = handovers?.reduce((sum, h) => sum + Number(h.handover_amount || 0), 0) || 0;
+          const totalSecured = directDonations + handoverAmounts;
           
           return {
             ...caseItem,
-            reports_count: count || 0
+            reports_count: reportsCount || 0,
+            total_secured_money: totalSecured
           };
         })
       );

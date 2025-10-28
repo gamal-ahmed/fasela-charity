@@ -19,15 +19,40 @@ const CaseDetails = () => {
     queryFn: async () => {
       if (!id) throw new Error("Case ID is required");
       
-      const { data, error } = await supabase
-        .from("cases")
-        .select("*")
-        .eq("id", id)
-        .eq("is_published", true)
-        .maybeSingle();
+      const [
+        { data: caseRecord, error: caseError },
+        { data: donations },
+        { data: handovers }
+      ] = await Promise.all([
+        supabase
+          .from("cases")
+          .select("*")
+          .eq("id", id)
+          .eq("is_published", true)
+          .maybeSingle(),
+        supabase
+          .from("donations")
+          .select("amount")
+          .eq("case_id", id)
+          .eq("status", "confirmed"),
+        supabase
+          .from("donation_handovers")
+          .select("handover_amount")
+          .eq("case_id", id)
+      ]);
       
-      if (error) throw error;
-      return data;
+      if (caseError) throw caseError;
+      if (!caseRecord) return null;
+      
+      // Calculate total from both direct donations and handovers
+      const directDonations = donations?.reduce((sum, d) => sum + Number(d.amount || 0), 0) || 0;
+      const handoverAmounts = handovers?.reduce((sum, h) => sum + Number(h.handover_amount || 0), 0) || 0;
+      const totalSecured = directDonations + handoverAmounts;
+      
+      return {
+        ...caseRecord,
+        total_secured_money: totalSecured
+      };
     },
     enabled: !!id
   });
