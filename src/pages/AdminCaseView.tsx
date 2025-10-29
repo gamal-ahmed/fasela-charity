@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import FollowupActionForm from "@/components/admin/FollowupActionForm";
 import FollowupActionsList from "@/components/admin/FollowupActionsList";
-import { CaseMonthlyHandoverView } from "@/components/admin/CaseMonthlyHandoverView";
+import CaseSpecificCalendar from "@/components/admin/CaseSpecificCalendar";
 import { KidsInfo } from "@/components/KidsInfo";
 
 export default function AdminCaseView() {
@@ -147,12 +147,12 @@ export default function AdminCaseView() {
                 <CardTitle>التقويم الشهري للتسليمات</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    عرض التسليمات الشهرية للحالة: {caseData.title_ar || caseData.title}
-                  </p>
-                  <CaseMonthlyHandoverView />
-                </div>
+                <CaseSpecificCalendar
+                  caseId={id!}
+                  caseTitle={caseData.title || ""}
+                  caseTitleAr={caseData.title_ar || caseData.title || ""}
+                  monthlyCost={caseData.monthly_cost || 0}
+                />
               </CardContent>
             </Card>
           </TabsContent>
