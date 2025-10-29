@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -26,8 +26,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const formSchema = z.object({
+  case_id: z.string().min(1, "يرجى اختيار الحالة"),
   title: z.string().min(1, "يرجى إدخال عنوان المتابعة"),
   description: z.string().optional(),
   action_date: z.string().min(1, "يرجى اختيار تاريخ المتابعة"),
@@ -36,7 +44,7 @@ const formSchema = z.object({
 });
 
 interface FollowupActionFormProps {
-  caseId: string;
+  caseId?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -51,9 +59,24 @@ export default function FollowupActionForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
+  // Fetch all cases for the dropdown
+  const { data: cases } = useQuery({
+    queryKey: ["cases-for-followup"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cases")
+        .select("id, title, title_ar")
+        .order("title_ar", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !caseId, // Only fetch if no caseId is provided
+  });
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      case_id: caseId || "",
       title: "",
       description: "",
       action_date: new Date().toISOString().split('T')[0],
@@ -75,7 +98,7 @@ export default function FollowupActionForm({
 
       console.log("FollowupActionForm: Attempting to insert followup action...");
       const { error } = await supabase.from("followup_actions" as any).insert({
-        case_id: caseId,
+        case_id: values.case_id,
         title: values.title,
         description: values.description || null,
         action_date: values.action_date,
@@ -91,8 +114,9 @@ export default function FollowupActionForm({
 
       console.log("FollowupActionForm: Successfully inserted followup action");
       toast.success("تم إضافة المتابعة بنجاح");
-      queryClient.invalidateQueries({ queryKey: ["followup-actions", caseId] });
+      queryClient.invalidateQueries({ queryKey: ["followup-actions", values.case_id] });
       queryClient.invalidateQueries({ queryKey: ["followup-actions-all"] });
+      queryClient.invalidateQueries({ queryKey: ["followup-actions-dashboard"] });
       form.reset();
       onOpenChange(false);
     } catch (error: any) {
@@ -115,6 +139,33 @@ export default function FollowupActionForm({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {!caseId && (
+              <FormField
+                control={form.control}
+                name="case_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>الحالة</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر الحالة" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {cases?.map((caseItem) => (
+                          <SelectItem key={caseItem.id} value={caseItem.id}>
+                            {caseItem.title_ar || caseItem.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="title"

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { Clock, CheckCircle, XCircle, ArrowRight, Plus } from "lucide-react";
+import FollowupActionForm from "./FollowupActionForm";
 
 export default function FollowupActionsDashboard() {
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const { data: actions, isLoading } = useQuery({
     queryKey: ["followup-actions-dashboard"],
     queryFn: async () => {
@@ -72,10 +75,14 @@ export default function FollowupActionsDashboard() {
           <p className="text-sm text-muted-foreground">إدارة متابعات الحالات والإجراءات المطلوبة</p>
         </div>
         <div className="flex gap-2">
-          <Button asChild>
+          <Button onClick={() => setIsFormOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            إضافة متابعة
+          </Button>
+          <Button variant="outline" asChild>
             <Link to="/admin/followups">
               <ArrowRight className="h-4 w-4 mr-2" />
-              عرض جميع المتابعات
+              عرض الكل
             </Link>
           </Button>
         </div>
@@ -178,11 +185,9 @@ export default function FollowupActionsDashboard() {
             <div className="text-center py-8 text-muted-foreground">
               <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
               <p>لا توجد متابعات مسجلة</p>
-              <Button asChild className="mt-4">
-                <Link to="/admin/followups">
-                  <Plus className="h-4 w-4 mr-2" />
-                  إضافة متابعة جديدة
-                </Link>
+              <Button onClick={() => setIsFormOpen(true)} className="mt-4">
+                <Plus className="h-4 w-4 mr-2" />
+                إضافة متابعة جديدة
               </Button>
             </div>
           )}
@@ -203,16 +208,19 @@ export default function FollowupActionsDashboard() {
                 <span className="text-sm text-muted-foreground">إدارة جميع متابعات الحالات</span>
               </Link>
             </Button>
-            <Button asChild variant="outline" className="h-auto p-4 flex flex-col items-start">
-              <Link to="/admin">
-                <Plus className="h-5 w-5 mb-2" />
-                <span className="font-medium">إضافة متابعة جديدة</span>
-                <span className="text-sm text-muted-foreground">إنشاء متابعة لحالة معينة</span>
-              </Link>
+            <Button onClick={() => setIsFormOpen(true)} variant="outline" className="h-auto p-4 flex flex-col items-start">
+              <Plus className="h-5 w-5 mb-2" />
+              <span className="font-medium">إضافة متابعة جديدة</span>
+              <span className="text-sm text-muted-foreground">إنشاء متابعة لحالة معينة</span>
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      <FollowupActionForm 
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+      />
     </div>
   );
 }
