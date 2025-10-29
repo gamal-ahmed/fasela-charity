@@ -620,6 +620,11 @@ const DonationAuditDelivery = () => {
                                       <div className="flex items-center gap-2 mt-1">
                                         {getHandoverStatusBadge(donation.handover_status, donation.total_handed_over || 0, donation.amount)}
                                       </div>
+                                      {donation.admin_notes && (
+                                        <p className="text-xs text-muted-foreground mt-1 italic">
+                                          ملاحظات: {donation.admin_notes}
+                                        </p>
+                                      )}
                                     </div>
                                   </div>
                                 </div>
@@ -727,6 +732,11 @@ const DonationAuditDelivery = () => {
                                       </span>
                                     )}
                                   </div>
+                                  {record.handover_notes && (
+                                    <p className="text-xs text-muted-foreground mt-1 italic">
+                                      ملاحظات التسليم: {record.handover_notes}
+                                    </p>
+                                  )}
                                 </div>
                                 <Badge variant="outline" className="text-xs">
                                   مسلم
