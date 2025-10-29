@@ -13,6 +13,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import CaseHandoverCalendar from "./pages/CaseHandoverCalendar";
 import AdminCaseProfile from "./pages/AdminCaseProfile";
 import AdminFollowupActions from "./pages/AdminFollowupActions";
+import AdminCaseView from "./pages/AdminCaseView";
+import AdminCaseListView from "./pages/AdminCaseListView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +36,8 @@ const App = () => (
           <Route path="/admin/calendar" element={<CaseHandoverCalendar />} />
           <Route path="/admin/case-profile/:id" element={<AdminCaseProfile />} />
           <Route path="/admin/followups" element={<AdminFollowupActions />} />
+          <Route path="/admin/cases" element={<AdminCaseListView />} />
+          <Route path="/admin/case/:id" element={<AdminCaseView />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

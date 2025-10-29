@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
@@ -209,7 +209,16 @@ const AdminDashboard = () => {
             <StatsOverview />
           </TabsContent>
 
-          <TabsContent value="cases">
+          <TabsContent value="cases" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">إدارة الحالات</h2>
+              <Button asChild>
+                <Link to="/admin/cases">
+                  <Users className="w-4 h-4 ml-2" />
+                  عرض جميع الحالات
+                </Link>
+              </Button>
+            </div>
             <CasesList />
           </TabsContent>
 
