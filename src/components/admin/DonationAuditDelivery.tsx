@@ -66,6 +66,8 @@ interface HandoverRecord {
     donor_name: string | null;
     amount: number;
     payment_code: string;
+    created_at: string;
+    confirmed_at: string | null;
   };
 }
 
@@ -115,7 +117,7 @@ const DonationAuditDelivery = () => {
     }
   });
 
-  // Fetch handover history
+  // Fetch handover history with donation dates
   const { data: handoverHistory = [] } = useQuery({
     queryKey: ["handover-history"],
     queryFn: async () => {
@@ -124,7 +126,7 @@ const DonationAuditDelivery = () => {
         .select(`
           *,
           cases(title, title_ar),
-          donations(donor_name, amount, payment_code)
+          donations(donor_name, amount, payment_code, created_at, confirmed_at)
         `)
         .order("handover_date", { ascending: false })
         .limit(50);
@@ -364,6 +366,33 @@ const DonationAuditDelivery = () => {
   const filteredDonations = filterStatus === "all" ? donations : 
     donations.filter(d => d.status === filterStatus);
 
+  // Group ready for delivery donations by case
+  const groupedReadyForDelivery = readyForDelivery.reduce((acc, donation) => {
+    const caseId = donation.case_id;
+    if (!acc[caseId]) {
+      acc[caseId] = {
+        case: donation.cases,
+        donations: []
+      };
+    }
+    acc[caseId].donations.push(donation);
+    return acc;
+  }, {} as Record<string, { case: { id: string; title: string; title_ar: string }; donations: Donation[] }>);
+
+  // Group handover history by case
+  const groupedHandoverHistory = handoverHistory.reduce((acc, record) => {
+    const caseId = record.case_id;
+    if (!acc[caseId]) {
+      acc[caseId] = {
+        caseId: caseId,
+        case: record.cases,
+        records: []
+      };
+    }
+    acc[caseId].records.push(record);
+    return acc;
+  }, {} as Record<string, { caseId: string; case: { title: string; title_ar: string }; records: HandoverRecord[] }>);
+
   if (isLoading) {
     return <div className="text-center py-8">جار التحميل...</div>;
   }
@@ -489,31 +518,61 @@ const DonationAuditDelivery = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {readyForDelivery.map((donation) => (
-                <div key={donation.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <div>
-                        <p className="font-medium">{donation.donor_name || "متبرع مجهول"}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {donation.cases.title_ar} - {(donation.amount - (donation.total_handed_over || 0)).toLocaleString()} ج.م متبقي
-                        </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          {getHandoverStatusBadge(donation.handover_status, donation.total_handed_over || 0, donation.amount)}
+            <div className="space-y-6">
+              {Object.values(groupedReadyForDelivery).map((group) => (
+                <div key={group.case.id} className="space-y-3">
+                  <div className="border-b pb-2">
+                    <h3 className="font-semibold text-lg">{group.case.title_ar}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {group.donations.length} تبرع جاهز للتسليم
+                    </p>
+                  </div>
+                  <div className="space-y-3 pl-4">
+                    {group.donations.map((donation) => (
+                      <div key={donation.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <div className="w-full">
+                              <p className="font-medium">{donation.donor_name || "متبرع مجهول"}</p>
+                              <p className="text-sm text-muted-foreground">
+                                المبلغ المتبقي: {(donation.amount - (donation.total_handed_over || 0)).toLocaleString()} ج.م من {donation.amount.toLocaleString()} ج.م
+                              </p>
+                              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                <span>
+                                  تاريخ الإنشاء: {new Date(donation.created_at).toLocaleDateString('ar-EG', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                  })}
+                                </span>
+                                {donation.confirmed_at && (
+                                  <span>
+                                    تاريخ التأكيد: {new Date(donation.confirmed_at).toLocaleDateString('ar-EG', {
+                                      year: 'numeric',
+                                      month: 'long',
+                                      day: 'numeric'
+                                    })}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                {getHandoverStatusBadge(donation.handover_status, donation.total_handed_over || 0, donation.amount)}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            size="sm" 
+                            onClick={() => openHandoverDialog(donation)}
+                            className="flex items-center gap-1"
+                          >
+                            <Truck className="w-3 h-3" />
+                            تسليم
+                          </Button>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      size="sm" 
-                      onClick={() => openHandoverDialog(donation)}
-                      className="flex items-center gap-1"
-                    >
-                      <Truck className="w-3 h-3" />
-                      تسليم
-                    </Button>
+                    ))}
                   </div>
                 </div>
               ))}
@@ -531,22 +590,64 @@ const DonationAuditDelivery = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {handoverHistory.map((record) => (
-              <div key={record.id} className="flex items-center justify-between p-2 border-b last:border-b-0">
-                <div className="flex-1">
-                  <p className="text-sm font-medium">
-                    {record.donations.donor_name || "متبرع مجهول"} - {record.handover_amount.toLocaleString()} ج.م
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    إلى: {record.cases.title_ar} • {new Date(record.handover_date).toLocaleDateString('ar-EG')}
-                  </p>
+          <div className="space-y-6 max-h-96 overflow-y-auto">
+            {Object.keys(groupedHandoverHistory).length > 0 ? (
+              Object.values(groupedHandoverHistory).map((group) => (
+                <div key={group.caseId} className="space-y-3">
+                  <div className="border-b pb-2">
+                    <h3 className="font-semibold text-lg">{group.case.title_ar}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {group.records.length} عملية تسليم
+                    </p>
+                  </div>
+                  <div className="space-y-2 pl-4">
+                    {group.records.map((record) => (
+                      <div key={record.id} className="flex items-center justify-between p-2 border-b last:border-b-0">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">
+                            {record.donations.donor_name || "متبرع مجهول"} - {record.handover_amount.toLocaleString()} ج.م
+                          </p>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                            <span>
+                              تاريخ التسليم: {new Date(record.handover_date).toLocaleDateString('ar-EG', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </span>
+                            {record.donations.created_at && (
+                              <span>
+                                تاريخ الإنشاء: {new Date(record.donations.created_at).toLocaleDateString('ar-EG', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })}
+                              </span>
+                            )}
+                            {record.donations.confirmed_at && (
+                              <span>
+                                تاريخ التأكيد: {new Date(record.donations.confirmed_at).toLocaleDateString('ar-EG', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          مسلم
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <Badge variant="outline" className="text-xs">
-                  مسلم
-                </Badge>
+              ))
+            ) : (
+              <div className="text-center text-muted-foreground py-4">
+                لا توجد تسليمات مسجلة
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>
