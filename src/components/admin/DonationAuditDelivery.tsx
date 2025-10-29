@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { 
   CheckCircle, 
@@ -120,7 +121,7 @@ const DonationAuditDelivery = () => {
     }
   });
 
-  // Fetch handover history with donation dates
+  // Fetch all handover history since inception
   const { data: handoverHistory = [] } = useQuery({
     queryKey: ["handover-history"],
     queryFn: async () => {
@@ -131,8 +132,7 @@ const DonationAuditDelivery = () => {
           cases(title, title_ar),
           donations(donor_name, amount, payment_code, created_at, confirmed_at)
         `)
-        .order("handover_date", { ascending: false })
-        .limit(50);
+        .order("handover_date", { ascending: false });
       
       if (error) throw error;
       return data as HandoverRecord[];
@@ -479,237 +479,275 @@ const DonationAuditDelivery = () => {
         </Card>
       </div>
 
-      {/* Pending Donations Section */}
-      {pendingDonations.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-yellow-500" />
-              التبرعات في الانتظار ({pendingDonations.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {pendingDonations.map((donation) => (
-                <div key={donation.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <div>
-                        <p className="font-medium">{donation.donor_name || "متبرع مجهول"}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {donation.cases.title_ar} - {donation.amount.toLocaleString()} ج.م
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          كود الدفع: {donation.payment_code}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getStatusBadge(donation.status)}
-                    <Button 
-                      size="sm" 
-                      onClick={() => openActionDialog(donation)}
-                      className="flex items-center gap-1"
-                    >
-                      <Eye className="w-3 h-3" />
-                      مراجعة
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="pending" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="pending" className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            في الانتظار ({pendingDonations.length})
+          </TabsTrigger>
+          <TabsTrigger value="ready" className="flex items-center gap-2">
+            <Package className="w-4 h-4" />
+            جاهز للتسليم ({readyForDelivery.length})
+          </TabsTrigger>
+          <TabsTrigger value="handed-over" className="flex items-center gap-2">
+            <History className="w-4 h-4" />
+            مسلم ({handoverHistory.length})
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Ready for Delivery Section */}
-      {readyForDelivery.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="w-5 h-5 text-blue-500" />
-              جاهز للتسليم ({readyForDelivery.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {Object.values(groupedReadyForDelivery).map((group) => {
-                const isExpanded = expandedCases.has(group.case.id);
-                return (
-                  <div key={group.case.id} className="space-y-3">
-                    <div 
-                      className="border-b pb-2 cursor-pointer hover:bg-gray-50 p-2 rounded-md transition-colors"
-                      onClick={() => toggleCaseExpansion(group.case.id)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-semibold text-lg">{group.case.title_ar}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {group.donations.length} تبرع جاهز للتسليم
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">
-                            {isExpanded ? "إخفاء" : "عرض"}
-                          </span>
-                          {isExpanded ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          )}
+        {/* Pending Donations Tab */}
+        <TabsContent value="pending" className="space-y-4">
+          {pendingDonations.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-yellow-500" />
+                  التبرعات في الانتظار ({pendingDonations.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {pendingDonations.map((donation) => (
+                    <div key={donation.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <p className="font-medium">{donation.donor_name || "متبرع مجهول"}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {donation.cases.title_ar} - {donation.amount.toLocaleString()} ج.م
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              كود الدفع: {donation.payment_code}
+                            </p>
+                          </div>
                         </div>
                       </div>
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(donation.status)}
+                        <Button 
+                          size="sm" 
+                          onClick={() => openActionDialog(donation)}
+                          className="flex items-center gap-1"
+                        >
+                          <Eye className="w-3 h-3" />
+                          مراجعة
+                        </Button>
+                      </div>
                     </div>
-                    {isExpanded && (
-                      <div className="space-y-3 pl-4">
-                    {group.donations.map((donation) => (
-                      <div key={donation.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <div className="w-full">
-                              <p className="font-medium">{donation.donor_name || "متبرع مجهول"}</p>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="text-center py-8 text-muted-foreground">
+                <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>لا توجد تبرعات في الانتظار</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Ready for Delivery Tab */}
+        <TabsContent value="ready" className="space-y-4">
+          {readyForDelivery.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="w-5 h-5 text-blue-500" />
+                  جاهز للتسليم ({readyForDelivery.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {Object.values(groupedReadyForDelivery).map((group) => {
+                    const isExpanded = expandedCases.has(group.case.id);
+                    return (
+                      <div key={group.case.id} className="space-y-3">
+                        <div 
+                          className="border-b pb-2 cursor-pointer hover:bg-gray-50 p-2 rounded-md transition-colors"
+                          onClick={() => toggleCaseExpansion(group.case.id)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="font-semibold text-lg">{group.case.title_ar}</h3>
                               <p className="text-sm text-muted-foreground">
-                                المبلغ المتبقي: {(donation.amount - (donation.total_handed_over || 0)).toLocaleString()} ج.م من {donation.amount.toLocaleString()} ج.م
+                                {group.donations.length} تبرع جاهز للتسليم
                               </p>
-                              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                                <span>
-                                  تاريخ الإنشاء: {new Date(donation.created_at).toLocaleDateString('ar-EG', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric'
-                                  })}
-                                </span>
-                                {donation.confirmed_at && (
-                                  <span>
-                                    تاريخ التأكيد: {new Date(donation.confirmed_at).toLocaleDateString('ar-EG', {
-                                      year: 'numeric',
-                                      month: 'long',
-                                      day: 'numeric'
-                                    })}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2 mt-1">
-                                {getHandoverStatusBadge(donation.handover_status, donation.total_handed_over || 0, donation.amount)}
-                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                {isExpanded ? "إخفاء" : "عرض"}
+                              </span>
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            size="sm" 
-                            onClick={() => openHandoverDialog(donation)}
-                            className="flex items-center gap-1"
-                          >
-                            <Truck className="w-3 h-3" />
-                            تسليم
-                          </Button>
-                        </div>
+                        {isExpanded && (
+                          <div className="space-y-3 pl-4">
+                            {group.donations.map((donation) => (
+                              <div key={donation.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-full">
+                                      <p className="font-medium">{donation.donor_name || "متبرع مجهول"}</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        المبلغ المتبقي: {(donation.amount - (donation.total_handed_over || 0)).toLocaleString()} ج.م من {donation.amount.toLocaleString()} ج.م
+                                      </p>
+                                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                        <span>
+                                          تاريخ الإنشاء: {new Date(donation.created_at).toLocaleDateString('ar-EG', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric'
+                                          })}
+                                        </span>
+                                        {donation.confirmed_at && (
+                                          <span>
+                                            تاريخ التأكيد: {new Date(donation.confirmed_at).toLocaleDateString('ar-EG', {
+                                              year: 'numeric',
+                                              month: 'long',
+                                              day: 'numeric'
+                                            })}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-2 mt-1">
+                                        {getHandoverStatusBadge(donation.handover_status, donation.total_handed_over || 0, donation.amount)}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => openHandoverDialog(donation)}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <Truck className="w-3 h-3" />
+                                    تسليم
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="text-center py-8 text-muted-foreground">
+                <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>لا توجد تبرعات جاهزة للتسليم</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
-      {/* Delivery History Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <History className="w-5 h-5 text-green-500" />
-            سجل التسليمات الأخيرة (50 عملية)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6 max-h-96 overflow-y-auto">
-            {Object.keys(groupedHandoverHistory).length > 0 ? (
-              Object.values(groupedHandoverHistory).map((group) => {
-                const isExpanded = expandedCases.has(group.caseId);
-                return (
-                  <div key={group.caseId} className="space-y-3">
-                    <div 
-                      className="border-b pb-2 cursor-pointer hover:bg-gray-50 p-2 rounded-md transition-colors"
-                      onClick={() => toggleCaseExpansion(group.caseId)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-semibold text-lg">{group.case.title_ar}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {group.records.length} عملية تسليم
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">
-                            {isExpanded ? "إخفاء" : "عرض"}
-                          </span>
-                          {isExpanded ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    {isExpanded && (
-                      <div className="space-y-2 pl-4">
-                    {group.records.map((record) => (
-                      <div key={record.id} className="flex items-center justify-between p-2 border-b last:border-b-0">
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">
-                            {record.donations.donor_name || "متبرع مجهول"} - {record.handover_amount.toLocaleString()} ج.م
-                          </p>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                            <span>
-                              تاريخ التسليم: {new Date(record.handover_date).toLocaleDateString('ar-EG', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                              })}
-                            </span>
-                            {record.donations.created_at && (
-                              <span>
-                                تاريخ الإنشاء: {new Date(record.donations.created_at).toLocaleDateString('ar-EG', {
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric'
-                                })}
+        {/* Handed Over Donations Tab */}
+        <TabsContent value="handed-over" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <History className="w-5 h-5 text-green-500" />
+                جميع التسليمات منذ البداية ({handoverHistory.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6 max-h-96 overflow-y-auto">
+                {Object.keys(groupedHandoverHistory).length > 0 ? (
+                  Object.values(groupedHandoverHistory).map((group) => {
+                    const isExpanded = expandedCases.has(group.caseId);
+                    return (
+                      <div key={group.caseId} className="space-y-3">
+                        <div 
+                          className="border-b pb-2 cursor-pointer hover:bg-gray-50 p-2 rounded-md transition-colors"
+                          onClick={() => toggleCaseExpansion(group.caseId)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="font-semibold text-lg">{group.case.title_ar}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                {group.records.length} عملية تسليم
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                {isExpanded ? "إخفاء" : "عرض"}
                               </span>
-                            )}
-                            {record.donations.confirmed_at && (
-                              <span>
-                                تاريخ التأكيد: {new Date(record.donations.confirmed_at).toLocaleDateString('ar-EG', {
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric'
-                                })}
-                              </span>
-                            )}
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <Badge variant="outline" className="text-xs">
-                          مسلم
-                        </Badge>
+                        {isExpanded && (
+                          <div className="space-y-2 pl-4">
+                            {group.records.map((record) => (
+                              <div key={record.id} className="flex items-center justify-between p-2 border-b last:border-b-0">
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium">
+                                    {record.donations.donor_name || "متبرع مجهول"} - {record.handover_amount.toLocaleString()} ج.م
+                                  </p>
+                                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                    <span>
+                                      تاريخ التسليم: {new Date(record.handover_date).toLocaleDateString('ar-EG', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric'
+                                      })}
+                                    </span>
+                                    {record.donations.created_at && (
+                                      <span>
+                                        تاريخ الإنشاء: {new Date(record.donations.created_at).toLocaleDateString('ar-EG', {
+                                          year: 'numeric',
+                                          month: 'long',
+                                          day: 'numeric'
+                                        })}
+                                      </span>
+                                    )}
+                                    {record.donations.confirmed_at && (
+                                      <span>
+                                        تاريخ التأكيد: {new Date(record.donations.confirmed_at).toLocaleDateString('ar-EG', {
+                                          year: 'numeric',
+                                          month: 'long',
+                                          day: 'numeric'
+                                        })}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <Badge variant="outline" className="text-xs">
+                                  مسلم
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      ))}
-                      </div>
-                    )}
+                    );
+                  })
+                ) : (
+                  <div className="text-center text-muted-foreground py-4">
+                    لا توجد تسليمات مسجلة
                   </div>
-                );
-              })
-            ) : (
-              <div className="text-center text-muted-foreground py-4">
-                لا توجد تسليمات مسجلة
+                )}
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Action Dialog */}
       <Dialog open={showActionDialog} onOpenChange={setShowActionDialog}>
