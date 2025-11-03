@@ -6,7 +6,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, LogOut, FileText, Users, BarChart3, CreditCard, Home, Heart, Calendar, CheckSquare } from "lucide-react";
+import { Plus, LogOut, FileText, Users, BarChart3, CreditCard, Home, Heart, Calendar, CheckSquare, ExternalLink, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import CaseForm from "@/components/admin/CaseForm";
 import CasesList from "@/components/admin/CasesList";
@@ -248,9 +248,19 @@ const StatsOverview = () => {
   const activeCases = cases?.filter(c => c.status === 'active').length || 0;
   const totalDonations = donations?.reduce((sum, d) => sum + (d.amount || 0), 0) || 0;
   const monthlyReports = reports?.length || 0;
+  const { toast } = useToast();
+
+  const handleCopyReportUrl = () => {
+    const reportUrl = `${window.location.origin}/donor-report`;
+    navigator.clipboard.writeText(reportUrl);
+    toast({
+      title: "تم النسخ",
+      description: "تم نسخ رابط تقرير المتبرعين",
+    });
+  };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-xs sm:text-sm font-medium">إجمالي الحالات</CardTitle>
@@ -292,6 +302,35 @@ const StatsOverview = () => {
         <CardContent>
           <div className="text-xl sm:text-2xl font-bold">{monthlyReports}</div>
           <p className="text-xs text-muted-foreground">تقرير شهري</p>
+        </CardContent>
+      </Card>
+      
+      <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-xs sm:text-sm font-medium">تقرير المتبرعين</CardTitle>
+          <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() => window.open('/donor-report', '_blank')}
+            >
+              <ExternalLink className="h-3 w-3 ml-2" />
+              عرض التقرير
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full"
+              onClick={handleCopyReportUrl}
+            >
+              <Copy className="h-3 w-3 ml-2" />
+              نسخ الرابط
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
