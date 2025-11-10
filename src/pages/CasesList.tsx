@@ -256,8 +256,117 @@ const CasesList = () => {
           </Badge>
         </div>
 
+        {/* Featured Case - الدعم العام */}
+        {cases?.filter(c => c.title_ar === "الدعم العام").map((caseItem) => (
+          <Link key={caseItem.id} to={`/case/${caseItem.id}`} className="block mb-8">
+            <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all cursor-pointer border-2 border-primary/20">
+              <div className="grid md:grid-cols-2 gap-0">
+                {/* Image Section */}
+                {caseItem.photo_url && (
+                  <div className="relative h-64 md:h-auto bg-gray-100">
+                    <img 
+                      src={caseItem.photo_url} 
+                      alt={caseItem.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-4 right-4 flex flex-col gap-2">
+                      <Badge 
+                        variant="default"
+                        className="bg-primary text-primary-foreground text-sm px-3 py-1"
+                      >
+                        حالة مميزة
+                      </Badge>
+                      <Badge 
+                        variant={caseItem.status === 'active' ? 'default' : 'secondary'}
+                        className="bg-white/90 text-gray-800 text-sm"
+                      >
+                        {caseItem.status === 'active' ? 'نشطة' : 'مكتملة'}
+                      </Badge>
+                      {caseItem.deserve_zakkah && (
+                        <Badge 
+                          variant="outline"
+                          className="bg-green-500/90 text-white border-green-600 text-sm"
+                        >
+                          مستحق للزكاة
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Content Section */}
+                <div className="p-6 md:p-8 flex flex-col justify-between">
+                  <div>
+                    <CardTitle className="text-2xl md:text-3xl mb-4">{caseItem.title_ar || caseItem.title}</CardTitle>
+                    <p className="text-muted-foreground text-base md:text-lg mb-6 leading-relaxed">
+                      {caseItem.short_description_ar || caseItem.short_description}
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="bg-primary/10 p-2 rounded-lg">
+                          <Users className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted-foreground">المبلغ الشهري</div>
+                          <div className="font-semibold">{caseItem.monthly_cost} جنيه</div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="bg-primary/10 p-2 rounded-lg">
+                          <Calendar className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted-foreground">الشهور المكتملة</div>
+                          <div className="font-semibold">{caseItem.months_covered} من {caseItem.months_needed}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="bg-primary/10 p-2 rounded-lg">
+                          <Heart className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted-foreground">المبلغ المجمع</div>
+                          <div className="font-semibold">{(caseItem.total_secured_money || 0).toLocaleString()} جنيه</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium">التقدم المالي</span>
+                        <span className="font-bold text-primary">
+                          {Math.round(((caseItem.total_secured_money || 0) / (caseItem.monthly_cost * caseItem.months_needed)) * 100)}%
+                        </span>
+                      </div>
+                      <Progress 
+                        value={Math.min(((caseItem.total_secured_money || 0) / (caseItem.monthly_cost * caseItem.months_needed)) * 100, 100)}
+                        className="h-3"
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>{(caseItem.total_secured_money || 0).toLocaleString()} جنيه</span>
+                        <span>{(caseItem.monthly_cost * caseItem.months_needed).toLocaleString()} جنيه</span>
+                      </div>
+                    </div>
+
+                    <Button className="w-full" size="lg">
+                      عرض التفاصيل والمساهمة
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </Link>
+        ))}
+
+        {/* Other Cases Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {cases?.map((caseItem) => (
+          {cases?.filter(c => c.title_ar !== "الدعم العام").map((caseItem) => (
             <Link key={caseItem.id} to={`/case/${caseItem.id}`} className="block">
               <Card className="overflow-hidden shadow-soft hover:shadow-lg transition-shadow cursor-pointer hover:scale-105 transform transition-transform">
               {caseItem.photo_url && (
