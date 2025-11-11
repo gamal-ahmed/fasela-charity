@@ -331,28 +331,30 @@ const CasesList = () => {
                         </div>
                         <div>
                           <div className="text-xs text-muted-foreground">المبلغ المجمع</div>
-                          <div className="font-semibold">{(caseItem.total_secured_money || 0).toLocaleString()} جنيه</div>
+                          <div className="font-bold text-lg text-primary">{(caseItem.total_secured_money || 0).toLocaleString()} جنيه</div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Progress Bar */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="font-medium">التقدم المالي</span>
-                        <span className="font-bold text-primary">
-                          {Math.round(((caseItem.total_secured_money || 0) / (caseItem.monthly_cost * caseItem.months_needed)) * 100)}%
-                        </span>
+                    {/* Progress Bar - Hidden when collected exceeds needed */}
+                    {(caseItem.total_secured_money || 0) <= (caseItem.monthly_cost * caseItem.months_needed) && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium">التقدم المالي</span>
+                          <span className="font-bold text-primary">
+                            {Math.round(((caseItem.total_secured_money || 0) / (caseItem.monthly_cost * caseItem.months_needed)) * 100)}%
+                          </span>
+                        </div>
+                        <Progress 
+                          value={Math.min(((caseItem.total_secured_money || 0) / (caseItem.monthly_cost * caseItem.months_needed)) * 100, 100)}
+                          className="h-3"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>{(caseItem.total_secured_money || 0).toLocaleString()} جنيه</span>
+                          <span>{(caseItem.monthly_cost * caseItem.months_needed).toLocaleString()} جنيه</span>
+                        </div>
                       </div>
-                      <Progress 
-                        value={Math.min(((caseItem.total_secured_money || 0) / (caseItem.monthly_cost * caseItem.months_needed)) * 100, 100)}
-                        className="h-3"
-                      />
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{(caseItem.total_secured_money || 0).toLocaleString()} جنيه</span>
-                        <span>{(caseItem.monthly_cost * caseItem.months_needed).toLocaleString()} جنيه</span>
-                      </div>
-                    </div>
+                    )}
 
                     <Button className="w-full" size="lg">
                       عرض التفاصيل والمساهمة
@@ -424,29 +426,31 @@ const CasesList = () => {
                     </span>
                   </div>
                   
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Heart className="w-4 h-4" />
-                    <span>المبلغ المجمع: {caseItem.total_secured_money || 0} جنيه</span>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Heart className="w-4 h-4 text-primary" />
+                    <span className="font-bold text-primary">المبلغ المجمع: {(caseItem.total_secured_money || 0).toLocaleString()} جنيه</span>
                   </div>
                 </div>
 
-                {/* شريط التقدم المالي */}
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>التقدم المالي</span>
-                    <span>
-                      {Math.round(((caseItem.total_secured_money || 0) / (caseItem.monthly_cost * caseItem.months_needed)) * 100)}%
-                    </span>
+                {/* شريط التقدم المالي - Hidden when collected exceeds needed */}
+                {(caseItem.total_secured_money || 0) <= (caseItem.monthly_cost * caseItem.months_needed) && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>التقدم المالي</span>
+                      <span>
+                        {Math.round(((caseItem.total_secured_money || 0) / (caseItem.monthly_cost * caseItem.months_needed)) * 100)}%
+                      </span>
+                    </div>
+                    <Progress 
+                      value={Math.min(((caseItem.total_secured_money || 0) / (caseItem.monthly_cost * caseItem.months_needed)) * 100, 100)}
+                      className="h-3"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>{(caseItem.total_secured_money || 0).toLocaleString()} جنيه</span>
+                      <span>{(caseItem.monthly_cost * caseItem.months_needed).toLocaleString()} جنيه</span>
+                    </div>
                   </div>
-                  <Progress 
-                    value={Math.min(((caseItem.total_secured_money || 0) / (caseItem.monthly_cost * caseItem.months_needed)) * 100, 100)}
-                    className="h-3"
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{(caseItem.total_secured_money || 0).toLocaleString()} جنيه</span>
-                    <span>{(caseItem.monthly_cost * caseItem.months_needed).toLocaleString()} جنيه</span>
-                  </div>
-                </div>
+                )}
 
               </CardContent>
               </Card>
