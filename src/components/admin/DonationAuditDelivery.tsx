@@ -86,6 +86,8 @@ const DonationAuditDelivery = () => {
   const [showActionDialog, setShowActionDialog] = useState(false);
   const [showHandoverDialog, setShowHandoverDialog] = useState(false);
   const [expandedCases, setExpandedCases] = useState<Set<string>>(new Set());
+  const [handoverPage, setHandoverPage] = useState(1);
+  const HANDOVERS_PER_PAGE = 20;
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -121,10 +123,13 @@ const DonationAuditDelivery = () => {
     }
   });
 
-  // Fetch all handover history since inception
-  const { data: handoverHistory = [] } = useQuery({
-    queryKey: ["handover-history"],
+  // Fetch all handover history since inception with pagination
+  const { data: handoverHistory = [], isFetching: isFetchingHandovers } = useQuery({
+    queryKey: ["handover-history", handoverPage],
     queryFn: async () => {
+      const from = 0;
+      const to = handoverPage * HANDOVERS_PER_PAGE - 1;
+      
       const { data, error } = await supabase
         .from("donation_handovers")
         .select(`
@@ -132,10 +137,24 @@ const DonationAuditDelivery = () => {
           cases(title, title_ar),
           donations(donor_name, amount, payment_code, created_at, confirmed_at)
         `)
-        .order("handover_date", { ascending: false });
+        .order("handover_date", { ascending: false })
+        .range(from, to);
       
       if (error) throw error;
       return data as HandoverRecord[];
+    }
+  });
+  
+  // Check if there are more handovers to load
+  const { data: totalHandovers } = useQuery({
+    queryKey: ["handover-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("donation_handovers")
+        .select("*", { count: 'exact', head: true });
+      
+      if (error) throw error;
+      return count || 0;
     }
   });
 
@@ -246,6 +265,7 @@ const DonationAuditDelivery = () => {
       toast({ title: "تم تسليم التبرع بنجاح" });
       queryClient.invalidateQueries({ queryKey: ["donation-audit"] });
       queryClient.invalidateQueries({ queryKey: ["handover-history"] });
+      queryClient.invalidateQueries({ queryKey: ["handover-count"] });
       setShowHandoverDialog(false);
       resetForm();
     },
@@ -757,6 +777,19 @@ const DonationAuditDelivery = () => {
                   </div>
                 )}
               </div>
+              
+              {/* Load More Button */}
+              {totalHandovers && handoverHistory.length < totalHandovers && (
+                <div className="flex justify-center pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setHandoverPage(prev => prev + 1)}
+                    disabled={isFetchingHandovers}
+                  >
+                    {isFetchingHandovers ? "جاري التحميل..." : `تحميل المزيد (${totalHandovers - handoverHistory.length} متبقي)`}
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
