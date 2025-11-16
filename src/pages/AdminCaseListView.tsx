@@ -13,13 +13,16 @@ import {
   FileText,
   Heart,
   DollarSign,
-  Package
+  Package,
+  ClipboardList
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
 import AdminHeader from "@/components/admin/AdminHeader";
 
 const AdminCaseListView = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"date" | "followups">("date");
 
   const { data: cases, isLoading } = useQuery({
     queryKey: ["admin-cases-list"],
@@ -54,6 +57,13 @@ const AdminCaseListView = () => {
       
       if (handoversError) throw handoversError;
       
+      // Get follow-up actions count for each case
+      const { data: followups, error: followupsError } = await supabase
+        .from("followup_actions")
+        .select("case_id");
+      
+      if (followupsError) throw followupsError;
+      
       // Calculate totals for each case
       const casesWithFinancials = casesData.map(caseItem => {
         const confirmedAmount = confirmedDonations
@@ -71,11 +81,14 @@ const AdminCaseListView = () => {
         const totalHandedOver = redeemedAmount + handoverAmount;
         const remainingAmount = confirmedAmount - totalHandedOver;
         
+        const followupCount = followups?.filter(f => f.case_id === caseItem.id).length || 0;
+        
         return {
           ...caseItem,
           confirmed_amount: confirmedAmount,
           handed_over_amount: totalHandedOver,
-          remaining_amount: remainingAmount
+          remaining_amount: remainingAmount,
+          followup_count: followupCount
         };
       });
       
@@ -83,11 +96,16 @@ const AdminCaseListView = () => {
     }
   });
 
-  // Filter cases based on search query
-  const filteredCases = cases?.filter(caseItem => 
+  // Filter and sort cases
+  const filteredCases = (cases?.filter(caseItem => 
     (caseItem.title_ar?.toLowerCase().includes(searchQuery.toLowerCase()) || 
      caseItem.title?.toLowerCase().includes(searchQuery.toLowerCase()))
-  ) || [];
+  ) || []).sort((a, b) => {
+    if (sortBy === "followups") {
+      return (b.followup_count || 0) - (a.followup_count || 0);
+    }
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
 
   if (isLoading) {
     return (
@@ -189,10 +207,16 @@ const AdminCaseListView = () => {
                         <CardTitle className="text-lg line-clamp-2">
                           {caseItem.title_ar || caseItem.title}
                         </CardTitle>
-                        <div className="flex items-center gap-2 mt-2">
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
                           <Badge variant={caseItem.is_published ? "default" : "secondary"}>
                             {caseItem.is_published ? "منشورة" : "غير منشورة"}
                           </Badge>
+                          {caseItem.followup_count > 0 && (
+                            <Badge variant="outline" className="flex items-center gap-1">
+                              <ClipboardList className="w-3 h-3" />
+                              {caseItem.followup_count} متابعة
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>

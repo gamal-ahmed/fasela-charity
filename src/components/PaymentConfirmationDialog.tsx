@@ -21,7 +21,7 @@ interface PaymentConfirmationDialogProps {
   paymentCode: string;
   amount: number; // Final calculated amount from the main page
   caseTitle: string;
-  onConfirm: (donorName: string) => void; // Only need donor name now
+  onConfirm: (donorName: string, donorEmail?: string) => void;
 }
 
 export const PaymentConfirmationDialog = ({
@@ -34,6 +34,7 @@ export const PaymentConfirmationDialog = ({
 }: PaymentConfirmationDialogProps) => {
   const { toast } = useToast();
   const [donorName, setDonorName] = useState("");
+  const [donorEmail, setDonorEmail] = useState("");
 
   // Safe amount with fallback to prevent undefined errors
   const safeAmount = amount && typeof amount === 'number' && !isNaN(amount) ? amount : 500;
@@ -55,11 +56,12 @@ export const PaymentConfirmationDialog = ({
       });
       return;
     }
-    onConfirm(donorName);
+    onConfirm(donorName, donorEmail.trim() || undefined);
   };
 
   const resetDialog = () => {
     setDonorName("");
+    setDonorEmail("");
   };
 
   const handleClose = () => {
@@ -91,17 +93,34 @@ export const PaymentConfirmationDialog = ({
 
         <div className="flex-1 overflow-y-auto min-h-0 space-y-3">
           {/* معلومات المتبرع */}
-          <div className="space-y-2">
-            <Label htmlFor="donor-name" className="text-sm font-medium">
-              الاسم الكريم
-            </Label>
-            <Input
-              id="donor-name"
-              value={donorName}
-              onChange={(e) => setDonorName(e.target.value)}
-              placeholder="أدخل اسمك الكريم"
-              className="text-right"
-            />
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="donor-name" className="text-sm font-medium">
+                الاسم الكريم <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="donor-name"
+                value={donorName}
+                onChange={(e) => setDonorName(e.target.value)}
+                placeholder="أدخل اسمك الكريم"
+                className="text-right"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="donor-email" className="text-sm font-medium">
+                البريد الإلكتروني <span className="text-muted-foreground text-xs">(اختياري)</span>
+              </Label>
+              <Input
+                id="donor-email"
+                type="email"
+                value={donorEmail}
+                onChange={(e) => setDonorEmail(e.target.value)}
+                placeholder="example@email.com"
+                className="text-right"
+                dir="ltr"
+              />
+            </div>
           </div>
 
           {/* ملخص مختصر */}
@@ -133,10 +152,16 @@ export const PaymentConfirmationDialog = ({
             </p>
           </div>
 
-          <div className="bg-green-50 border border-green-200 p-2 rounded">
-            <p className="text-xs text-green-800">
-              ✅ سيتم مراجعة التبرع وتأكيده من الإدارة
+          {/* رسالة التوضيح */}
+          <div className="bg-primary/5 border border-primary/20 p-3 rounded-lg space-y-2">
+            <p className="text-sm font-medium text-primary">
+              📱 الخطوات التالية:
             </p>
+            <ol className="text-xs text-muted-foreground space-y-1 mr-4 list-decimal">
+              <li>سيتم توجيهك إلى إنستاباي لإتمام الدفع</li>
+              <li>استخدم كود الدفع أعلاه في خانة البيان</li>
+              <li>سيتم مراجعة وتأكيد التبرع من الإدارة</li>
+            </ol>
           </div>
         </div>
 

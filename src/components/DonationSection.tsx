@@ -49,7 +49,7 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
     setShowPaymentDialog(true);
   };
 
-  const handlePaymentConfirm = async (donorName: string) => {
+  const handlePaymentConfirm = async (donorName: string, donorEmail?: string) => {
     try {
       if (!caseId || !paymentCode) return;
       
@@ -59,6 +59,7 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
         .insert({
           case_id: caseId,
           donor_name: donorName,
+          donor_email: donorEmail || null,
           amount: totalAmount, // Use the amount already calculated in the main page
           months_pledged: donationType === 'monthly' ? months : Math.ceil(totalAmount / monthlyNeed),
           payment_code: paymentCode,
