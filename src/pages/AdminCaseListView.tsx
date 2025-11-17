@@ -203,7 +203,7 @@ const AdminCaseListView = () => {
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       {caseItem.admin_profile_picture_url ? (
-                        <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-primary/20 flex-shrink-0">
+                        <div className="w-28 h-28 rounded-full overflow-hidden border-2 border-primary/20 flex-shrink-0">
                           <img 
                             src={caseItem.admin_profile_picture_url} 
                             alt={caseItem.title_ar || caseItem.title || "Case"}
@@ -211,8 +211,8 @@ const AdminCaseListView = () => {
                           />
                         </div>
                       ) : (
-                        <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <div className="text-3xl">💙</div>
+                        <div className="w-28 h-28 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <div className="text-4xl">💙</div>
                         </div>
                       )}
                       <div className="flex-1">

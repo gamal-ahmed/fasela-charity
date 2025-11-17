@@ -155,6 +155,23 @@ export default function AdminCaseView() {
   return (
     <AdminHeader title={`الحالة: ${caseData?.title_ar || caseData?.title}`} showBackButton backTo="/admin/cases" backLabel="العودة لقائمة الحالات">
       <div className="space-y-6">
+        {/* Admin Profile Picture */}
+        {caseData?.admin_profile_picture_url && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-center">
+                <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-primary/20 shadow-lg">
+                  <img 
+                    src={caseData.admin_profile_picture_url} 
+                    alt={caseData.title_ar || caseData.title || "Case"}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
         {/* Quick Stats */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card className="border-l-4 border-l-primary">
