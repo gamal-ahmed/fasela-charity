@@ -2,50 +2,56 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Heart, GraduationCap, CheckCircle, TrendingUp, Calendar, PieChart, BarChart3 } from "lucide-react";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
 
 const PublicDonorReport = () => {
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading, error } = useQuery({
     queryKey: ["donor-report-stats"],
     queryFn: async () => {
-      // Get total cases
-      const { count: totalCases } = await supabase
-        .from("cases")
-        .select("*", { count: "exact", head: true })
-        .eq("is_published", true);
+      // Run all queries in parallel for better performance
+      const [
+        { count: totalCases, error: totalCasesError },
+        { count: sponsoredCases, error: sponsoredCasesError },
+        { count: completedCases, error: completedCasesError },
+        { count: totalKids, error: totalKidsError },
+        { data: donations, error: donationsError },
+        { data: uniqueDonors, error: donorsError },
+      ] = await Promise.all([
+        supabase
+          .from("cases")
+          .select("*", { count: "exact", head: true })
+          .eq("is_published", true),
+        supabase
+          .from("cases")
+          .select("*", { count: "exact", head: true })
+          .eq("lifecycle_status", "sponsored"),
+        supabase
+          .from("cases")
+          .select("*", { count: "exact", head: true })
+          .eq("lifecycle_status", "completed"),
+        supabase
+          .from("case_kids")
+          .select("*", { count: "exact", head: true }),
+        supabase
+          .from("donations")
+          .select("amount")
+          .eq("status", "confirmed"),
+        supabase
+          .from("donations")
+          .select("donor_email")
+          .eq("status", "confirmed"),
+      ]);
 
-      // Get sponsored cases
-      const { count: sponsoredCases } = await supabase
-        .from("cases")
-        .select("*", { count: "exact", head: true })
-        .eq("lifecycle_status", "sponsored");
+      // Check for errors
+      if (totalCasesError) throw totalCasesError;
+      if (sponsoredCasesError) throw sponsoredCasesError;
+      if (completedCasesError) throw completedCasesError;
+      if (totalKidsError) throw totalKidsError;
+      if (donationsError) throw donationsError;
+      if (donorsError) throw donorsError;
 
-      // Get completed cases
-      const { count: completedCases } = await supabase
-        .from("cases")
-        .select("*", { count: "exact", head: true })
-        .eq("lifecycle_status", "completed");
-
-      // Get total kids
-      const { count: totalKids } = await supabase
-        .from("case_kids")
-        .select("*", { count: "exact", head: true });
-
-      // Get confirmed donations
-      const { data: donations } = await supabase
-        .from("donations")
-        .select("amount")
-        .eq("status", "confirmed");
-
-      const totalDonations = donations?.reduce((sum, d) => sum + Number(d.amount), 0) || 0;
-
-      // Get total donors
-      const { data: uniqueDonors } = await supabase
-        .from("donations")
-        .select("donor_email")
-        .eq("status", "confirmed");
-
+      const totalDonations = donations?.reduce((sum, d) => sum + Number(d.amount || 0), 0) || 0;
       const totalDonors = new Set(uniqueDonors?.map(d => d.donor_email).filter(Boolean)).size;
 
       return {
@@ -63,6 +69,26 @@ const PublicDonorReport = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center">
         <div className="animate-pulse text-lg text-muted-foreground">Loading report...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center">
+        <Card className="p-6 max-w-md">
+          <CardHeader>
+            <CardTitle className="text-destructive">خطأ في تحميل التقرير</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4">
+              حدث خطأ أثناء محاولة تحميل بيانات التقرير. يرجى المحاولة مرة أخرى.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {error instanceof Error ? error.message : "خطأ غير معروف"}
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
