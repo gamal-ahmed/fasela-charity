@@ -6,6 +6,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import { Plus, LogOut, FileText, Users, BarChart3, CreditCard, Home, Heart, Calendar, CheckSquare, ExternalLink, Copy, ArrowRight, Baby } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import CaseForm from "@/components/admin/CaseForm";
@@ -229,148 +230,224 @@ const AdminDashboard = () => {
 };
 
 const StatsOverview = () => {
-  const { data: cases } = useQuery({
-    queryKey: ["admin-cases"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("cases")
-        .select("*");
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  const { data: donations } = useQuery({
-    queryKey: ["admin-donations"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("donations")
-        .select("*");
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  const { data: reports } = useQuery({
-    queryKey: ["admin-reports"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("monthly_reports")
-        .select("*")
-        .gte("created_at", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString());
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  const { data: kids } = useQuery({
-    queryKey: ["admin-kids"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("case_kids")
-        .select("*");
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  const totalCases = cases?.length || 0;
-  const activeCases = cases?.filter(c => c.status === 'active').length || 0;
-  const totalDonations = donations?.reduce((sum, d) => sum + (d.amount || 0), 0) || 0;
-  const monthlyReports = reports?.length || 0;
-  const totalKids = kids?.length || 0;
   const { toast } = useToast();
 
-  const handleCopyReportUrl = () => {
-    const reportUrl = `${window.location.origin}/donor-report`;
-    navigator.clipboard.writeText(reportUrl);
-    toast({
-      title: "تم النسخ",
-      description: "تم نسخ رابط تقرير المتبرعين",
-    });
-  };
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ["admin-stats"],
+    queryFn: async () => {
+      const [casesData, donationsData, reportsData, kidsData, followupsData, handoversData] = await Promise.all([
+        supabase.from("cases").select("*"),
+        supabase.from("donations").select("*"),
+        supabase.from("monthly_reports").select("*"),
+        supabase.from("case_kids").select("*"),
+        supabase.from("followup_actions").select("*"),
+        supabase.from("donation_handovers").select("*"),
+      ]);
+
+      const confirmedDonations = donationsData.data?.filter(d => d.status === "confirmed") || [];
+      const pendingDonations = donationsData.data?.filter(d => d.status === "pending") || [];
+      const pendingFollowups = followupsData.data?.filter(f => f.status === "pending") || [];
+      const completedFollowups = followupsData.data?.filter(f => f.status === "completed") || [];
+
+      return {
+        totalCases: casesData.data?.length || 0,
+        activeCases: casesData.data?.filter(c => c.status === "active" && c.is_published).length || 0,
+        completedCases: casesData.data?.filter(c => c.lifecycle_status === "completed").length || 0,
+        totalKids: kidsData.data?.length || 0,
+        totalDonations: confirmedDonations.reduce((sum, d) => sum + Number(d.amount), 0),
+        pendingDonationsAmount: pendingDonations.reduce((sum, d) => sum + Number(d.amount), 0),
+        pendingDonationsCount: pendingDonations.length,
+        monthlyReports: reportsData.data?.length || 0,
+        totalFollowups: followupsData.data?.length || 0,
+        pendingFollowups: pendingFollowups.length,
+        completedFollowups: completedFollowups.length,
+        totalHandovers: handoversData.data?.reduce((sum, h) => sum + Number(h.handover_amount), 0) || 0,
+      };
+    },
+  });
+
+  if (isLoading) {
+    return <div>جار التحميل...</div>;
+  }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-xs sm:text-sm font-medium">إجمالي الحالات</CardTitle>
-          <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-xl sm:text-2xl font-bold">{totalCases}</div>
-          <p className="text-xs text-muted-foreground">جميع الحالات المسجلة</p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-xs sm:text-sm font-medium">الحالات النشطة</CardTitle>
-          <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-xl sm:text-2xl font-bold">{activeCases}</div>
-          <p className="text-xs text-muted-foreground">{totalCases > 0 ? Math.round((activeCases / totalCases) * 100) : 0}% من إجمالي الحالات</p>
-        </CardContent>
-      </Card>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold mb-2">لوحة المراقبة الشاملة</h2>
+        <p className="text-muted-foreground">نظرة عامة على الأداء والإحصائيات الرئيسية</p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-l-4 border-l-primary">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">إجمالي الحالات</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalCases || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              نشطة: {stats?.activeCases || 0} | مكتملة: {stats?.completedCases || 0}
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="border-l-4 border-l-green-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">التبرعات المؤكدة</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalDonations.toLocaleString()} ريال</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              تم التسليم: {stats?.totalHandovers.toLocaleString()} ريال
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-orange-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">التبرعات المعلقة</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.pendingDonationsCount || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              المبلغ: {stats?.pendingDonationsAmount.toLocaleString()} ريال
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">المتابعات</CardTitle>
+            <CheckSquare className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalFollowups || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              معلقة: {stats?.pendingFollowups || 0} | مكتملة: {stats?.completedFollowups || 0}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">إجمالي الأطفال</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalKids || 0}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">التقارير الشهرية</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.monthlyReports || 0}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Heart className="h-5 w-5 text-primary" />
+              ملخص الحالات
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm">الحالات النشطة المنشورة</span>
+                <span className="font-bold text-primary">{stats?.activeCases || 0}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">إجمالي الحالات</span>
+                <span className="font-bold">{stats?.totalCases || 0}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">الحالات المكتملة</span>
+                <span className="font-bold text-green-600">{stats?.completedCases || 0}</span>
+              </div>
+              <Button className="w-full mt-4" asChild>
+                <Link to="/admin/cases">
+                  عرض جميع الحالات
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckSquare className="h-5 w-5 text-blue-500" />
+              ملخص المتابعات
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm">المتابعات المعلقة</span>
+                <span className="font-bold text-orange-600">{stats?.pendingFollowups || 0}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">المتابعات المكتملة</span>
+                <span className="font-bold text-green-600">{stats?.completedFollowups || 0}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">إجمالي المتابعات</span>
+                <span className="font-bold">{stats?.totalFollowups || 0}</span>
+              </div>
+              <Button className="w-full mt-4" asChild>
+                <Link to="/admin/followups">
+                  عرض جميع المتابعات
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-xs sm:text-sm font-medium">إجمالي الأطفال</CardTitle>
-          <Baby className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ExternalLink className="h-5 w-5" />
+            رابط تقرير المتبرعين
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-xl sm:text-2xl font-bold">{totalKids}</div>
-          <p className="text-xs text-muted-foreground">جميع الأطفال المسجلين</p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-xs sm:text-sm font-medium">إجمالي التبرعات</CardTitle>
-          <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-xl sm:text-2xl font-bold">{totalDonations.toLocaleString()}</div>
-          <p className="text-xs text-muted-foreground">جنيه مصري</p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-xs sm:text-sm font-medium">التقارير هذا الشهر</CardTitle>
-          <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-xl sm:text-2xl font-bold">{monthlyReports}</div>
-          <p className="text-xs text-muted-foreground">تقرير شهري</p>
-        </CardContent>
-      </Card>
-      
-      <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-xs sm:text-sm font-medium">تقرير المتبرعين</CardTitle>
-          <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input 
+              value={`${window.location.origin}/donor-report`} 
+              readOnly 
+              className="flex-1"
+            />
             <Button
               variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => window.open('/donor-report', '_blank')}
+              size="icon"
+              onClick={() => {
+                navigator.clipboard.writeText(`${window.location.origin}/donor-report`);
+                toast({
+                  title: "تم النسخ",
+                  description: "تم نسخ الرابط إلى الحافظة",
+                });
+              }}
             >
-              <ExternalLink className="h-3 w-3 ml-2" />
-              عرض التقرير
+              <Copy className="h-4 w-4" />
             </Button>
             <Button
-              variant="secondary"
-              size="sm"
-              className="w-full"
-              onClick={handleCopyReportUrl}
+              variant="outline"
+              onClick={() => window.open(`${window.location.origin}/donor-report`, '_blank')}
             >
-              <Copy className="h-3 w-3 ml-2" />
-              نسخ الرابط
+              فتح الرابط
+              <ExternalLink className="h-4 w-4 mr-2" />
             </Button>
           </div>
         </CardContent>

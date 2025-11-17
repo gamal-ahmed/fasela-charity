@@ -164,18 +164,18 @@ export default function AdminHeader({
             >
               <Link to="/admin">
                 <FileText className="w-4 h-4" />
-                <span>لوحة التحكم</span>
+                <span>لوحة المراقبة</span>
               </Link>
             </Button>
             <Button 
-              variant={isActiveTab("/admin/cases") ? "default" : "ghost"} 
+              variant={isActiveTab("/admin/cases") || isActiveTab("/admin/case") ? "default" : "ghost"} 
               size="sm" 
               asChild 
               className="gap-2 whitespace-nowrap"
             >
               <Link to="/admin/cases">
                 <Users className="w-4 h-4" />
-                <span>الحالات</span>
+                <span>إدارة الحالات</span>
               </Link>
             </Button>
             <Button 
