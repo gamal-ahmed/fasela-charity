@@ -49,7 +49,7 @@ export default function AdminCaseView() {
       // Fetch case data
       const { data: caseInfo, error: caseError } = await supabase
         .from("cases")
-        .select("*")
+        .select("*, admin_profile_picture_url")
         .eq("id", id)
         .single();
 

@@ -114,7 +114,7 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
       // Load case data
       const { data: caseData, error: caseError } = await supabase
         .from("cases")
-        .select("*")
+        .select("*, admin_profile_picture_url")
         .eq("id", caseId)
         .single();
 

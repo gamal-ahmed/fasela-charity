@@ -478,6 +478,7 @@ export type Database = {
       }
       cases: {
         Row: {
+          admin_profile_picture_url: string | null
           area: string | null
           city: string | null
           created_at: string
@@ -510,6 +511,7 @@ export type Database = {
           work_ability: string | null
         }
         Insert: {
+          admin_profile_picture_url?: string | null
           area?: string | null
           city?: string | null
           created_at?: string
@@ -542,6 +544,7 @@ export type Database = {
           work_ability?: string | null
         }
         Update: {
+          admin_profile_picture_url?: string | null
           area?: string | null
           city?: string | null
           created_at?: string

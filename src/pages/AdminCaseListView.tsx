@@ -29,7 +29,7 @@ const AdminCaseListView = () => {
     queryFn: async () => {
       const { data: casesData, error: casesError } = await supabase
         .from("cases")
-        .select("*")
+        .select("*, admin_profile_picture_url")
         .order("created_at", { ascending: false });
       
       if (casesError) throw casesError;
