@@ -9,6 +9,7 @@ import { MapPin, Users, Calendar, Heart, Filter, Home, Baby, BookOpen, CheckCirc
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import Navigation from "@/components/Navigation";
+import { FeaturedCasesGrid } from "@/components/FeaturedCasesGrid";
 
 const CasesList = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -222,6 +223,11 @@ const CasesList = () => {
 
       {/* قائمة الحالات */}
       <div className="container mx-auto px-4 py-8 sm:py-12">
+        {/* Featured Cases Section */}
+        <div className="mb-12">
+          <FeaturedCasesGrid />
+        </div>
+
         {/* الفلاتر البسيطة */}
         <div className="mb-6 flex flex-wrap gap-2 justify-center">
           <Badge 

@@ -8,7 +8,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 export const FeaturedCasesGrid = () => {
-  const { data: featuredCases, isLoading } = useQuery({
+  const { data: featuredCases, isLoading, error } = useQuery({
     queryKey: ["featured-cases"],
     queryFn: async () => {
       // Fetch featured cases
@@ -22,7 +22,15 @@ export const FeaturedCasesGrid = () => {
         .order("created_at", { ascending: false })
         .limit(3);
 
-      if (casesError) throw casesError;
+      if (casesError) {
+        console.error("Error fetching featured cases:", casesError);
+        // If column doesn't exist, return empty array instead of throwing
+        if (casesError.message?.includes("column") && casesError.message?.includes("is_featured")) {
+          console.warn("is_featured column may not exist yet. Please run the migration.");
+          return [];
+        }
+        throw casesError;
+      }
 
       // Fetch donations and handovers for each case
       const casesWithStats = await Promise.all(
@@ -59,23 +67,35 @@ export const FeaturedCasesGrid = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[1, 2, 3].map((i) => (
-          <Card key={i} className="overflow-hidden">
-            <div className="h-48 bg-muted animate-pulse" />
-            <CardContent className="p-6">
-              <div className="h-6 bg-muted animate-pulse rounded mb-4" />
-              <div className="h-4 bg-muted animate-pulse rounded mb-2" />
-              <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
-            </CardContent>
-          </Card>
-        ))}
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">
+            حالات مميزة تحتاج دعمكم
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="overflow-hidden">
+              <div className="h-48 bg-muted animate-pulse" />
+              <CardContent className="p-6">
+                <div className="h-6 bg-muted animate-pulse rounded mb-4" />
+                <div className="h-4 bg-muted animate-pulse rounded mb-2" />
+                <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
 
+  if (error) {
+    console.error("Featured cases error:", error);
+    return null; // Silently fail if there's an error (likely migration not run)
+  }
+
   if (!featuredCases || featuredCases.length === 0) {
-    return null;
+    return null; // Don't show section if no featured cases
   }
 
   return (
