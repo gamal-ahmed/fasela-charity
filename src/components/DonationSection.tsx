@@ -73,10 +73,10 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
     } else {
       // Custom donation
       const amount = Number(customAmount);
-      if (!customAmount || amount < 100) {
+      if (!customAmount || amount < 1) {
         toast({
           title: "خطأ",
-          description: "يرجى إدخال مبلغ التبرع (الحد الأدنى 100 جنيه)",
+          description: "يرجى إدخال مبلغ التبرع (الحد الأدنى 1 جنيه)",
           variant: "destructive"
         });
         return;

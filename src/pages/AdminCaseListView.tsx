@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,15 +14,19 @@ import {
   Heart,
   DollarSign,
   Package,
-  ClipboardList
+  ClipboardList,
+  Star
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
 import AdminHeader from "@/components/admin/AdminHeader";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminCaseListView = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "followups">("date");
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: cases, isLoading } = useQuery({
     queryKey: ["admin-cases-list"],
@@ -95,6 +99,39 @@ const AdminCaseListView = () => {
       return casesWithFinancials;
     }
   });
+
+  // Toggle featured status mutation
+  const toggleFeaturedMutation = useMutation({
+    mutationFn: async ({ caseId, isFeatured }: { caseId: string; isFeatured: boolean }) => {
+      const { error } = await supabase
+        .from("cases")
+        .update({ is_featured: !isFeatured })
+        .eq("id", caseId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-cases-list"] });
+      queryClient.invalidateQueries({ queryKey: ["featured-cases"] });
+      toast({
+        title: "تم التحديث",
+        description: "تم تحديث حالة التميز بنجاح",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ",
+        description: error.message || "فشل في تحديث حالة التميز",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleToggleFeatured = (e: React.MouseEvent, caseId: string, isFeatured: boolean) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFeaturedMutation.mutate({ caseId, isFeatured });
+  };
 
   // Filter and sort cases
   const filteredCases = (cases?.filter(caseItem => 
@@ -197,9 +234,8 @@ const AdminCaseListView = () => {
         {/* Cases Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCases.map((caseItem) => (
-            <Link key={caseItem.id} to={`/admin/case/${caseItem.id}`}>
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-                <CardHeader>
+            <Card key={caseItem.id} className="hover:shadow-lg transition-shadow h-full flex flex-col">
+                <CardHeader className="cursor-pointer" onClick={() => window.location.href = `/admin/case/${caseItem.id}`}>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       {caseItem.admin_profile_picture_url ? (
@@ -223,6 +259,12 @@ const AdminCaseListView = () => {
                           <Badge variant={caseItem.is_published ? "default" : "secondary"}>
                             {caseItem.is_published ? "منشورة" : "غير منشورة"}
                           </Badge>
+                          {caseItem.is_featured && (
+                            <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600 flex items-center gap-1">
+                              <Star className="w-3 h-3 fill-white" />
+                              مميزة
+                            </Badge>
+                          )}
                           {caseItem.followup_count > 0 && (
                             <Badge variant="outline" className="flex items-center gap-1">
                               <ClipboardList className="w-3 h-3" />
@@ -234,9 +276,9 @@ const AdminCaseListView = () => {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 flex-1 flex flex-col">
                   {/* Financial Summary */}
-                  <div className="space-y-2">
+                  <div className="space-y-2 cursor-pointer" onClick={() => window.location.href = `/admin/case/${caseItem.id}`}>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">إجمالي التبرعات:</span>
                       <span className="font-semibold">{caseItem.confirmed_amount.toLocaleString()} ج.م</span>
@@ -252,15 +294,31 @@ const AdminCaseListView = () => {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex items-center gap-2 pt-2">
-                    <Button size="sm" className="flex-1">
+                  <div className="flex items-center gap-2 pt-2 mt-auto">
+                    <Button 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.location.href = `/admin/case/${caseItem.id}`;
+                      }}
+                    >
                       <Eye className="w-4 h-4 ml-2" />
                       عرض التفاصيل
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={caseItem.is_featured ? "default" : "outline"}
+                      className={caseItem.is_featured ? "bg-yellow-500 hover:bg-yellow-600" : ""}
+                      onClick={(e) => handleToggleFeatured(e, caseItem.id, caseItem.is_featured || false)}
+                      title={caseItem.is_featured ? "إلغاء التميز" : "تمييز الحالة"}
+                    >
+                      <Star className={`w-4 h-4 ${caseItem.is_featured ? "fill-white" : ""}`} />
                     </Button>
                   </div>
                 </CardContent>
               </Card>
-            </Link>
           ))}
         </div>
 

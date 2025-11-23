@@ -24,6 +24,7 @@ interface CaseFormData {
   admin_profile_picture_url?: string;
   description_images?: string[];
   is_published: boolean;
+  is_featured?: boolean;
   city?: string;
   area?: string;
   deserve_zakkah: boolean;
@@ -204,6 +205,7 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
         setValue("months_needed", caseData.months_needed);
         setValue("photo_url", caseData.photo_url || "");
         setValue("is_published", caseData.is_published);
+        setValue("is_featured", caseData.is_featured || false);
         setValue("city", caseData.city || "");
         setValue("area", caseData.area || "");
         setValue("deserve_zakkah", caseData.deserve_zakkah || false);
@@ -679,6 +681,7 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
             admin_profile_picture_url: adminProfilePictureUrl || null,
             description_images: descriptionImages,
             is_published: data.is_published,
+            is_featured: data.is_featured || false,
             city: data.city || null,
             area: data.area || null,
             deserve_zakkah: data.deserve_zakkah || false,
@@ -807,6 +810,7 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
             admin_profile_picture_url: adminProfilePictureUrl || null,
             description_images: descriptionImages,
             is_published: data.is_published,
+            is_featured: data.is_featured || false,
             city: data.city || null,
             area: data.area || null,
             deserve_zakkah: data.deserve_zakkah || false,
@@ -1353,13 +1357,28 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 space-x-reverse">
-            <Switch
-              id="is_published"
-              checked={watch("is_published")}
-              onCheckedChange={(checked) => setValue("is_published", checked)}
-            />
-            <Label htmlFor="is_published">نشر الحالة فوراً</Label>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2 space-x-reverse">
+              <Switch
+                id="is_published"
+                checked={watch("is_published")}
+                onCheckedChange={(checked) => setValue("is_published", checked)}
+              />
+              <Label htmlFor="is_published">نشر الحالة فوراً</Label>
+            </div>
+            <div className="flex items-center space-x-2 space-x-reverse">
+              <Switch
+                id="is_featured"
+                checked={watch("is_featured")}
+                onCheckedChange={(checked) => setValue("is_featured", checked)}
+              />
+              <Label htmlFor="is_featured" className="text-sm">
+                عرض في القسم المميز (الصفحة الرئيسية)
+              </Label>
+            </div>
+            <p className="text-xs text-muted-foreground pr-6">
+              عند تفعيل هذا الخيار، ستظهر الحالة في قسم الحالات المميزة على الصفحة الرئيسية (حد أقصى 3 حالات)
+            </p>
           </div>
         </CardContent>
       </Card>

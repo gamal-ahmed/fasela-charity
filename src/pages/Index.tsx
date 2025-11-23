@@ -2,6 +2,7 @@ import { FamilyProfile } from "@/components/FamilyProfile";
 import { MonthlyNeeds } from "@/components/MonthlyNeeds";
 import { DonationSection } from "@/components/DonationSection";
 import { MonthlyUpdates } from "@/components/MonthlyUpdates";
+import { FeaturedCasesGrid } from "@/components/FeaturedCasesGrid";
 import { Heart, Shield, Eye, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -132,30 +133,13 @@ const Index = () => {
           {/* العمود الأيمن - قسم التبرع */}
           <div className="space-y-6">
             <DonationSection monthlyNeed={totalMonthlyNeed} />
-            
-            {/* معلومات إضافية */}
-            <Card className="p-4 sm:p-6 shadow-soft">
-              <h4 className="font-semibold mb-4 text-base sm:text-lg">لماذا تختار كفالة الأسر؟</h4>
-              <div className="space-y-3 text-sm text-muted-foreground">
-                <div className="flex items-start gap-2">
-                  <Shield className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>شفافية كاملة في استخدام التبرعات</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Eye className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>تقارير شهرية مفصلة بالصور</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Heart className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>أثر مباشر وملموس على حياة الأسرة</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Users className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>متابعة مستمرة من قبل فريقنا</span>
-                </div>
-              </div>
-            </Card>
           </div>
+        </div>
+
+        {/* Featured Cases Section */}
+        <div className="mt-12 lg:mt-16">
+          <FeaturedCasesGrid />
+        </div>
         </div>
       </div>
     </div>
