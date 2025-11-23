@@ -2,7 +2,7 @@ import { FamilyProfile } from "@/components/FamilyProfile";
 import { MonthlyNeeds } from "@/components/MonthlyNeeds";
 import { DonationSection } from "@/components/DonationSection";
 import { MonthlyUpdates } from "@/components/MonthlyUpdates";
-import { FeaturedCasesGrid } from "@/components/FeaturedCasesGrid";
+import { FeaturedCasesCarousel } from "@/components/FeaturedCasesCarousel";
 import { Heart, Shield, Eye, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -138,7 +138,7 @@ const Index = () => {
 
         {/* Featured Cases Section */}
         <div className="mt-12 lg:mt-16">
-          <FeaturedCasesGrid />
+          <FeaturedCasesCarousel />
         </div>
         </div>
       </div>

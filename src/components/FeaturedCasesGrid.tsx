@@ -243,16 +243,6 @@ export const FeaturedCasesGrid = () => {
           );
         })}
       </div>
-
-      {/* View All Link */}
-      <div className="text-center pt-4">
-        <Button asChild variant="ghost" className="text-primary hover:text-primary/80">
-          <Link to="/cases">
-            عرض جميع الحالات
-            <ArrowRight className="w-4 h-4 mr-2" />
-          </Link>
-        </Button>
-      </div>
     </div>
   );
 };
