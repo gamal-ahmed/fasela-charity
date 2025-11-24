@@ -79,8 +79,15 @@ export const FeaturedCasesCarousel = () => {
   useEffect(() => {
     if (!api || !featuredCases || featuredCases.length <= 1) return;
 
+    // Reinitialize carousel when cases change
+    api.reInit();
+
     const interval = setInterval(() => {
-      api.scrollNext();
+      if (api.canScrollNext()) {
+        api.scrollNext();
+      } else {
+        api.scrollTo(0); // Loop back to start
+      }
     }, 5000); // Change slide every 5 seconds
 
     return () => clearInterval(interval);
@@ -90,10 +97,27 @@ export const FeaturedCasesCarousel = () => {
   useEffect(() => {
     if (!api) return;
 
-    api.on("select", () => {
+    const onSelect = () => {
       setCurrent(api.selectedScrollSnap());
-    });
+    };
+
+    api.on("select", onSelect);
+    setCurrent(api.selectedScrollSnap());
+
+    return () => {
+      api.off("select", onSelect);
+    };
   }, [api]);
+
+  // Reinitialize carousel when featured cases change
+  useEffect(() => {
+    if (api && featuredCases && featuredCases.length > 0) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        api.reInit();
+      }, 100);
+    }
+  }, [api, featuredCases]);
 
   if (isLoading) {
     return (
@@ -130,16 +154,18 @@ export const FeaturedCasesCarousel = () => {
         </p>
       </div>
 
-      <div className="relative">
+      <div className="relative w-full">
         <Carousel
           setApi={setApi}
           opts={{
             align: "start",
             loop: featuredCases.length > 1,
+            skipSnaps: false,
+            dragFree: false,
           }}
           className="w-full"
         >
-          <CarouselContent>
+          <CarouselContent className="-ml-0">
             {featuredCases.map((caseItem) => {
               const isOneTime = caseItem.case_care_type === 'one_time_donation';
               const totalNeeded = isOneTime 
@@ -150,9 +176,8 @@ export const FeaturedCasesCarousel = () => {
                 : 0;
 
               return (
-                <CarouselItem key={caseItem.id}>
-                  <div className="p-1">
-                    <Link to={`/case/${caseItem.id}`} className="block">
+                <CarouselItem key={caseItem.id} className="pl-0 basis-full">
+                  <Link to={`/case/${caseItem.id}`} className="block w-full">
                     <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer border-2 border-transparent hover:border-primary/20 group">
                       <div className="grid md:grid-cols-2 gap-0">
                         {/* Image Section */}
@@ -274,8 +299,7 @@ export const FeaturedCasesCarousel = () => {
                         </div>
                       </div>
                     </Card>
-                    </Link>
-                  </div>
+                  </Link>
                 </CarouselItem>
               );
             })}
