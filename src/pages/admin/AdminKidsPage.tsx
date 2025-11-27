@@ -1,4 +1,4 @@
-import KidsListAdmin from "@/components/admin/KidsListAdmin";
+import KidsListAdminInfinite from "@/components/admin/KidsListAdminInfinite";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Baby } from "lucide-react";
@@ -15,7 +15,7 @@ const AdminKidsPage = () => {
                     </Link>
                 </Button>
             </div>
-            <KidsListAdmin />
+            <KidsListAdminInfinite />
         </div>
     );
 };
