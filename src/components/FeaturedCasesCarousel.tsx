@@ -15,6 +15,10 @@ import {
 } from "@/components/ui/carousel";
 import { useEffect, useState } from "react";
 
+import Autoplay from "embla-carousel-autoplay";
+
+
+
 export const FeaturedCasesCarousel = () => {
   const [api, setApi] = useState<any>();
   const [current, setCurrent] = useState(0);
@@ -75,24 +79,6 @@ export const FeaturedCasesCarousel = () => {
     }
   });
 
-  // Auto-rotate carousel
-  useEffect(() => {
-    if (!api || !featuredCases || featuredCases.length <= 1) return;
-
-    // Reinitialize carousel when cases change
-    api.reInit();
-
-    const interval = setInterval(() => {
-      if (api.canScrollNext()) {
-        api.scrollNext();
-      } else {
-        api.scrollTo(0); // Loop back to start
-      }
-    }, 5000); // Change slide every 5 seconds
-
-    return () => clearInterval(interval);
-  }, [api, featuredCases]);
-
   // Track current slide
   useEffect(() => {
     if (!api) return;
@@ -108,16 +94,6 @@ export const FeaturedCasesCarousel = () => {
       api.off("select", onSelect);
     };
   }, [api]);
-
-  // Reinitialize carousel when featured cases change
-  useEffect(() => {
-    if (api && featuredCases && featuredCases.length > 0) {
-      // Small delay to ensure DOM is ready
-      setTimeout(() => {
-        api.reInit();
-      }, 100);
-    }
-  }, [api, featuredCases]);
 
   if (isLoading) {
     return (
@@ -154,24 +130,28 @@ export const FeaturedCasesCarousel = () => {
         </p>
       </div>
 
-      <div className="relative w-full">
+      <div className="relative w-full" dir="rtl">
         <Carousel
           setApi={setApi}
+          plugins={[
+            Autoplay({
+              delay: 5000,
+            }) as any,
+          ]}
           opts={{
             align: "start",
             loop: featuredCases.length > 1,
-            skipSnaps: false,
-            dragFree: false,
+            direction: "rtl",
           }}
           className="w-full"
         >
           <CarouselContent className="-ml-0">
-            {featuredCases.map((caseItem) => {
+            {featuredCases.map((caseItem: any) => {
               const isOneTime = caseItem.case_care_type === 'one_time_donation';
-              const totalNeeded = isOneTime 
-                ? caseItem.monthly_cost 
+              const totalNeeded = isOneTime
+                ? caseItem.monthly_cost
                 : (caseItem.monthly_cost * (caseItem.months_needed || 1));
-              const progressValue = totalNeeded > 0 
+              const progressValue = totalNeeded > 0
                 ? Math.min(((caseItem.total_secured_money || 0) / totalNeeded) * 100, 100)
                 : 0;
 
@@ -183,41 +163,41 @@ export const FeaturedCasesCarousel = () => {
                         {/* Image Section */}
                         {caseItem.photo_url ? (
                           <div className="relative h-64 md:h-96 bg-gray-100">
-                            <img 
-                              src={caseItem.photo_url} 
+                            <img
+                              src={caseItem.photo_url}
                               alt={caseItem.title_ar || caseItem.title}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             />
                             <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent" />
                             <div className="absolute top-4 right-4 flex flex-col gap-2">
-                              <Badge 
+                              <Badge
                                 variant="default"
                                 className="bg-primary/90 text-primary-foreground text-sm px-3 py-1 backdrop-blur-sm"
                               >
                                 حالة مميزة
                               </Badge>
-                              <Badge 
+                              <Badge
                                 variant="outline"
                                 className={
                                   caseItem.case_care_type === 'one_time_donation'
                                     ? "bg-orange-500/90 text-white border-orange-600 text-sm backdrop-blur-sm"
                                     : caseItem.case_care_type === 'cancelled'
-                                    ? "bg-gray-500/90 text-white border-gray-600 text-sm backdrop-blur-sm"
-                                    : "bg-blue-500/90 text-white border-blue-600 text-sm backdrop-blur-sm"
+                                      ? "bg-gray-500/90 text-white border-gray-600 text-sm backdrop-blur-sm"
+                                      : "bg-blue-500/90 text-white border-blue-600 text-sm backdrop-blur-sm"
                                 }
                               >
-                                {caseItem.case_care_type === 'one_time_donation' 
-                                  ? 'مساعدة لمرة واحدة' 
+                                {caseItem.case_care_type === 'one_time_donation'
+                                  ? 'مساعدة لمرة واحدة'
                                   : caseItem.case_care_type === 'cancelled'
-                                  ? 'ملغاة'
-                                  : 'كفالة (التزام شهري)'}
+                                    ? 'ملغاة'
+                                    : 'كفالة (التزام شهري)'}
                               </Badge>
                             </div>
                           </div>
                         ) : (
                           <div className="relative h-64 md:h-96 bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
                             <Heart className="w-24 h-24 text-primary/40" />
-                            <Badge 
+                            <Badge
                               variant="default"
                               className="absolute top-4 right-4 bg-primary/90 text-primary-foreground text-sm"
                             >
@@ -288,7 +268,7 @@ export const FeaturedCasesCarousel = () => {
                           </div>
 
                           {/* CTA Button */}
-                          <Button 
+                          <Button
                             size="lg"
                             className="w-full text-base md:text-lg py-6 group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
                             variant="outline"
@@ -319,11 +299,10 @@ export const FeaturedCasesCarousel = () => {
               <button
                 key={index}
                 onClick={() => api?.scrollTo(index)}
-                className={`h-2 rounded-full transition-all ${
-                  current === index 
-                    ? "w-8 bg-primary" 
-                    : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
-                }`}
+                className={`h-2 rounded-full transition-all ${current === index
+                  ? "w-8 bg-primary"
+                  : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                  }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
             ))}

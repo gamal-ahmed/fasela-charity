@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from "@/components/ui/sidebar";
 import { Home, Users, Baby, Calendar, CreditCard, CheckSquare, FileText, LogOut } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -9,6 +10,49 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        navigate("/auth");
+        return;
+      }
+
+      // Check for admin role
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id);
+
+      const isAdmin = roles?.some(r => r.role === "admin");
+
+      if (!isAdmin) {
+        toast({
+          title: "غير مصرح",
+          description: "ليس لديك صلاحيات المسؤول",
+          variant: "destructive",
+        });
+        navigate("/");
+        return;
+      }
+
+      setIsLoading(false);
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        navigate("/auth");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, toast]);
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -26,6 +70,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       navigate("/auth");
     }
   };
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">جار التحميل...</div>;
+  }
 
   const items = [
     {
@@ -66,7 +114,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <SidebarProvider direction="rtl">
+    <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
         <Sidebar side="right">
           <SidebarContent>
@@ -87,10 +135,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
-            
+
             <div className="mt-auto p-4">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
                 onClick={handleSignOut}
               >
