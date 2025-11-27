@@ -11,10 +11,15 @@ import KidProfile from "./pages/KidProfile";
 import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/AdminDashboard";
 import CaseHandoverCalendar from "./pages/CaseHandoverCalendar";
+import AdminLayout from "./components/layouts/AdminLayout";
+import AdminCasesPage from "./pages/admin/AdminCasesPage";
+import AdminKidsPage from "./pages/admin/AdminKidsPage";
+import AdminDonationsPage from "./pages/admin/AdminDonationsPage";
+import AdminTasksPage from "./pages/admin/AdminTasksPage";
+import AdminReportsPage from "./pages/admin/AdminReportsPage";
 import AdminCaseProfile from "./pages/AdminCaseProfile";
 import AdminFollowupActions from "./pages/AdminFollowupActions";
 import AdminCaseView from "./pages/AdminCaseView";
-import AdminCaseListView from "./pages/AdminCaseListView";
 import PublicDonorReport from "./pages/PublicDonorReport";
 import MonthlyDonorReport from "./pages/MonthlyDonorReport";
 import MonthlyReport from "./pages/MonthlyReport";
@@ -35,12 +40,21 @@ const App = () => (
           <Route path="/kids" element={<KidsList />} />
           <Route path="/kid/:id" element={<KidProfile />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/calendar" element={<CaseHandoverCalendar />} />
-          <Route path="/admin/case-profile/:id" element={<AdminCaseProfile />} />
-          <Route path="/admin/followups" element={<AdminFollowupActions />} />
-          <Route path="/admin/cases" element={<AdminCaseListView />} />
-          <Route path="/admin/case/:id" element={<AdminCaseView />} />
+
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
+          <Route path="/admin/cases" element={<AdminLayout><AdminCasesPage /></AdminLayout>} />
+          <Route path="/admin/kids" element={<AdminLayout><AdminKidsPage /></AdminLayout>} />
+          <Route path="/admin/calendar" element={<AdminLayout><CaseHandoverCalendar /></AdminLayout>} />
+          <Route path="/admin/donations" element={<AdminLayout><AdminDonationsPage /></AdminLayout>} />
+          <Route path="/admin/tasks" element={<AdminLayout><AdminTasksPage /></AdminLayout>} />
+          <Route path="/admin/reports" element={<AdminLayout><AdminReportsPage /></AdminLayout>} />
+
+          {/* Admin Detail Views - Wrapped in Layout for consistency */}
+          <Route path="/admin/case-profile/:id" element={<AdminLayout><AdminCaseProfile /></AdminLayout>} />
+          <Route path="/admin/case/:id" element={<AdminLayout><AdminCaseView /></AdminLayout>} />
+          <Route path="/admin/followups" element={<AdminLayout><AdminFollowupActions /></AdminLayout>} />
+
           <Route path="/donor-report" element={<PublicDonorReport />} />
           <Route path="/monthly-donor-report" element={<MonthlyDonorReport />} />
           <Route path="/monthly-report" element={<MonthlyReport />} />

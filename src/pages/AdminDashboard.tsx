@@ -5,19 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Plus, LogOut, FileText, Users, BarChart3, CreditCard, Home, Heart, Calendar, CheckSquare, ExternalLink, Copy, ArrowRight, Baby } from "lucide-react";
+import { FileText, Users, BarChart3, CreditCard, Heart, CheckSquare, ExternalLink, Copy, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import CaseForm from "@/components/admin/CaseForm";
-import CasesList from "@/components/admin/CasesList";
-import ReportForm from "@/components/admin/ReportForm";
-import ReportsList from "@/components/admin/ReportsList";
-import KidsListAdmin from "@/components/admin/KidsListAdmin";
-import { DonationAuditDelivery } from "@/components/admin/DonationAuditDelivery";
-import { MonthlyDonationsView } from "@/components/admin/MonthlyDonationsView";
-import FollowupActionsDashboard from "@/components/admin/FollowupActionsDashboard";
-import AdminHeader from "@/components/admin/AdminHeader";
+
 
 const AdminDashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -33,7 +24,7 @@ const AdminDashboard = () => {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         if (!session?.user) {
           navigate("/auth");
         } else {
@@ -47,7 +38,7 @@ const AdminDashboard = () => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-      
+
       if (!session?.user) {
         navigate("/auth");
       } else {
@@ -72,7 +63,7 @@ const AdminDashboard = () => {
 
       const hasAdminRole = data?.some(role => role.role === "admin") || false;
       setIsAdmin(hasAdminRole || false);
-      
+
       if (!hasAdminRole) {
         toast({
           title: "غير مخول",
@@ -83,23 +74,6 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       console.error("Error checking user role:", error);
-    }
-  };
-
-  const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء تسجيل الخروج",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "تم تسجيل الخروج",
-        description: "تم تسجيل الخروج بنجاح",
-      });
-      navigate("/auth");
     }
   };
 
@@ -118,114 +92,10 @@ const AdminDashboard = () => {
   }
 
   return (
-    <AdminHeader title="لوحة التحكم">
-        <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
-          {/* Mobile-optimized TabsList */}
-          <div className="w-full overflow-x-auto">
-            <TabsList className="grid w-full min-w-[960px] sm:min-w-0 grid-cols-8 gap-1 h-auto p-1">
-              <TabsTrigger value="overview" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm py-2 sm:py-3 px-2 sm:px-4">
-                <BarChart3 className="w-4 h-4 flex-shrink-0" />
-                <span className="hidden sm:inline">نظرة عامة</span>
-                <span className="sm:hidden text-[10px] leading-tight">عامة</span>
-              </TabsTrigger>
-              <TabsTrigger value="cases" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm py-2 sm:py-3 px-2 sm:px-4">
-                <Users className="w-4 h-4 flex-shrink-0" />
-                <span className="hidden sm:inline">إدارة الحالات</span>
-                <span className="sm:hidden text-[10px] leading-tight">الحالات</span>
-              </TabsTrigger>
-              <TabsTrigger value="kids" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm py-2 sm:py-3 px-2 sm:px-4">
-                <Baby className="w-4 h-4 flex-shrink-0" />
-                <span className="hidden sm:inline">الأطفال</span>
-                <span className="sm:hidden text-[10px] leading-tight">أطفال</span>
-              </TabsTrigger>
-              <TabsTrigger value="donation-audit" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm py-2 sm:py-3 px-2 sm:px-4">
-                <CreditCard className="w-4 h-4 flex-shrink-0" />
-                <span className="hidden sm:inline">مراجعة وتسليم التبرعات</span>
-                <span className="sm:hidden text-[10px] leading-tight">التبرعات</span>
-              </TabsTrigger>
-              <TabsTrigger value="monthly-donations" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm py-2 sm:py-3 px-2 sm:px-4">
-                <Heart className="w-4 h-4 flex-shrink-0" />
-                <span className="hidden sm:inline">التبرعات الشهرية</span>
-                <span className="sm:hidden text-[10px] leading-tight">شهري</span>
-              </TabsTrigger>
-              <TabsTrigger value="tasks" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm py-2 sm:py-3 px-2 sm:px-4">
-                <CheckSquare className="w-4 h-4 flex-shrink-0" />
-                <span className="hidden sm:inline">المهام والمتابعة</span>
-                <span className="sm:hidden text-[10px] leading-tight">مهام</span>
-              </TabsTrigger>
-              <TabsTrigger value="reports" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm py-2 sm:py-3 px-2 sm:px-4">
-                <FileText className="w-4 h-4 flex-shrink-0" />
-                <span className="hidden sm:inline">التقارير</span>
-                <span className="sm:hidden text-[10px] leading-tight">تقارير</span>
-              </TabsTrigger>
-              <TabsTrigger value="add-case" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm py-2 sm:py-3 px-2 sm:px-4">
-                <Plus className="w-4 h-4 flex-shrink-0" />
-                <span className="hidden sm:inline">إضافة حالة</span>
-                <span className="sm:hidden text-[10px] leading-tight">إضافة</span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="overview" className="space-y-4 sm:space-y-6">
-            <StatsOverview />
-          </TabsContent>
-
-          <TabsContent value="cases" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">إدارة الحالات</h2>
-              <Button asChild>
-                <Link to="/admin/cases">
-                  <Users className="w-4 h-4 ml-2" />
-                  عرض جميع الحالات
-                </Link>
-              </Button>
-            </div>
-            <CasesList />
-          </TabsContent>
-
-          <TabsContent value="kids" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">إدارة الأطفال</h2>
-              <Button asChild>
-                <Link to="/kids">
-                  <Baby className="w-4 h-4 ml-2" />
-                  عرض جميع الأطفال
-                </Link>
-              </Button>
-            </div>
-            <KidsListAdmin />
-          </TabsContent>
-
-          <TabsContent value="donation-audit">
-            <DonationAuditDelivery />
-          </TabsContent>
-
-          <TabsContent value="monthly-donations">
-            <MonthlyDonationsView />
-          </TabsContent>
-
-          <TabsContent value="tasks">
-            <FollowupActionsDashboard />
-          </TabsContent>
-
-          <TabsContent value="reports">
-            <div className="space-y-4 sm:space-y-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <h2 className="text-xl sm:text-2xl font-bold">التقارير الشهرية</h2>
-                <ReportForm />
-              </div>
-              <ReportsList />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="add-case">
-            <div className="max-w-full lg:max-w-2xl mx-auto">
-              <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">إضافة حالة جديدة</h2>
-              <CaseForm />
-            </div>
-          </TabsContent>
-        </Tabs>
-    </AdminHeader>
+    <div className="space-y-6">
+      <h2 className="text-3xl font-bold tracking-tight">نظرة عامة</h2>
+      <StatsOverview />
+    </div>
   );
 };
 
@@ -290,7 +160,7 @@ const StatsOverview = () => {
             </p>
           </CardContent>
         </Card>
-        
+
         <Card className="border-l-4 border-l-green-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">التبرعات المؤكدة</CardTitle>
@@ -424,9 +294,9 @@ const StatsOverview = () => {
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
-            <Input 
-              value={`${window.location.origin}/donor-report`} 
-              readOnly 
+            <Input
+              value={`${window.location.origin}/donor-report`}
+              readOnly
               className="flex-1"
             />
             <Button
