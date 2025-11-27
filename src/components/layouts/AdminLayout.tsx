@@ -136,7 +136,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </SidebarGroupContent>
             </SidebarGroup>
 
-            <div className="mt-auto p-4">
+            <div className="mt-auto p-4 space-y-2">
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                asChild
+              >
+                <Link to="/">
+                  <Home className="mr-2 h-4 w-4" />
+                  الصفحة الرئيسية
+                </Link>
+              </Button>
               <Button
                 variant="ghost"
                 className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
