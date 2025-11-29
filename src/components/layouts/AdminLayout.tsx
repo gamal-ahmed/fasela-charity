@@ -5,6 +5,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { KidsSidebarItem } from "@/components/admin/KidsSidebarItem";
+import { AdminStatsSummary } from "@/components/admin/AdminStatsSummary";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -86,11 +88,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       url: "/admin/cases",
       icon: Users,
     },
-    {
-      title: "إدارة الأطفال",
-      url: "/admin/kids",
-      icon: Baby,
-    },
+
     {
       title: "التقويم",
       url: "/admin/calendar",
@@ -122,7 +120,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <SidebarGroupLabel>لوحة التحكم</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {items.map((item) => (
+                  {items.slice(0, 2).map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild isActive={location.pathname === item.url}>
+                        <Link to={item.url}>
+                          <item.icon />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+
+                  <KidsSidebarItem />
+
+                  {items.slice(2).map((item) => (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton asChild isActive={location.pathname === item.url}>
                         <Link to={item.url}>
@@ -159,11 +170,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </SidebarContent>
         </Sidebar>
         <main className="flex-1 overflow-auto">
-          <div className="p-4 flex items-center gap-4 border-b">
-            <SidebarTrigger />
-            <h1 className="font-semibold text-lg">
-              {items.find(i => i.url === location.pathname)?.title || "لوحة التحكم"}
-            </h1>
+          <div className="p-4 flex items-center justify-between border-b">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger />
+              <h1 className="font-semibold text-lg">
+                {items.find(i => i.url === location.pathname)?.title || "لوحة التحكم"}
+              </h1>
+            </div>
+            <AdminStatsSummary />
           </div>
           <div className="p-4 md:p-8">
             {children}
