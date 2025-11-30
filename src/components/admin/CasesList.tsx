@@ -163,7 +163,7 @@ const CasesList = () => {
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3 flex-1">
                   {caseItem.admin_profile_picture_url ? (
-                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary/20 flex-shrink-0">
+                    <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-primary/20 flex-shrink-0">
                       <img
                         src={caseItem.admin_profile_picture_url}
                         alt={caseItem.title_ar || caseItem.title || "Case"}
@@ -171,7 +171,7 @@ const CasesList = () => {
                       />
                     </div>
                   ) : (
-                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                       <div className="text-2xl">💙</div>
                     </div>
                   )}
