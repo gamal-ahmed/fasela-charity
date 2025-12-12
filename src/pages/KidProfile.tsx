@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, GraduationCap, BookOpen, Calendar, Award, Edit2, Save, Plus, X, TrendingUp } from "lucide-react";
+import { Heart, GraduationCap, BookOpen, Calendar, Award, Edit2, Save, Plus, X, TrendingUp, Palette } from "lucide-react";
 import { useParams, Link } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -21,9 +21,11 @@ interface Kid {
   health_state?: string;
   current_grade?: string;
   school_name?: string;
-  education_progress?: Array<{year: string; description: string; grade?: string}>;
-  certificates?: Array<{name: string; date?: string; issuer?: string}>;
-  ongoing_courses?: Array<{name: string; startDate?: string; description?: string}>;
+  education_progress?: Array<{ year: string; description: string; grade?: string }>;
+  certificates?: Array<{ name: string; date?: string; issuer?: string }>;
+  certificates?: Array<{ name: string; date?: string; issuer?: string }>;
+  ongoing_courses?: Array<{ name: string; startDate?: string; description?: string }>;
+  hobbies?: string[];
   case_id: string;
   cases?: {
     title: string;
@@ -58,9 +60,9 @@ const KidProfile = () => {
       return {
         ...data,
         cases: caseData,
-        education_progress: (data.education_progress || []) as Array<{year: string; description: string; grade?: string}>,
-        certificates: (data.certificates || []) as Array<{name: string; date?: string; issuer?: string}>,
-        ongoing_courses: (data.ongoing_courses || []) as Array<{name: string; startDate?: string; description?: string}>
+        education_progress: (data.education_progress || []) as Array<{ year: string; description: string; grade?: string }>,
+        certificates: (data.certificates || []) as Array<{ name: string; date?: string; issuer?: string }>,
+        ongoing_courses: (data.ongoing_courses || []) as Array<{ name: string; startDate?: string; description?: string }>
       } as Kid;
     },
   });
@@ -79,7 +81,7 @@ const KidProfile = () => {
         .from("case_kids")
         .update(updates)
         .eq("id", id);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -167,7 +169,7 @@ const KidProfile = () => {
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <Navigation />
-      
+
       <main className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header Card */}
         <Card className="mb-6 animate-fade-in">
@@ -177,7 +179,7 @@ const KidProfile = () => {
                 <div className="text-5xl">{getGenderIcon(kid.gender)}</div>
                 <div>
                   <CardTitle className="text-3xl mb-2">{kid.name}</CardTitle>
-                  <Link 
+                  <Link
                     to={`/case/${kid.case_id}`}
                     className="text-sm text-primary hover:underline"
                   >
@@ -185,7 +187,7 @@ const KidProfile = () => {
                   </Link>
                 </div>
               </div>
-              <Button 
+              <Button
                 onClick={isEditing ? handleSave : handleEdit}
                 variant={isEditing ? "default" : "outline"}
                 size="lg"
@@ -560,12 +562,12 @@ const KidProfile = () => {
                       <div className="relative">
                         {/* Timeline line */}
                         <div className="absolute right-6 top-0 bottom-0 w-0.5 bg-border" />
-                        
+
                         {kid.education_progress.map((progress: any, index: number) => (
                           <div key={index} className="relative pr-12 pb-8 last:pb-0">
                             {/* Timeline dot */}
                             <div className="absolute right-4 top-2 w-4 h-4 rounded-full bg-indigo-500 border-4 border-background" />
-                            
+
                             <div className="p-4 bg-muted rounded-lg space-y-2">
                               <div className="flex items-center justify-between">
                                 <h4 className="font-bold text-lg">

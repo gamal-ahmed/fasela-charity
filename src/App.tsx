@@ -27,6 +27,7 @@ import AdminStaticPages from "./pages/admin/AdminStaticPages";
 import SelectionCriteria from "./pages/SelectionCriteria";
 import FundingChannels from "./pages/FundingChannels";
 import CasePipeline from "./pages/CasePipeline";
+import MomSurvey from "./pages/MomSurvey";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +67,7 @@ const App = () => (
           <Route path="/selection-criteria" element={<SelectionCriteria />} />
           <Route path="/funding-channels" element={<FundingChannels />} />
           <Route path="/case-pipeline" element={<CasePipeline />} />
+          <Route path="/mom-survey" element={<MomSurvey />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
