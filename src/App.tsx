@@ -72,6 +72,7 @@ const App = () => (
           {/* Admin Detail Views - Wrapped in Layout for consistency */}
           <Route path="/admin/case-profile/:id" element={<AdminLayout><AdminCaseProfile /></AdminLayout>} />
           <Route path="/admin/case/:id" element={<AdminLayout><AdminCaseView /></AdminLayout>} />
+          <Route path="/admin/kid/:id" element={<AdminLayout><KidProfile /></AdminLayout>} />
           <Route path="/admin/followups" element={<AdminLayout><AdminFollowupActions /></AdminLayout>} />
 
 
