@@ -39,7 +39,7 @@ export const KidsInfo = ({ kids }: KidsInfoProps) => {
       <CardContent>
         <div className="space-y-4">
           {kids.map((kid) => (
-            <Link to={`/admin/kid/${kid.id}`} key={kid.id} className="block transition-transform hover:scale-[1.01]">
+            <Link to={`/kid/${kid.id}`} key={kid.id} className="block transition-transform hover:scale-[1.01]">
               <div className="p-4 border rounded-lg bg-background/50 hover:bg-slate-50 hover:shadow-sm transition-all cursor-pointer">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
