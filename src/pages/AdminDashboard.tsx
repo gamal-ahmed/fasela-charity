@@ -167,9 +167,9 @@ const StatsOverview = () => {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalDonations.toLocaleString()} ريال</div>
+            <div className="text-2xl font-bold">{stats?.totalDonations.toLocaleString()} جنيه</div>
             <p className="text-xs text-muted-foreground mt-1">
-              تم التسليم: {stats?.totalHandovers.toLocaleString()} ريال
+              تم التسليم: {stats?.totalHandovers.toLocaleString()} جنيه
             </p>
           </CardContent>
         </Card>
@@ -182,7 +182,7 @@ const StatsOverview = () => {
           <CardContent>
             <div className="text-2xl font-bold">{stats?.pendingDonationsCount || 0}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              المبلغ: {stats?.pendingDonationsAmount.toLocaleString()} ريال
+              المبلغ: {stats?.pendingDonationsAmount.toLocaleString()} جنيه
             </p>
           </CardContent>
         </Card>

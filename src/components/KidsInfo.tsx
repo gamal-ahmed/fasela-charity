@@ -1,4 +1,5 @@
 import { Users, User } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -38,32 +39,34 @@ export const KidsInfo = ({ kids }: KidsInfoProps) => {
       <CardContent>
         <div className="space-y-4">
           {kids.map((kid) => (
-            <div key={kid.id} className="p-4 border rounded-lg bg-background/50">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">
-                    {getGenderIcon(kid.gender)}
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-lg">{kid.name}</h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-xs">
-                        {kid.age} سنة
-                      </Badge>
-                      <Badge variant="secondary" className="text-xs">
-                        {getGenderText(kid.gender)}
-                      </Badge>
+            <Link to={`/admin/kid/${kid.id}`} key={kid.id} className="block transition-transform hover:scale-[1.01]">
+              <div className="p-4 border rounded-lg bg-background/50 hover:bg-slate-50 hover:shadow-sm transition-all cursor-pointer">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="text-2xl">
+                      {getGenderIcon(kid.gender)}
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-lg">{kid.name}</h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          {kid.age} سنة
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          {getGenderText(kid.gender)}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                {kid.description && (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {kid.description}
+                  </p>
+                )}
               </div>
-              
-              {kid.description && (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  {kid.description}
-                </p>
-              )}
-            </div>
+            </Link>
           ))}
         </div>
       </CardContent>

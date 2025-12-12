@@ -178,9 +178,20 @@ export default function AdminCaseView() {
     );
   }
 
+  // Check for pending followups for page highlighting
+  const hasPendingFollowups = caseData?.stats?.pendingFollowups > 0;
+
   return (
     <AdminHeader title={`الحالة: ${caseData?.title_ar || caseData?.title}`} showBackButton backTo="/admin/cases" backLabel="العودة لقائمة الحالات">
-      <div className="space-y-6">
+
+      {hasPendingFollowups && (
+        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
+          <p className="font-bold">تنبيه</p>
+          <p>توجد متابعات معلقة لهذه الحالة تتطلب اتخاذ إجراء.</p>
+        </div>
+      )}
+
+      <div className={`space-y-6 ${hasPendingFollowups ? 'border-2 border-yellow-400 p-4 rounded-xl bg-yellow-50/30' : ''}`}>
         {/* Admin Profile Picture */}
         {caseData?.admin_profile_picture_url && (
           <Card>
@@ -205,9 +216,9 @@ export default function AdminCaseView() {
               <CardTitle className="text-sm font-medium">التبرعات المؤكدة</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{caseData.stats.totalDonations.toLocaleString()} ريال</div>
+              <div className="text-2xl font-bold">{caseData.stats.totalDonations.toLocaleString()} جنيه</div>
               <p className="text-xs text-muted-foreground mt-1">
-                تم التسليم: {caseData.stats.totalHandovers.toLocaleString()} ريال
+                تم التسليم: {caseData.stats.totalHandovers.toLocaleString()} جنيه
               </p>
             </CardContent>
           </Card>
@@ -219,7 +230,7 @@ export default function AdminCaseView() {
             <CardContent>
               <div className="text-2xl font-bold">{caseData.stats.pendingDonations}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                المبلغ: {caseData.stats.pendingDonationsAmount.toLocaleString()} ريال
+                المبلغ: {caseData.stats.pendingDonationsAmount.toLocaleString()} جنيه
               </p>
             </CardContent>
           </Card>
@@ -319,7 +330,7 @@ export default function AdminCaseView() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">التكلفة الشهرية</p>
-                <p className="font-medium">{caseData.monthly_cost} ريال</p>
+                <p className="font-medium">{caseData.monthly_cost} جنيه</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">رقم جوال الأم</p>
