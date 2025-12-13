@@ -87,4 +87,3 @@ export const KidsInfo = ({ kids }: KidsInfoProps) => {
     </Card>
   );
 };
-```
