@@ -337,35 +337,22 @@ const CasePipeline = () => {
         </div>
       </div>
 
+      <h2 className="text-3xl md:text-4xl font-bold mb-4">
+        كن جزءاً من هذه الرحلة
+      </h2>
+      <p className="text-xl opacity-90 max-w-2xl mx-auto mb-10">
+        ساهم معنا في دعم الأسر المحتاجة وتغيير حياتهم للأفضل
+      </p>
+      <a
+        href="/cases"
+        className="inline-flex items-center gap-3 bg-white text-primary px-10 py-5 rounded-2xl font-bold text-lg hover:bg-white/90 transition-all hover:scale-105 shadow-2xl"
+      >
+        <Heart className="w-6 h-6" />
+        تصفح الحالات وابدأ الكفالة
+      </a>
     </div>
-
-      {/* Acceptance Criteria */ }
-  <CaseAcceptanceCriteria />
-
-  {/* CTA */ }
-  <div className="container mx-auto px-4 py-20 pb-20 pt-0">
-    <div className="gradient-hero rounded-3xl text-white overflow-hidden relative">
-      <div className="absolute inset-0">
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
-      </div>
-      <div className="p-12 md:p-16 text-center relative z-10">
-        <h2 className="text-3xl md:text-4xl font-bold mb-4">
-          كن جزءاً من هذه الرحلة
-        </h2>
-        <p className="text-xl opacity-90 max-w-2xl mx-auto mb-10">
-          ساهم معنا في دعم الأسر المحتاجة وتغيير حياتهم للأفضل
-        </p>
-        <a
-          href="/cases"
-          className="inline-flex items-center gap-3 bg-white text-primary px-10 py-5 rounded-2xl font-bold text-lg hover:bg-white/90 transition-all hover:scale-105 shadow-2xl"
-        >
-          <Heart className="w-6 h-6" />
-          تصفح الحالات وابدأ الكفالة
-        </a>
-      </div>
-    </div>
-  </div>
+    </div >
+  </div >
     </div >
   );
 };
