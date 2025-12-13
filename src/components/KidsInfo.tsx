@@ -8,7 +8,6 @@ interface Kid {
   name: string;
   age: number;
   gender: 'male' | 'female';
-  gender: 'male' | 'female';
   description?: string;
   hobbies?: string[];
 }
@@ -58,34 +57,34 @@ export const KidsInfo = ({ kids }: KidsInfoProps) => {
                           {getGenderText(kid.gender)}
                         </Badge>
                       </div>
-                    </div>
 
-                    {kid.hobbies && kid.hobbies.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {kid.hobbies.slice(0, 3).map((hobby, idx) => (
-                          <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0 bg-purple-50 text-purple-700 border-purple-100">
-                            {hobby}
-                          </Badge>
-                        ))}
-                        {kid.hobbies.length > 3 && (
-                          <span className="text-[10px] text-muted-foreground self-center">+{kid.hobbies.length - 3}</span>
-                        )}
-                      </div>
-                    )}
+                      {kid.hobbies && kid.hobbies.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {kid.hobbies.slice(0, 3).map((hobby, idx) => (
+                            <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0 bg-purple-50 text-purple-700 border-purple-100">
+                              {hobby}
+                            </Badge>
+                          ))}
+                          {kid.hobbies.length > 3 && (
+                            <span className="text-[10px] text-muted-foreground self-center">+{kid.hobbies.length - 3}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {kid.description && (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  {kid.description}
-                </p>
-              )}
-            </div>
+                {kid.description && (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {kid.description}
+                  </p>
+                )}
+              </div>
             </Link>
           ))}
-      </div>
-    </CardContent>
-    </Card >
+        </div>
+      </CardContent>
+    </Card>
   );
 };
+```
