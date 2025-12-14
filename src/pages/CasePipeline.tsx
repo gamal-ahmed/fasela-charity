@@ -337,23 +337,25 @@ const CasePipeline = () => {
         </div>
       </div>
 
-      <h2 className="text-3xl md:text-4xl font-bold mb-4">
-        كن جزءاً من هذه الرحلة
-      </h2>
-      <p className="text-xl opacity-90 max-w-2xl mx-auto mb-10">
-        ساهم معنا في دعم الأسر المحتاجة وتغيير حياتهم للأفضل
-      </p>
-      <a
-        href="/cases"
-        className="inline-flex items-center gap-3 bg-white text-primary px-10 py-5 rounded-2xl font-bold text-lg hover:bg-white/90 transition-all hover:scale-105 shadow-2xl"
-      >
-        <Heart className="w-6 h-6" />
-        تصفح الحالات وابدأ الكفالة
-      </a>
+      {/* CTA Section */}
+      <div className="bg-gradient-to-br from-primary to-primary/80 text-white py-20 text-center">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            كن جزءاً من هذه الرحلة
+          </h2>
+          <p className="text-xl opacity-90 max-w-2xl mx-auto mb-10">
+            ساهم معنا في دعم الأسر المحتاجة وتغيير حياتهم للأفضل
+          </p>
+          <a
+            href="/cases"
+            className="inline-flex items-center gap-3 bg-white text-primary px-10 py-5 rounded-2xl font-bold text-lg hover:bg-white/90 transition-all hover:scale-105 shadow-2xl"
+          >
+            <Heart className="w-6 h-6" />
+            تصفح الحالات وابدأ الكفالة
+          </a>
+        </div>
+      </div>
     </div>
-    </div >
-  </div >
-    </div >
   );
 };
 
