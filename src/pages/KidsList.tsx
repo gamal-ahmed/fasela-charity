@@ -18,6 +18,7 @@ interface Kid {
   education_progress?: any[];
   certificates?: any[];
   ongoing_courses?: any[];
+  hobbies?: string[];
   case_id: string;
   cases?: {
     title: string;
@@ -156,6 +157,19 @@ const KidsList = () => {
                           </div>
                         )}
                       </div>
+
+                      {kid.hobbies && kid.hobbies.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {kid.hobbies.slice(0, 3).map((hobby, idx) => (
+                            <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0 bg-purple-50 text-purple-700 border-purple-100">
+                              {hobby}
+                            </Badge>
+                          ))}
+                          {kid.hobbies.length > 3 && (
+                            <span className="text-[10px] text-muted-foreground self-center">+{kid.hobbies.length - 3}</span>
+                          )}
+                        </div>
+                      )}
 
                       {kid.ongoing_courses && kid.ongoing_courses.length > 0 && (
                         <div>
