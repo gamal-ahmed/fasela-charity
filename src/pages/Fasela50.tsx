@@ -12,6 +12,7 @@ import {
   TrendingUp
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import fasela50Hero from "@/assets/fasela50-hero.png";
 
 const Fasela50 = () => {
   const features = [
@@ -90,6 +91,20 @@ const Fasela50 = () => {
             transition={{ duration: 0.8 }}
             className="text-center max-w-4xl mx-auto"
           >
+            {/* Hero Image */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6 }}
+              className="mb-8 rounded-2xl overflow-hidden shadow-2xl"
+            >
+              <img 
+                src={fasela50Hero} 
+                alt="مشروع فسيلة ٥٠ - كفالة ٥٠ عائلة مصرية في رحلتهم التعليمية" 
+                className="w-full h-auto"
+              />
+            </motion.div>
+
             <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full mb-6">
               <HandHeart className="w-5 h-5" />
               <span className="font-medium">مشروع إنساني متكامل</span>
