@@ -297,6 +297,9 @@ const CasePipeline = () => {
         </div>
       </div>
 
+      {/* Case Acceptance Criteria Section */}
+      <CaseAcceptanceCriteria />
+
       {/* Summary Section */}
       <div className="bg-muted/30 py-20 relative overflow-hidden">
         <div className="absolute inset-0">
