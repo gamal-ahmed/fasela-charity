@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Heart, GraduationCap, BookOpen, Calendar, Award, Edit2, Save, Plus, X, TrendingUp, Palette, PenTool } from "lucide-react";
 import { useParams, Link } from "react-router-dom";
-import { useState } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 
 interface Kid {
@@ -39,7 +39,7 @@ const KidProfile = () => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   // Check if user is admin
-  useState(() => {
+  React.useEffect(() => {
     const checkAdmin = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
@@ -52,7 +52,7 @@ const KidProfile = () => {
       }
     };
     checkAdmin();
-  });
+  }, []);
 
   const { data: kid, isLoading } = useQuery({
     queryKey: ["kid", id],
