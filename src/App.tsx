@@ -43,6 +43,10 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* Standalone pages without navigation - for case mothers */}
+          <Route path="/mom-survey" element={<MomSurvey />} />
+          <Route path="/case-followups" element={<CaseFollowups />} />
+
           {/* Public Routes - Wrapped in PublicLayout */}
           <Route element={<PublicLayout />}>
             <Route path="/" element={<CasesList />} />
@@ -57,8 +61,6 @@ const App = () => (
             <Route path="/monthly-report" element={<MonthlyReport />} />
             <Route path="/donor-report" element={<PublicDonorReport />} />
             <Route path="/monthly-donor-report" element={<MonthlyDonorReport />} />
-            <Route path="/mom-survey" element={<MomSurvey />} />
-            <Route path="/case-followups" element={<CaseFollowups />} />
           </Route>
 
           <Route path="/auth" element={<Auth />} />
