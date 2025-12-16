@@ -385,6 +385,9 @@ const CaseDetails = () => {
               caseId={caseData.id}
               caseCareType={caseData.case_care_type as 'cancelled' | 'sponsorship' | 'one_time_donation' | undefined}
               totalSecured={caseData.total_secured_money || 0}
+              minCustomDonation={(caseData as any).min_custom_donation ?? 1}
+              showMonthlyDonation={(caseData as any).show_monthly_donation ?? true}
+              showCustomDonation={(caseData as any).show_custom_donation ?? true}
             />
 
             {/* معلومات إضافية */}

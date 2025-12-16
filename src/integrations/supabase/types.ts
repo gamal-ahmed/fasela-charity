@@ -540,6 +540,7 @@ export type Database = {
           is_published: boolean
           kids_number: number | null
           lifecycle_status: string
+          min_custom_donation: number | null
           monthly_cost: number
           months_covered: number
           months_needed: number
@@ -550,6 +551,8 @@ export type Database = {
           rent_amount: number | null
           short_description: string
           short_description_ar: string
+          show_custom_donation: boolean | null
+          show_monthly_donation: boolean | null
           skills: string[] | null
           status: string
           title: string
@@ -576,6 +579,7 @@ export type Database = {
           is_published?: boolean
           kids_number?: number | null
           lifecycle_status?: string
+          min_custom_donation?: number | null
           monthly_cost: number
           months_covered?: number
           months_needed: number
@@ -586,6 +590,8 @@ export type Database = {
           rent_amount?: number | null
           short_description: string
           short_description_ar: string
+          show_custom_donation?: boolean | null
+          show_monthly_donation?: boolean | null
           skills?: string[] | null
           status?: string
           title: string
@@ -612,6 +618,7 @@ export type Database = {
           is_published?: boolean
           kids_number?: number | null
           lifecycle_status?: string
+          min_custom_donation?: number | null
           monthly_cost?: number
           months_covered?: number
           months_needed?: number
@@ -622,6 +629,8 @@ export type Database = {
           rent_amount?: number | null
           short_description?: string
           short_description_ar?: string
+          show_custom_donation?: boolean | null
+          show_monthly_donation?: boolean | null
           skills?: string[] | null
           status?: string
           title?: string

@@ -29,6 +29,10 @@ interface CaseFormData {
   area?: string;
   deserve_zakkah: boolean;
   case_care_type?: 'cancelled' | 'sponsorship' | 'one_time_donation';
+  // Donation configuration fields
+  min_custom_donation?: number;
+  show_monthly_donation?: boolean;
+  show_custom_donation?: boolean;
   // Parent profile fields
   rent_amount?: number;
   kids_number?: number;
@@ -211,6 +215,11 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
         setValue("area", caseData.area || "");
         setValue("deserve_zakkah", caseData.deserve_zakkah || false);
         setValue("case_care_type", (caseData.case_care_type as "cancelled" | "one_time_donation" | "sponsorship") || 'sponsorship');
+
+        // Donation configuration fields
+        setValue("min_custom_donation", (caseData as any).min_custom_donation ?? 1);
+        setValue("show_monthly_donation", (caseData as any).show_monthly_donation ?? true);
+        setValue("show_custom_donation", (caseData as any).show_custom_donation ?? true);
 
         // Parent profile fields
         setValue("rent_amount", caseData.rent_amount || 0);
@@ -686,6 +695,10 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
             area: data.area || null,
             deserve_zakkah: data.deserve_zakkah || false,
             case_care_type: data.case_care_type || 'sponsorship',
+            // Donation configuration fields
+            min_custom_donation: data.min_custom_donation ?? 1,
+            show_monthly_donation: data.show_monthly_donation ?? true,
+            show_custom_donation: data.show_custom_donation ?? true,
             // Parent profile fields
             rent_amount: data.rent_amount || 0,
             kids_number: data.kids_number || 0,
@@ -816,6 +829,10 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
             area: data.area || null,
             deserve_zakkah: data.deserve_zakkah || false,
             case_care_type: data.case_care_type || 'sponsorship',
+            // Donation configuration fields
+            min_custom_donation: data.min_custom_donation ?? 1,
+            show_monthly_donation: data.show_monthly_donation ?? true,
+            show_custom_donation: data.show_custom_donation ?? true,
             // Parent profile fields
             rent_amount: data.rent_amount || 0,
             kids_number: data.kids_number || 0,
@@ -1352,6 +1369,62 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
               </p>
             </div>
           </div>
+
+          {/* Donation Configuration Section */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>إعدادات التبرعات</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="min_custom_donation">الحد الأدنى للتبرع المخصص (جنيه)</Label>
+                  <Input
+                    id="min_custom_donation"
+                    type="number"
+                    {...register("min_custom_donation")}
+                    defaultValue={1}
+                    min={1}
+                    placeholder="1"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    أقل مبلغ يمكن للمتبرع دفعه في التبرع المخصص
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="show_monthly_donation">عرض خيار الكفالة الشهرية</Label>
+                  <div className="flex items-center space-x-2 space-x-reverse pt-2">
+                    <Switch
+                      id="show_monthly_donation"
+                      checked={watch("show_monthly_donation") ?? true}
+                      onCheckedChange={(checked) => setValue("show_monthly_donation", checked)}
+                    />
+                    <Label htmlFor="show_monthly_donation" className="text-sm text-muted-foreground">
+                      {watch("show_monthly_donation") !== false ? "مفعّل" : "معطّل"}
+                    </Label>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="show_custom_donation">عرض خيار التبرع المخصص</Label>
+                  <div className="flex items-center space-x-2 space-x-reverse pt-2">
+                    <Switch
+                      id="show_custom_donation"
+                      checked={watch("show_custom_donation") ?? true}
+                      onCheckedChange={(checked) => setValue("show_custom_donation", checked)}
+                    />
+                    <Label htmlFor="show_custom_donation" className="text-sm text-muted-foreground">
+                      {watch("show_custom_donation") !== false ? "مفعّل" : "معطّل"}
+                    </Label>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                ملاحظة: يجب تفعيل خيار واحد على الأقل (الكفالة الشهرية أو التبرع المخصص)
+              </p>
+            </CardContent>
+          </Card>
 
           <div className="space-y-4">
             <div className="flex items-center space-x-2 space-x-reverse">

@@ -19,14 +19,43 @@ interface DonationSectionProps {
   caseId?: string;
   caseCareType?: 'cancelled' | 'sponsorship' | 'one_time_donation';
   totalSecured?: number;
+  minCustomDonation?: number;
+  showMonthlyDonation?: boolean;
+  showCustomDonation?: boolean;
 }
 
-export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, monthsNeeded = 1, paymentCode, caseTitle, caseId, caseCareType = 'sponsorship', totalSecured = 0 }: DonationSectionProps) => {
-  const [selectedMonths, setSelectedMonths] = useState([1]);
-  const [customAmount, setCustomAmount] = useState("");
+export const DonationSection = ({ 
+  monthlyNeed, 
+  caseStatus, 
+  monthsCovered = 0, 
+  monthsNeeded = 1, 
+  paymentCode, 
+  caseTitle, 
+  caseId, 
+  caseCareType = 'sponsorship', 
+  totalSecured = 0,
+  minCustomDonation = 1,
+  showMonthlyDonation = true,
+  showCustomDonation = true
+}: DonationSectionProps) => {
   const isOneTime = caseCareType === 'one_time_donation';
   const isCancelled = caseCareType === 'cancelled';
-  const [donationType, setDonationType] = useState<'monthly' | 'custom'>(isOneTime ? 'custom' : (monthsNeeded === 1 ? 'custom' : 'monthly'));
+  
+  // Determine which tabs to show
+  const canShowMonthly = showMonthlyDonation && !isOneTime && monthsNeeded !== 1;
+  const canShowCustom = showCustomDonation;
+  
+  // Default to first available tab
+  const getDefaultDonationType = () => {
+    if (isOneTime) return 'custom';
+    if (canShowMonthly) return 'monthly';
+    if (canShowCustom) return 'custom';
+    return 'monthly';
+  };
+  
+  const [selectedMonths, setSelectedMonths] = useState([1]);
+  const [customAmount, setCustomAmount] = useState("");
+  const [donationType, setDonationType] = useState<'monthly' | 'custom'>(getDefaultDonationType());
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const { toast } = useToast();
 
@@ -73,10 +102,10 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
     } else {
       // Custom donation
       const amount = Number(customAmount);
-      if (!customAmount || amount < 1) {
+      if (!customAmount || amount < minCustomDonation) {
         toast({
           title: "خطأ",
-          description: "يرجى إدخال مبلغ التبرع (الحد الأدنى 1 جنيه)",
+          description: `يرجى إدخال مبلغ التبرع (الحد الأدنى ${minCustomDonation} جنيه)`,
           variant: "destructive"
         });
         return;
@@ -168,7 +197,7 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
         )}
 
         {/* نوع التبرع */}
-        {!isDonationDisabled && !isOneTime && monthsNeeded !== 1 && (
+        {!isDonationDisabled && canShowMonthly && canShowCustom && (
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Button
               variant={donationType === 'monthly' ? 'default' : 'outline'}
@@ -189,7 +218,7 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
           </div>
         )}
 
-        {!isDonationDisabled && donationType === 'monthly' && (
+        {!isDonationDisabled && donationType === 'monthly' && canShowMonthly && (
           <>
             {/* خيارات سريعة */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -266,7 +295,7 @@ export const DonationSection = ({ monthlyNeed, caseStatus, monthsCovered = 0, mo
                 className="text-lg text-center"
               />
               <p className="text-xs text-muted-foreground text-center">
-                الحد الأدنى للتبرع: 1 جنيه
+                الحد الأدنى للتبرع: {minCustomDonation} جنيه
               </p>
             </div>
           </div>
