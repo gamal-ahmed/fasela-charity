@@ -122,7 +122,7 @@ export default function FollowupActionsView() {
           // Fetch kid-level answers
           const kidLevelTaskIds = kidLevelTasks.map((t: any) => t.id);
           const { data: kidAnswers } = await supabase
-            .from("followup_action_kid_answers")
+            .from("followup_action_kid_answers" as any)
             .select("*")
             .in("followup_action_id", kidLevelTaskIds);
 

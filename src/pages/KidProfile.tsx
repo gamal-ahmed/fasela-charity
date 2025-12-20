@@ -109,7 +109,7 @@ const KidProfile = () => {
       if (kidTasks.length > 0) {
         const taskIds = kidTasks.map((t: any) => t.id);
         const { data: answers } = await supabase
-          .from("followup_action_kid_answers")
+          .from("followup_action_kid_answers" as any)
           .select("*")
           .in("followup_action_id", taskIds)
           .eq("kid_id", id);
