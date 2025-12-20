@@ -173,14 +173,14 @@ export default function CaseFollowups() {
   const submitAnswerMutation = useMutation({
     mutationFn: async ({ taskId, answer, kidId, taskLevel }: { taskId: string; answer: any; kidId?: string; taskLevel?: string }) => {
       const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error("يجب تسجيل الدخول أولاً");
+      // answered_by is optional - allow null for phone-verified users
 
       if (taskLevel === "kid_level" && kidId) {
         // Insert into followup_action_kid_answers
         const answerData: any = {
           followup_action_id: taskId,
           kid_id: kidId,
-          answered_by: userData.user.id,
+          answered_by: userData.user?.id || null,
         };
 
         if (answer.type === "text_area") {
@@ -200,7 +200,7 @@ export default function CaseFollowups() {
         // Update followup_actions for case-level tasks
         const updateData: any = {
           answered_at: new Date().toISOString(),
-          answered_by: userData.user.id,
+          answered_by: userData.user?.id || null,
         };
 
         if (answer.type === "text_area") {
