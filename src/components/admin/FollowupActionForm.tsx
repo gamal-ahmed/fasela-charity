@@ -177,6 +177,8 @@ export default function FollowupActionForm({
     }
   };
 
+  console.log("FollowupActionForm render - open:", open, "caseId:", caseId);
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]" dir="rtl">

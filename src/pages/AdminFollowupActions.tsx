@@ -203,7 +203,13 @@ export default function FollowupActionsView() {
           <div className="text-sm text-muted-foreground">
             إجمالي المتابعات: {actions?.length || 0}
           </div>
-          <Button onClick={() => setShowTaskForm(true)}>
+          <Button 
+            onClick={() => {
+              console.log("Button clicked, opening form");
+              setShowTaskForm(true);
+            }}
+            className="bg-primary hover:bg-primary/90"
+          >
             <Plus className="w-4 h-4 ml-2" />
             إضافة مهمة جديدة
           </Button>
