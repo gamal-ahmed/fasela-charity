@@ -27,6 +27,10 @@ interface FollowupAction {
   completion_notes: string | null;
   created_at: string;
   created_by: string;
+  task_level?: "case_level" | "kid_level";
+  kid_ids?: string[];
+  kids?: Array<{ id: string; name: string; age: number }>;
+  kid_answers?: { [kidId: string]: any };
 }
 
 interface FollowupActionsListProps {
@@ -58,7 +62,63 @@ export default function FollowupActionsList({ caseId, onCreateNew }: FollowupAct
         .order("action_date", { ascending: false });
 
       if (error) throw error;
-      return data as any as FollowupAction[];
+
+      // Parse JSON fields
+      if (data) {
+        data.forEach((action: any) => {
+          if (action.kid_ids && typeof action.kid_ids === 'string') {
+            try {
+              action.kid_ids = JSON.parse(action.kid_ids);
+            } catch (e) {
+              action.kid_ids = [];
+            }
+          }
+        });
+
+        // Fetch kid information for kid-level tasks
+        const kidLevelTasks = data.filter((action: any) => action.task_level === "kid_level" && action.kid_ids && action.kid_ids.length > 0);
+        if (kidLevelTasks.length > 0) {
+          const allKidIds = new Set<string>();
+          kidLevelTasks.forEach((task: any) => {
+            task.kid_ids.forEach((kidId: string) => allKidIds.add(kidId));
+          });
+
+          const { data: kidsData } = await supabase
+            .from("case_kids")
+            .select("id, name, age")
+            .in("id", Array.from(allKidIds))
+            .eq("case_id", caseId);
+
+          const kidsMap = new Map((kidsData || []).map(k => [k.id, k]));
+
+          // Attach kids to tasks
+          data.forEach((action: any) => {
+            if (action.task_level === "kid_level" && action.kid_ids) {
+              action.kids = action.kid_ids.map((kidId: string) => kidsMap.get(kidId)).filter(Boolean);
+            }
+          });
+
+          // Fetch kid-level answers
+          const kidLevelTaskIds = kidLevelTasks.map((t: any) => t.id);
+          const { data: kidAnswers } = await supabase
+            .from("followup_action_kid_answers")
+            .select("*")
+            .in("followup_action_id", kidLevelTaskIds);
+
+          // Group answers by task and kid
+          data.forEach((action: any) => {
+            if (action.task_level === "kid_level") {
+              const taskAnswers = (kidAnswers || []).filter((ans: any) => ans.followup_action_id === action.id);
+              action.kid_answers = taskAnswers.reduce((acc: any, ans: any) => {
+                acc[ans.kid_id] = ans;
+                return acc;
+              }, {});
+            }
+          });
+        }
+      }
+
+      return data as FollowupAction[];
     },
     staleTime: 30000,
     refetchOnWindowFocus: false,
@@ -254,7 +314,18 @@ export default function FollowupActionsList({ caseId, onCreateNew }: FollowupAct
               </div>
             )}
 
-            <div className="flex items-center gap-4 mb-3">
+            <div className="flex items-center gap-4 mb-3 flex-wrap">
+              {action.task_level === "kid_level" && action.kids && action.kids.length > 0 && (
+                <div className="flex items-center gap-1 text-sm text-orange-600">
+                  <Users className="h-3 w-3" />
+                  <span>مستوى الطفل: {action.kids.map(k => k.name).join(", ")}</span>
+                </div>
+              )}
+              {action.task_level === "case_level" && (
+                <div className="flex items-center gap-1 text-sm text-gray-600">
+                  <span>مستوى الحالة</span>
+                </div>
+              )}
               {action.requires_case_action && (
                 <div className="flex items-center gap-1 text-sm text-blue-600">
                   <User className="h-3 w-3" />
@@ -268,6 +339,49 @@ export default function FollowupActionsList({ caseId, onCreateNew }: FollowupAct
                 </div>
               )}
             </div>
+
+            {/* Show Kid-Level Answers */}
+            {action.task_level === "kid_level" && action.kids && action.kids.length > 0 && action.kid_answers && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-3">
+                <h5 className="text-sm font-semibold text-orange-900 mb-2">إجابات الأطفال:</h5>
+                <div className="space-y-2">
+                  {action.kids.map((kid) => {
+                    const kidAnswer = action.kid_answers[kid.id];
+                    if (!kidAnswer) {
+                      return (
+                        <div key={kid.id} className="text-xs text-orange-700">
+                          {kid.name}: لم يتم الإجابة بعد
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={kid.id} className="bg-white rounded p-2 border border-orange-200">
+                        <p className="text-xs font-medium text-orange-900 mb-1">{kid.name}:</p>
+                        {kidAnswer.answer_text && (
+                          <p className="text-xs text-orange-800 whitespace-pre-wrap">{kidAnswer.answer_text}</p>
+                        )}
+                        {kidAnswer.answer_multi_choice && (
+                          <p className="text-xs text-orange-800">{kidAnswer.answer_multi_choice}</p>
+                        )}
+                        {kidAnswer.answer_photos && Array.isArray(kidAnswer.answer_photos) && kidAnswer.answer_photos.length > 0 && (
+                          <div className="grid grid-cols-3 gap-1 mt-1">
+                            {kidAnswer.answer_photos.map((photo: string, idx: number) => (
+                              <img
+                                key={idx}
+                                src={photo}
+                                alt={`Answer ${idx + 1}`}
+                                className="w-full h-12 object-cover rounded"
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {action.status === "completed" && action.completion_notes && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">

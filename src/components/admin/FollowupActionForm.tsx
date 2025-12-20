@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Plus, X, Upload } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -46,12 +47,23 @@ const formSchema = z.object({
   answer_type: z.enum(["multi_choice", "photo_upload", "text_area"]).optional().nullable(),
   answer_options: z.array(z.string()).optional(),
   create_for_all_cases: z.boolean().default(false),
+  task_level: z.enum(["case_level", "kid_level"]).default("case_level"),
+  kid_ids: z.array(z.string()).default([]),
 }).refine((data) => {
   // Either create_for_all_cases is true OR case_id is provided
   return data.create_for_all_cases || (data.case_id && data.case_id.length > 0);
 }, {
   message: "يرجى اختيار الحالة أو تفعيل إنشاء المتابعة لجميع الحالات",
   path: ["case_id"],
+}).refine((data) => {
+  // If kid_level, must have kid_ids (unless creating for all cases)
+  if (data.task_level === "kid_level" && !data.create_for_all_cases) {
+    return data.kid_ids && data.kid_ids.length > 0;
+  }
+  return true;
+}, {
+  message: "يرجى اختيار طفل واحد على الأقل",
+  path: ["kid_ids"],
 });
 
 interface FollowupActionFormProps {
@@ -70,6 +82,7 @@ export default function FollowupActionForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [answerOptions, setAnswerOptions] = useState<string[]>([]);
   const [newOption, setNewOption] = useState("");
+  const [selectedKidIds, setSelectedKidIds] = useState<string[]>([]);
   const queryClient = useQueryClient();
 
   // Fetch all cases for the dropdown
@@ -86,6 +99,25 @@ export default function FollowupActionForm({
     enabled: !caseId, // Only fetch if no caseId is provided
   });
 
+  const selectedCaseId = form.watch("case_id") || caseId;
+  const taskLevel = form.watch("task_level");
+
+  // Fetch kids for selected case
+  const { data: kids } = useQuery({
+    queryKey: ["kids-for-case", selectedCaseId],
+    queryFn: async () => {
+      if (!selectedCaseId) return [];
+      const { data, error } = await supabase
+        .from("case_kids")
+        .select("id, name, age")
+        .eq("case_id", selectedCaseId)
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedCaseId && taskLevel === "kid_level" && !form.watch("create_for_all_cases"),
+  });
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -99,10 +131,30 @@ export default function FollowupActionForm({
       answer_type: null,
       answer_options: [],
       create_for_all_cases: false,
+      task_level: "case_level",
+      kid_ids: [],
     },
   });
 
   const createForAllCases = form.watch("create_for_all_cases");
+
+  // Handle task level change
+  const handleTaskLevelChange = (value: string) => {
+    form.setValue("task_level", value as "case_level" | "kid_level");
+    if (value === "case_level") {
+      setSelectedKidIds([]);
+      form.setValue("kid_ids", []);
+    }
+  };
+
+  // Handle kid selection
+  const toggleKidSelection = (kidId: string) => {
+    const updated = selectedKidIds.includes(kidId)
+      ? selectedKidIds.filter(id => id !== kidId)
+      : [...selectedKidIds, kidId];
+    setSelectedKidIds(updated);
+    form.setValue("kid_ids", updated);
+  };
 
   const answerType = form.watch("answer_type");
   const requiresCaseAction = form.watch("requires_case_action");
@@ -162,43 +214,111 @@ export default function FollowupActionForm({
         requires_volunteer_action: values.requires_volunteer_action,
         answer_type: values.requires_case_action ? (values.answer_type || null) : null,
         answer_options: values.answer_type === "multi_choice" && values.answer_options ? values.answer_options : [],
+        task_level: values.task_level,
+        kid_ids: values.task_level === "kid_level" ? values.kid_ids : [],
         created_by: userData.user.id,
       };
 
       if (values.create_for_all_cases) {
-        // Create follow-up for all cases
-        console.log("FollowupActionForm: Creating follow-up for all cases");
-        
-        // Fetch all cases
-        const { data: allCases, error: casesError } = await supabase
-          .from("cases")
-          .select("id");
-        
-        if (casesError) {
-          throw new Error("فشل في جلب قائمة الحالات: " + casesError.message);
+        if (values.task_level === "kid_level") {
+          // Create kid-level tasks for all kids in all cases
+          console.log("FollowupActionForm: Creating kid-level tasks for all kids in all cases");
+          
+          // Fetch all cases with their kids
+          const { data: allCases, error: casesError } = await supabase
+            .from("cases")
+            .select("id");
+          
+          if (casesError) {
+            throw new Error("فشل في جلب قائمة الحالات: " + casesError.message);
+          }
+
+          if (!allCases || allCases.length === 0) {
+            throw new Error("لا توجد حالات متاحة");
+          }
+
+          // Fetch all kids grouped by case
+          const { data: allKids, error: kidsError } = await supabase
+            .from("case_kids")
+            .select("id, case_id");
+          
+          if (kidsError) {
+            throw new Error("فشل في جلب قائمة الأطفال: " + kidsError.message);
+          }
+
+          // Group kids by case_id
+          const kidsByCase = new Map<string, string[]>();
+          allKids?.forEach(kid => {
+            const existing = kidsByCase.get(kid.case_id) || [];
+            existing.push(kid.id);
+            kidsByCase.set(kid.case_id, existing);
+          });
+
+          // Create follow-up actions for each case with its kids
+          const followupActions = Array.from(kidsByCase.entries()).map(([caseId, kidIds]) => ({
+            ...followupData,
+            case_id: caseId,
+            kid_ids: kidIds,
+          }));
+
+          // Also create for cases without kids (empty kid_ids array)
+          const casesWithKids = new Set(kidsByCase.keys());
+          const casesWithoutKids = allCases.filter(c => !casesWithKids.has(c.id));
+          casesWithoutKids.forEach(caseItem => {
+            followupActions.push({
+              ...followupData,
+              case_id: caseItem.id,
+              kid_ids: [],
+            });
+          });
+
+          const { error } = await supabase
+            .from("followup_actions" as any)
+            .insert(followupActions);
+
+          if (error) {
+            console.error("FollowupActionForm: Supabase error:", error);
+            throw new Error(error.message || "فشل في حفظ المتابعات");
+          }
+
+          const totalKids = allKids?.length || 0;
+          console.log(`FollowupActionForm: Successfully created ${followupActions.length} follow-up actions for ${totalKids} kids`);
+          toast.success(`تم إضافة المتابعة لجميع الأطفال في جميع الحالات بنجاح (${totalKids} طفل)`);
+        } else {
+          // Create case-level tasks for all cases
+          console.log("FollowupActionForm: Creating follow-up for all cases");
+          
+          // Fetch all cases
+          const { data: allCases, error: casesError } = await supabase
+            .from("cases")
+            .select("id");
+          
+          if (casesError) {
+            throw new Error("فشل في جلب قائمة الحالات: " + casesError.message);
+          }
+
+          if (!allCases || allCases.length === 0) {
+            throw new Error("لا توجد حالات متاحة");
+          }
+
+          // Create follow-up actions for all cases
+          const followupActions = allCases.map((caseItem) => ({
+            ...followupData,
+            case_id: caseItem.id,
+          }));
+
+          const { error } = await supabase
+            .from("followup_actions" as any)
+            .insert(followupActions);
+
+          if (error) {
+            console.error("FollowupActionForm: Supabase error:", error);
+            throw new Error(error.message || "فشل في حفظ المتابعات");
+          }
+
+          console.log(`FollowupActionForm: Successfully created ${allCases.length} follow-up actions`);
+          toast.success(`تم إضافة المتابعة لجميع الحالات بنجاح (${allCases.length} حالة)`);
         }
-
-        if (!allCases || allCases.length === 0) {
-          throw new Error("لا توجد حالات متاحة");
-        }
-
-        // Create follow-up actions for all cases
-        const followupActions = allCases.map((caseItem) => ({
-          ...followupData,
-          case_id: caseItem.id,
-        }));
-
-        const { error } = await supabase
-          .from("followup_actions" as any)
-          .insert(followupActions);
-
-        if (error) {
-          console.error("FollowupActionForm: Supabase error:", error);
-          throw new Error(error.message || "فشل في حفظ المتابعات");
-        }
-
-        console.log(`FollowupActionForm: Successfully created ${allCases.length} follow-up actions`);
-        toast.success(`تم إضافة المتابعة لجميع الحالات بنجاح (${allCases.length} حالة)`);
       } else {
         // Create follow-up for single case
         console.log("FollowupActionForm: Creating follow-up for single case");
@@ -224,6 +344,7 @@ export default function FollowupActionForm({
       form.reset();
       setAnswerOptions([]);
       setNewOption("");
+      setSelectedKidIds([]);
       onOpenChange(false);
     } catch (error: any) {
       console.error("FollowupActionForm: Error creating followup action:", error);
@@ -313,6 +434,94 @@ export default function FollowupActionForm({
                   </div>
                 )}
               </>
+            )}
+
+            {/* Task Level Selector */}
+            <FormField
+              control={form.control}
+              name="task_level"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>مستوى المهمة</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      value={field.value}
+                      onValueChange={handleTaskLevelChange}
+                      className="flex gap-6"
+                    >
+                      <div className="flex items-center space-x-2 space-y-0">
+                        <RadioGroupItem value="case_level" id="case_level" />
+                        <Label htmlFor="case_level" className="font-normal cursor-pointer">
+                          مستوى الحالة
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 space-y-0">
+                        <RadioGroupItem value="kid_level" id="kid_level" />
+                        <Label htmlFor="kid_level" className="font-normal cursor-pointer">
+                          مستوى الطفل
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Kid Selection - Only show when kid_level is selected and case is selected */}
+            {taskLevel === "kid_level" && !createForAllCases && selectedCaseId && (
+              <FormField
+                control={form.control}
+                name="kid_ids"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>اختر الأطفال</FormLabel>
+                    <div className="space-y-2 p-4 border rounded-lg bg-muted/50">
+                      {kids && kids.length > 0 ? (
+                        <>
+                          <div className="space-y-2 max-h-48 overflow-y-auto">
+                            {kids.map((kid) => (
+                              <div
+                                key={kid.id}
+                                className="flex items-center space-x-2 space-y-0 p-2 hover:bg-background rounded cursor-pointer"
+                                onClick={() => toggleKidSelection(kid.id)}
+                              >
+                                <Checkbox
+                                  checked={selectedKidIds.includes(kid.id)}
+                                  onCheckedChange={() => toggleKidSelection(kid.id)}
+                                />
+                                <Label className="font-normal cursor-pointer flex-1">
+                                  {kid.name} ({kid.age} سنة)
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                          {selectedKidIds.length > 0 && (
+                            <div className="pt-2 border-t">
+                              <p className="text-sm text-muted-foreground">
+                                تم اختيار {selectedKidIds.length} طفل
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          لا توجد أطفال مسجلين في هذه الحالة
+                        </p>
+                      )}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {taskLevel === "kid_level" && createForAllCases && (
+              <div className="p-4 border-2 border-blue-200 rounded-lg bg-blue-50/50">
+                <p className="text-sm font-medium text-blue-900">
+                  ⚠️ سيتم إنشاء هذه المهمة لجميع الأطفال في جميع الحالات
+                </p>
+              </div>
             )}
 
             <FormField

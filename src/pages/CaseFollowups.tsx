@@ -27,6 +27,9 @@ interface FollowupAction {
   answer_photos: string[] | null;
   answer_multi_choice: string | null;
   answered_at: string | null;
+  task_level: "case_level" | "kid_level";
+  kid_ids: string[];
+  kids?: Array<{ id: string; name: string; age: number }>;
 }
 
 export default function CaseFollowups() {
@@ -39,6 +42,8 @@ export default function CaseFollowups() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [taskAnswers, setTaskAnswers] = useState<{ [key: string]: any }>({});
   const [uploadedPhotos, setUploadedPhotos] = useState<{ [key: string]: string[] }>({});
+  const [kidTaskAnswers, setKidTaskAnswers] = useState<{ [key: string]: { [kidId: string]: any } }>({});
+  const [kidUploadedPhotos, setKidUploadedPhotos] = useState<{ [key: string]: { [kidId: string]: string[] } }>({});
 
   // Check phone number and get case
   const handleVerifyPhone = async () => {
@@ -82,7 +87,7 @@ export default function CaseFollowups() {
       if (!caseId) return [];
       const { data, error } = await supabase
         .from("followup_actions")
-        .select("id, title, description, action_date, status, requires_case_action, requires_volunteer_action, answer_type, answer_options, answer_text, answer_photos, answer_multi_choice, answered_at")
+        .select("id, title, description, action_date, status, requires_case_action, requires_volunteer_action, answer_type, answer_options, answer_text, answer_photos, answer_multi_choice, answered_at, task_level, kid_ids")
         .eq("case_id", caseId)
         .eq("status", "pending")
         .eq("requires_case_action", true)
@@ -106,8 +111,59 @@ export default function CaseFollowups() {
             item.answer_photos = [];
           }
         }
+        if (item.kid_ids && typeof item.kid_ids === 'string') {
+          try {
+            item.kid_ids = JSON.parse(item.kid_ids);
+          } catch (e) {
+            item.kid_ids = [];
+          }
+        }
         return item;
       });
+
+      // Fetch kid information for kid-level tasks
+      const kidLevelTasks = parsedData.filter((item: any) => item.task_level === "kid_level" && item.kid_ids && item.kid_ids.length > 0);
+      if (kidLevelTasks.length > 0) {
+        const allKidIds = new Set<string>();
+        kidLevelTasks.forEach((task: any) => {
+          task.kid_ids.forEach((kidId: string) => allKidIds.add(kidId));
+        });
+
+        const { data: kidsData } = await supabase
+          .from("case_kids")
+          .select("id, name, age")
+          .in("id", Array.from(allKidIds))
+          .eq("case_id", caseId);
+
+        const kidsMap = new Map((kidsData || []).map(k => [k.id, k]));
+
+        // Attach kids to tasks
+        parsedData.forEach((item: any) => {
+          if (item.task_level === "kid_level" && item.kid_ids) {
+            item.kids = item.kid_ids.map((kidId: string) => kidsMap.get(kidId)).filter(Boolean);
+          }
+        });
+      }
+
+      // Fetch kid-level answers
+      const kidLevelTaskIds = parsedData.filter((item: any) => item.task_level === "kid_level").map((item: any) => item.id);
+      if (kidLevelTaskIds.length > 0) {
+        const { data: kidAnswers } = await supabase
+          .from("followup_action_kid_answers")
+          .select("followup_action_id, kid_id, answer_text, answer_photos, answer_multi_choice, answered_at")
+          .in("followup_action_id", kidLevelTaskIds);
+
+        // Attach answers to tasks
+        parsedData.forEach((item: any) => {
+          if (item.task_level === "kid_level") {
+            const taskAnswers = (kidAnswers || []).filter((ans: any) => ans.followup_action_id === item.id);
+            item.kid_answers = taskAnswers.reduce((acc: any, ans: any) => {
+              acc[ans.kid_id] = ans;
+              return acc;
+            }, {});
+          }
+        });
+      }
       
       return parsedData as FollowupAction[];
     },
@@ -115,29 +171,53 @@ export default function CaseFollowups() {
   });
 
   const submitAnswerMutation = useMutation({
-    mutationFn: async ({ taskId, answer }: { taskId: string; answer: any }) => {
+    mutationFn: async ({ taskId, answer, kidId, taskLevel }: { taskId: string; answer: any; kidId?: string; taskLevel?: string }) => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("يجب تسجيل الدخول أولاً");
 
-      const updateData: any = {
-        answered_at: new Date().toISOString(),
-        answered_by: userData.user.id,
-      };
+      if (taskLevel === "kid_level" && kidId) {
+        // Insert into followup_action_kid_answers
+        const answerData: any = {
+          followup_action_id: taskId,
+          kid_id: kidId,
+          answered_by: userData.user.id,
+        };
 
-      if (answer.type === "text_area") {
-        updateData.answer_text = answer.text;
-      } else if (answer.type === "multi_choice") {
-        updateData.answer_multi_choice = answer.choice;
-      } else if (answer.type === "photo_upload") {
-        updateData.answer_photos = answer.photos;
+        if (answer.type === "text_area") {
+          answerData.answer_text = answer.text;
+        } else if (answer.type === "multi_choice") {
+          answerData.answer_multi_choice = answer.choice;
+        } else if (answer.type === "photo_upload") {
+          answerData.answer_photos = answer.photos;
+        }
+
+        const { error } = await supabase
+          .from("followup_action_kid_answers")
+          .upsert(answerData, { onConflict: "followup_action_id,kid_id" });
+
+        if (error) throw error;
+      } else {
+        // Update followup_actions for case-level tasks
+        const updateData: any = {
+          answered_at: new Date().toISOString(),
+          answered_by: userData.user.id,
+        };
+
+        if (answer.type === "text_area") {
+          updateData.answer_text = answer.text;
+        } else if (answer.type === "multi_choice") {
+          updateData.answer_multi_choice = answer.choice;
+        } else if (answer.type === "photo_upload") {
+          updateData.answer_photos = answer.photos;
+        }
+
+        const { error } = await supabase
+          .from("followup_actions")
+          .update(updateData)
+          .eq("id", taskId);
+
+        if (error) throw error;
       }
-
-      const { error } = await supabase
-        .from("followup_actions")
-        .update(updateData)
-        .eq("id", taskId);
-
-      if (error) throw error;
     },
     onSuccess: () => {
       toast({
@@ -147,6 +227,8 @@ export default function CaseFollowups() {
       queryClient.invalidateQueries({ queryKey: ["case_followups", caseId] });
       setTaskAnswers({});
       setUploadedPhotos({});
+      setKidTaskAnswers({});
+      setKidUploadedPhotos({});
     },
     onError: (error: any) => {
       toast({
@@ -157,10 +239,10 @@ export default function CaseFollowups() {
     },
   });
 
-  const handlePhotoUpload = async (taskId: string, file: File) => {
+  const handlePhotoUpload = async (taskId: string, file: File, kidId?: string) => {
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `task_${taskId}_${Date.now()}.${fileExt}`;
+      const fileName = `task_${taskId}_${kidId ? `kid_${kidId}_` : ''}${Date.now()}.${fileExt}`;
 
       const { data, error } = await supabase.storage
         .from('case-images')
@@ -172,11 +254,24 @@ export default function CaseFollowups() {
         .from('case-images')
         .getPublicUrl(fileName);
 
-      const currentPhotos = uploadedPhotos[taskId] || [];
-      setUploadedPhotos({
-        ...uploadedPhotos,
-        [taskId]: [...currentPhotos, publicUrl]
-      });
+      if (kidId) {
+        // Kid-level task
+        const currentPhotos = kidUploadedPhotos[taskId]?.[kidId] || [];
+        setKidUploadedPhotos({
+          ...kidUploadedPhotos,
+          [taskId]: {
+            ...(kidUploadedPhotos[taskId] || {}),
+            [kidId]: [...currentPhotos, publicUrl]
+          }
+        });
+      } else {
+        // Case-level task
+        const currentPhotos = uploadedPhotos[taskId] || [];
+        setUploadedPhotos({
+          ...uploadedPhotos,
+          [taskId]: [...currentPhotos, publicUrl]
+        });
+      }
 
       toast({
         title: "تم رفع الصورة",
@@ -191,52 +286,110 @@ export default function CaseFollowups() {
     }
   };
 
-  const removePhoto = (taskId: string, index: number) => {
-    const currentPhotos = uploadedPhotos[taskId] || [];
-    setUploadedPhotos({
-      ...uploadedPhotos,
-      [taskId]: currentPhotos.filter((_, i) => i !== index)
-    });
+  const removePhoto = (taskId: string, index: number, kidId?: string) => {
+    if (kidId) {
+      // Kid-level task
+      const currentPhotos = kidUploadedPhotos[taskId]?.[kidId] || [];
+      setKidUploadedPhotos({
+        ...kidUploadedPhotos,
+        [taskId]: {
+          ...(kidUploadedPhotos[taskId] || {}),
+          [kidId]: currentPhotos.filter((_, i) => i !== index)
+        }
+      });
+    } else {
+      // Case-level task
+      const currentPhotos = uploadedPhotos[taskId] || [];
+      setUploadedPhotos({
+        ...uploadedPhotos,
+        [taskId]: currentPhotos.filter((_, i) => i !== index)
+      });
+    }
   };
 
-  const handleSubmitAnswer = (task: FollowupAction) => {
-    const answer = taskAnswers[task.id];
-    if (!answer) {
-      toast({
-        title: "خطأ",
-        description: "يرجى إدخال الإجابة",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (task.answer_type === "multi_choice" && !answer.choice) {
-      toast({
-        title: "خطأ",
-        description: "يرجى اختيار خيار",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (task.answer_type === "photo_upload" && (!uploadedPhotos[task.id] || uploadedPhotos[task.id].length === 0)) {
-      toast({
-        title: "خطأ",
-        description: "يرجى رفع صورة واحدة على الأقل",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    submitAnswerMutation.mutate({
-      taskId: task.id,
-      answer: {
-        type: task.answer_type,
-        text: answer.text,
-        choice: answer.choice,
-        photos: uploadedPhotos[task.id] || [],
+  const handleSubmitAnswer = (task: FollowupAction, kidId?: string) => {
+    if (task.task_level === "kid_level" && kidId) {
+      // Kid-level task
+      const answer = kidTaskAnswers[task.id]?.[kidId];
+      if (!answer) {
+        toast({
+          title: "خطأ",
+          description: "يرجى إدخال الإجابة",
+          variant: "destructive",
+        });
+        return;
       }
-    });
+
+      if (task.answer_type === "multi_choice" && !answer.choice) {
+        toast({
+          title: "خطأ",
+          description: "يرجى اختيار خيار",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const kidPhotos = kidUploadedPhotos[task.id]?.[kidId] || [];
+      if (task.answer_type === "photo_upload" && kidPhotos.length === 0) {
+        toast({
+          title: "خطأ",
+          description: "يرجى رفع صورة واحدة على الأقل",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      submitAnswerMutation.mutate({
+        taskId: task.id,
+        kidId: kidId,
+        taskLevel: "kid_level",
+        answer: {
+          type: task.answer_type,
+          text: answer.text,
+          choice: answer.choice,
+          photos: kidPhotos,
+        }
+      });
+    } else {
+      // Case-level task
+      const answer = taskAnswers[task.id];
+      if (!answer) {
+        toast({
+          title: "خطأ",
+          description: "يرجى إدخال الإجابة",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (task.answer_type === "multi_choice" && !answer.choice) {
+        toast({
+          title: "خطأ",
+          description: "يرجى اختيار خيار",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (task.answer_type === "photo_upload" && (!uploadedPhotos[task.id] || uploadedPhotos[task.id].length === 0)) {
+        toast({
+          title: "خطأ",
+          description: "يرجى رفع صورة واحدة على الأقل",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      submitAnswerMutation.mutate({
+        taskId: task.id,
+        answer: {
+          type: task.answer_type,
+          text: answer.text,
+          choice: answer.choice,
+          photos: uploadedPhotos[task.id] || [],
+        }
+      });
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -361,7 +514,10 @@ export default function CaseFollowups() {
                   </div>
 
                   {followups?.map((followup, index) => {
-                    const isAnswered = !!followup.answered_at;
+                    const isKidLevel = followup.task_level === "kid_level";
+                    const isCaseLevelAnswered = !isKidLevel && !!followup.answered_at;
+                    const kidAnswers = (followup as any).kid_answers || {};
+                    
                     return (
                       <motion.div
                         key={followup.id}
@@ -369,7 +525,7 @@ export default function CaseFollowups() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.1 }}
                         className={`bg-white border-2 rounded-2xl p-5 transition-all ${
-                          isAnswered 
+                          (isCaseLevelAnswered || (isKidLevel && followup.kids?.every(k => kidAnswers[k.id]))) 
                             ? "border-green-200 bg-green-50/30" 
                             : "border-slate-100 hover:border-amber-200"
                         }`}
@@ -377,12 +533,19 @@ export default function CaseFollowups() {
                         {/* Task Number */}
                         <div className="flex items-center gap-3 mb-3">
                           <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg ${
-                            isAnswered ? "bg-green-500 text-white" : "bg-amber-500 text-white"
+                            (isCaseLevelAnswered || (isKidLevel && followup.kids?.every(k => kidAnswers[k.id]))) ? "bg-green-500 text-white" : "bg-amber-500 text-white"
                           }`}>
-                            {isAnswered ? <Check className="w-5 h-5" /> : index + 1}
+                            {(isCaseLevelAnswered || (isKidLevel && followup.kids?.every(k => kidAnswers[k.id]))) ? <Check className="w-5 h-5" /> : index + 1}
                           </span>
-                          <h3 className="font-bold text-xl text-slate-800">{followup.title}</h3>
-                          {isAnswered && (
+                          <div className="flex-1">
+                            <h3 className="font-bold text-xl text-slate-800">{followup.title}</h3>
+                            {isKidLevel && followup.kids && followup.kids.length > 0 && (
+                              <p className="text-sm text-slate-500 mt-1">
+                                للأطفال: {followup.kids.map(k => k.name).join(", ")}
+                              </p>
+                            )}
+                          </div>
+                          {(isCaseLevelAnswered || (isKidLevel && followup.kids?.every(k => kidAnswers[k.id]))) && (
                             <span className="text-sm text-green-600 font-medium">✓ تم الإجابة</span>
                           )}
                         </div>
@@ -405,8 +568,8 @@ export default function CaseFollowups() {
                           <span className="text-base">التاريخ: {formatDate(followup.action_date)}</span>
                         </div>
 
-                        {/* Answer Form */}
-                        {!isAnswered && followup.answer_type && (
+                        {/* Answer Form - Case Level */}
+                        {!isKidLevel && !isCaseLevelAnswered && followup.answer_type && (
                           <div className="space-y-4 mt-4 pt-4 border-t border-slate-200">
                             {followup.answer_type === "text_area" && (
                               <div className="space-y-2">
@@ -514,8 +677,8 @@ export default function CaseFollowups() {
                           </div>
                         )}
 
-                        {/* Show Answer if Already Answered */}
-                        {isAnswered && (
+                        {/* Show Answer if Already Answered - Case Level */}
+                        {!isKidLevel && isCaseLevelAnswered && (
                           <div className="mt-4 pt-4 border-t border-green-200">
                             {followup.answer_type === "text_area" && followup.answer_text && (
                               <div className="bg-green-50 rounded-lg p-3">
@@ -544,6 +707,179 @@ export default function CaseFollowups() {
                                 </div>
                               </div>
                             )}
+                          </div>
+                        )}
+
+                        {/* Kid-Level Tasks - Show separate forms for each kid */}
+                        {isKidLevel && followup.kids && followup.kids.length > 0 && (
+                          <div className="space-y-4 mt-4 pt-4 border-t border-slate-200">
+                            {followup.kids.map((kid) => {
+                              const kidAnswer = kidAnswers[kid.id];
+                              const isKidAnswered = !!kidAnswer;
+                              const kidAnswerKey = `${followup.id}_${kid.id}`;
+                              
+                              return (
+                                <div key={kid.id} className={`p-4 rounded-lg border-2 ${
+                                  isKidAnswered ? "border-green-200 bg-green-50/30" : "border-slate-200 bg-slate-50"
+                                }`}>
+                                  <div className="flex items-center justify-between mb-3">
+                                    <h4 className="font-semibold text-slate-800">
+                                      {kid.name} ({kid.age} سنة)
+                                    </h4>
+                                    {isKidAnswered && (
+                                      <span className="text-xs text-green-600 font-medium">✓ تم الإجابة</span>
+                                    )}
+                                  </div>
+
+                                  {!isKidAnswered && followup.answer_type && (
+                                    <div className="space-y-3">
+                                      {followup.answer_type === "text_area" && (
+                                        <div className="space-y-2">
+                                          <Label className="text-sm">الإجابة</Label>
+                                          <Textarea
+                                            placeholder="اكتب إجابتك هنا..."
+                                            rows={3}
+                                            value={kidTaskAnswers[followup.id]?.[kid.id]?.text || ""}
+                                            onChange={(e) => {
+                                              setKidTaskAnswers({
+                                                ...kidTaskAnswers,
+                                                [followup.id]: {
+                                                  ...(kidTaskAnswers[followup.id] || {}),
+                                                  [kid.id]: { ...(kidTaskAnswers[followup.id]?.[kid.id] || {}), text: e.target.value }
+                                                }
+                                              });
+                                            }}
+                                            className="resize-none"
+                                          />
+                                        </div>
+                                      )}
+
+                                      {followup.answer_type === "multi_choice" && followup.answer_options && (
+                                        <div className="space-y-2">
+                                          <Label className="text-sm">اختر الإجابة</Label>
+                                          <RadioGroup
+                                            value={kidTaskAnswers[followup.id]?.[kid.id]?.choice || ""}
+                                            onValueChange={(value) => {
+                                              setKidTaskAnswers({
+                                                ...kidTaskAnswers,
+                                                [followup.id]: {
+                                                  ...(kidTaskAnswers[followup.id] || {}),
+                                                  [kid.id]: { ...(kidTaskAnswers[followup.id]?.[kid.id] || {}), choice: value }
+                                                }
+                                              });
+                                            }}
+                                          >
+                                            {followup.answer_options.map((option, optIndex) => (
+                                              <div key={optIndex} className="flex items-center space-x-2 space-y-0">
+                                                <RadioGroupItem value={option} id={`option-${kidAnswerKey}-${optIndex}`} />
+                                                <Label htmlFor={`option-${kidAnswerKey}-${optIndex}`} className="font-normal cursor-pointer text-sm">
+                                                  {option}
+                                                </Label>
+                                              </div>
+                                            ))}
+                                          </RadioGroup>
+                                        </div>
+                                      )}
+
+                                      {followup.answer_type === "photo_upload" && (
+                                        <div className="space-y-2">
+                                          <Label className="text-sm">رفع الصور</Label>
+                                          <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                              <Input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                  const file = e.target.files?.[0];
+                                                  if (file) handlePhotoUpload(followup.id, file, kid.id);
+                                                }}
+                                                className="hidden"
+                                                id={`photo-upload-${kidAnswerKey}`}
+                                              />
+                                              <Label
+                                                htmlFor={`photo-upload-${kidAnswerKey}`}
+                                                className="flex items-center gap-2 px-3 py-1.5 border rounded-lg cursor-pointer hover:bg-slate-50 text-sm"
+                                              >
+                                                <Upload className="w-3 h-3" />
+                                                رفع صورة
+                                              </Label>
+                                            </div>
+                                            {kidUploadedPhotos[followup.id]?.[kid.id] && kidUploadedPhotos[followup.id][kid.id].length > 0 && (
+                                              <div className="grid grid-cols-2 gap-2">
+                                                {kidUploadedPhotos[followup.id][kid.id].map((photo, photoIndex) => (
+                                                  <div key={photoIndex} className="relative">
+                                                    <img
+                                                      src={photo}
+                                                      alt={`Uploaded ${photoIndex + 1}`}
+                                                      className="w-full h-20 object-cover rounded-lg"
+                                                    />
+                                                    <Button
+                                                      type="button"
+                                                      variant="destructive"
+                                                      size="icon"
+                                                      className="absolute top-1 left-1 h-5 w-5"
+                                                      onClick={() => removePhoto(followup.id, photoIndex, kid.id)}
+                                                    >
+                                                      <X className="h-2.5 w-2.5" />
+                                                    </Button>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      <Button
+                                        onClick={() => handleSubmitAnswer(followup, kid.id)}
+                                        disabled={submitAnswerMutation.isPending}
+                                        className="w-full bg-amber-600 hover:bg-amber-700 text-sm"
+                                        size="sm"
+                                      >
+                                        {submitAnswerMutation.isPending ? (
+                                          <Loader2 className="animate-spin ml-2 h-3 w-3" />
+                                        ) : (
+                                          <Check className="ml-2 h-3 w-3" />
+                                        )}
+                                        إرسال إجابة {kid.name}
+                                      </Button>
+                                    </div>
+                                  )}
+
+                                  {isKidAnswered && (
+                                    <div className="mt-3 pt-3 border-t border-green-200">
+                                      {kidAnswer.answer_text && (
+                                        <div className="bg-green-50 rounded-lg p-2">
+                                          <p className="text-xs font-medium text-green-900 mb-1">الإجابة:</p>
+                                          <p className="text-green-800 text-sm whitespace-pre-wrap">{kidAnswer.answer_text}</p>
+                                        </div>
+                                      )}
+                                      {kidAnswer.answer_multi_choice && (
+                                        <div className="bg-green-50 rounded-lg p-2">
+                                          <p className="text-xs font-medium text-green-900 mb-1">الإجابة:</p>
+                                          <p className="text-green-800 text-sm">{kidAnswer.answer_multi_choice}</p>
+                                        </div>
+                                      )}
+                                      {kidAnswer.answer_photos && Array.isArray(kidAnswer.answer_photos) && kidAnswer.answer_photos.length > 0 && (
+                                        <div className="bg-green-50 rounded-lg p-2">
+                                          <p className="text-xs font-medium text-green-900 mb-2">الصور:</p>
+                                          <div className="grid grid-cols-2 gap-2">
+                                            {kidAnswer.answer_photos.map((photo: string, photoIndex: number) => (
+                                              <img
+                                                key={photoIndex}
+                                                src={photo}
+                                                alt={`Answer ${photoIndex + 1}`}
+                                                className="w-full h-20 object-cover rounded-lg"
+                                              />
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </motion.div>
