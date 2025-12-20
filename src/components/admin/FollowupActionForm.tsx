@@ -85,39 +85,7 @@ export default function FollowupActionForm({
   const [selectedKidIds, setSelectedKidIds] = useState<string[]>([]);
   const queryClient = useQueryClient();
 
-  // Fetch all cases for the dropdown
-  const { data: cases } = useQuery({
-    queryKey: ["cases-for-followup"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("cases")
-        .select("id, title, title_ar")
-        .order("title_ar", { ascending: true });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !caseId, // Only fetch if no caseId is provided
-  });
-
-  const selectedCaseId = form.watch("case_id") || caseId;
-  const taskLevel = form.watch("task_level");
-
-  // Fetch kids for selected case
-  const { data: kids } = useQuery({
-    queryKey: ["kids-for-case", selectedCaseId],
-    queryFn: async () => {
-      if (!selectedCaseId) return [];
-      const { data, error } = await supabase
-        .from("case_kids")
-        .select("id, name, age")
-        .eq("case_id", selectedCaseId)
-        .order("name", { ascending: true });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!selectedCaseId && taskLevel === "kid_level" && !form.watch("create_for_all_cases"),
-  });
-
+  // Initialize form first
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -137,6 +105,38 @@ export default function FollowupActionForm({
   });
 
   const createForAllCases = form.watch("create_for_all_cases");
+  const selectedCaseId = form.watch("case_id") || caseId;
+  const taskLevel = form.watch("task_level");
+
+  // Fetch all cases for the dropdown
+  const { data: cases } = useQuery({
+    queryKey: ["cases-for-followup"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cases")
+        .select("id, title, title_ar")
+        .order("title_ar", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !caseId, // Only fetch if no caseId is provided
+  });
+
+  // Fetch kids for selected case
+  const { data: kids } = useQuery({
+    queryKey: ["kids-for-case", selectedCaseId],
+    queryFn: async () => {
+      if (!selectedCaseId) return [];
+      const { data, error } = await supabase
+        .from("case_kids")
+        .select("id, name, age")
+        .eq("case_id", selectedCaseId)
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedCaseId && taskLevel === "kid_level" && !createForAllCases,
+  });
 
   // Handle task level change
   const handleTaskLevelChange = (value: string) => {
