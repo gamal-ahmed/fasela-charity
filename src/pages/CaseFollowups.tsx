@@ -148,10 +148,10 @@ export default function CaseFollowups() {
       // Fetch kid-level answers
       const kidLevelTaskIds = parsedData.filter((item: any) => item.task_level === "kid_level").map((item: any) => item.id);
       if (kidLevelTaskIds.length > 0) {
-        const { data: kidAnswers } = await supabase
-          .from("followup_action_kid_answers")
-          .select("followup_action_id, kid_id, answer_text, answer_photos, answer_multi_choice, answered_at")
-          .in("followup_action_id", kidLevelTaskIds);
+          const { data: kidAnswers } = await supabase
+            .from("followup_action_kid_answers" as any)
+            .select("followup_action_id, kid_id, answer_text, answer_photos, answer_multi_choice, answered_at")
+            .in("followup_action_id", kidLevelTaskIds);
 
         // Attach answers to tasks
         parsedData.forEach((item: any) => {
@@ -192,7 +192,7 @@ export default function CaseFollowups() {
         }
 
         const { error } = await supabase
-          .from("followup_action_kid_answers")
+          .from("followup_action_kid_answers" as any)
           .upsert(answerData, { onConflict: "followup_action_id,kid_id" });
 
         if (error) throw error;
