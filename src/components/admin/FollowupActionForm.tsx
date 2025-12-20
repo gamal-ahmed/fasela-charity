@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/select";
 
 const formSchema = z.object({
-  case_id: z.string().min(1, "يرجى اختيار الحالة"),
+  case_id: z.string().optional(),
   title: z.string().min(1, "يرجى إدخال عنوان المتابعة"),
   description: z.string().optional(),
   action_date: z.string().min(1, "يرجى اختيار تاريخ المتابعة"),
@@ -45,6 +45,13 @@ const formSchema = z.object({
   requires_volunteer_action: z.boolean().default(false),
   answer_type: z.enum(["multi_choice", "photo_upload", "text_area"]).optional().nullable(),
   answer_options: z.array(z.string()).optional(),
+  create_for_all_cases: z.boolean().default(false),
+}).refine((data) => {
+  // Either create_for_all_cases is true OR case_id is provided
+  return data.create_for_all_cases || (data.case_id && data.case_id.length > 0);
+}, {
+  message: "يرجى اختيار الحالة أو تفعيل إنشاء المتابعة لجميع الحالات",
+  path: ["case_id"],
 });
 
 interface FollowupActionFormProps {
@@ -91,8 +98,11 @@ export default function FollowupActionForm({
       requires_volunteer_action: false,
       answer_type: null,
       answer_options: [],
+      create_for_all_cases: false,
     },
   });
+
+  const createForAllCases = form.watch("create_for_all_cases");
 
   const answerType = form.watch("answer_type");
   const requiresCaseAction = form.watch("requires_case_action");
@@ -135,15 +145,15 @@ export default function FollowupActionForm({
         throw new Error("يجب تسجيل الدخول أولاً");
       }
 
-      console.log("FollowupActionForm: Attempting to insert followup action...");
       // Validate multi-choice options
       if (values.answer_type === "multi_choice" && (!values.answer_options || values.answer_options.length < 2)) {
         toast.error("يرجى إضافة خيارين على الأقل للاختيار المتعدد");
+        setIsSubmitting(false);
         return;
       }
 
-      const { error } = await supabase.from("followup_actions" as any).insert({
-        case_id: values.case_id,
+      // Prepare the follow-up action data
+      const followupData = {
         title: values.title,
         description: values.description || null,
         action_date: values.action_date,
@@ -153,18 +163,64 @@ export default function FollowupActionForm({
         answer_type: values.requires_case_action ? (values.answer_type || null) : null,
         answer_options: values.answer_type === "multi_choice" && values.answer_options ? values.answer_options : [],
         created_by: userData.user.id,
-      });
+      };
 
-      if (error) {
-        console.error("FollowupActionForm: Supabase error:", error);
-        throw new Error(error.message || "فشل في حفظ المتابعة");
+      if (values.create_for_all_cases) {
+        // Create follow-up for all cases
+        console.log("FollowupActionForm: Creating follow-up for all cases");
+        
+        // Fetch all cases
+        const { data: allCases, error: casesError } = await supabase
+          .from("cases")
+          .select("id");
+        
+        if (casesError) {
+          throw new Error("فشل في جلب قائمة الحالات: " + casesError.message);
+        }
+
+        if (!allCases || allCases.length === 0) {
+          throw new Error("لا توجد حالات متاحة");
+        }
+
+        // Create follow-up actions for all cases
+        const followupActions = allCases.map((caseItem) => ({
+          ...followupData,
+          case_id: caseItem.id,
+        }));
+
+        const { error } = await supabase
+          .from("followup_actions" as any)
+          .insert(followupActions);
+
+        if (error) {
+          console.error("FollowupActionForm: Supabase error:", error);
+          throw new Error(error.message || "فشل في حفظ المتابعات");
+        }
+
+        console.log(`FollowupActionForm: Successfully created ${allCases.length} follow-up actions`);
+        toast.success(`تم إضافة المتابعة لجميع الحالات بنجاح (${allCases.length} حالة)`);
+      } else {
+        // Create follow-up for single case
+        console.log("FollowupActionForm: Creating follow-up for single case");
+        const { error } = await supabase.from("followup_actions" as any).insert({
+          ...followupData,
+          case_id: values.case_id,
+        });
+
+        if (error) {
+          console.error("FollowupActionForm: Supabase error:", error);
+          throw new Error(error.message || "فشل في حفظ المتابعة");
+        }
+
+        console.log("FollowupActionForm: Successfully inserted followup action");
+        toast.success("تم إضافة المتابعة بنجاح");
       }
 
-      console.log("FollowupActionForm: Successfully inserted followup action");
-      toast.success("تم إضافة المتابعة بنجاح");
-      queryClient.invalidateQueries({ queryKey: ["followup-actions", values.case_id] });
+      // Invalidate all relevant queries
+      queryClient.invalidateQueries({ queryKey: ["followup-actions"] });
       queryClient.invalidateQueries({ queryKey: ["followup-actions-all"] });
       queryClient.invalidateQueries({ queryKey: ["followup-actions-dashboard"] });
+      
       form.reset();
       setAnswerOptions([]);
       setNewOption("");
@@ -192,30 +248,71 @@ export default function FollowupActionForm({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {!caseId && (
-              <FormField
-                control={form.control}
-                name="case_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>الحالة</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <>
+                <FormField
+                  control={form.control}
+                  name="create_for_all_cases"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border rounded-lg bg-muted/50">
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="اختر الحالة" />
-                        </SelectTrigger>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={(checked) => {
+                            field.onChange(checked);
+                            if (checked) {
+                              form.setValue("case_id", "");
+                            }
+                          }}
+                        />
                       </FormControl>
-                      <SelectContent>
-                        {cases?.map((caseItem) => (
-                          <SelectItem key={caseItem.id} value={caseItem.id}>
-                            {caseItem.title_ar || caseItem.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>إنشاء المتابعة لجميع الحالات</FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          سيتم إنشاء هذه المتابعة لجميع الحالات المسجلة في النظام
+                        </p>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                {!createForAllCases && (
+                  <FormField
+                    control={form.control}
+                    name="case_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>الحالة</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="اختر الحالة" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {cases?.map((caseItem) => (
+                              <SelectItem key={caseItem.id} value={caseItem.id}>
+                                {caseItem.title_ar || caseItem.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 )}
-              />
+
+                {createForAllCases && (
+                  <div className="p-4 border-2 border-blue-200 rounded-lg bg-blue-50/50">
+                    <p className="text-sm font-medium text-blue-900">
+                      ⚠️ سيتم إنشاء هذه المتابعة لجميع الحالات في النظام
+                    </p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      تأكد من أن جميع المعلومات صحيحة قبل المتابعة
+                    </p>
+                  </div>
+                )}
+              </>
             )}
 
             <FormField
