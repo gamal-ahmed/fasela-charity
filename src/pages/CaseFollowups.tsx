@@ -30,6 +30,7 @@ interface FollowupAction {
   task_level: "case_level" | "kid_level";
   kid_ids: string[];
   kids?: Array<{ id: string; name: string; age: number }>;
+  profile_field_mapping?: string | null;
 }
 
 export default function CaseFollowups() {
@@ -87,7 +88,7 @@ export default function CaseFollowups() {
       if (!caseId) return [];
       const { data, error } = await supabase
         .from("followup_actions")
-        .select("id, title, description, action_date, status, requires_case_action, requires_volunteer_action, answer_type, answer_options, answer_text, answer_photos, answer_multi_choice, answered_at, task_level, kid_ids")
+        .select("id, title, description, action_date, status, requires_case_action, requires_volunteer_action, answer_type, answer_options, answer_text, answer_photos, answer_multi_choice, answered_at, task_level, kid_ids, profile_field_mapping")
         .eq("case_id", caseId)
         .eq("status", "pending")
         .eq("requires_case_action", true)
@@ -171,12 +172,100 @@ export default function CaseFollowups() {
   });
 
   const submitAnswerMutation = useMutation({
-    mutationFn: async ({ taskId, answer, kidId, taskLevel }: { taskId: string; answer: any; kidId?: string; taskLevel?: string }) => {
+    mutationFn: async ({ taskId, answer, kidId, taskLevel, profileFieldMapping }: { taskId: string; answer: any; kidId?: string; taskLevel?: string; profileFieldMapping?: string | null }) => {
       const { data: userData } = await supabase.auth.getUser();
       // answered_by is optional - allow null for phone-verified users
 
       if (taskLevel === "kid_level" && kidId) {
-        // Insert into followup_action_kid_answers
+        // If profile field mapping is set, update kid profile directly
+        if (profileFieldMapping) {
+          const updateData: any = {};
+          
+          // Determine the value to set based on answer type
+          let fieldValue: any = null;
+          if (answer.type === "text_area") {
+            fieldValue = answer.text;
+          } else if (answer.type === "multi_choice") {
+            fieldValue = answer.choice;
+          } else if (answer.type === "photo_upload") {
+            // For photo upload, we can't directly map to profile fields
+            // So we'll save to answer section instead
+            fieldValue = null;
+          }
+
+          // Map to the appropriate profile field
+          if (fieldValue !== null) {
+            // Handle text fields (simple direct assignment)
+            if (['health_state', 'current_grade', 'school_name'].includes(profileFieldMapping)) {
+              updateData[profileFieldMapping] = fieldValue;
+            } 
+            // Handle JSONB array fields - append new entry
+            else if (profileFieldMapping === 'education_progress') {
+              // Get current education progress
+              const { data: currentKid } = await supabase
+                .from("case_kids")
+                .select("education_progress")
+                .eq("id", kidId)
+                .single();
+              
+              const currentProgress = (currentKid?.education_progress as any[]) || [];
+              // Append new entry with current year and the answer as achievement
+              const newEntry = {
+                year: new Date().getFullYear().toString(),
+                grade: fieldValue,
+                achievements: fieldValue,
+              };
+              updateData.education_progress = [...currentProgress, newEntry];
+            }
+            else if (profileFieldMapping === 'certificates') {
+              // Get current certificates
+              const { data: currentKid } = await supabase
+                .from("case_kids")
+                .select("certificates")
+                .eq("id", kidId)
+                .single();
+              
+              const currentCertificates = (currentKid?.certificates as any[]) || [];
+              // Append new certificate
+              const newCertificate = {
+                name: fieldValue,
+                date: new Date().toISOString().split('T')[0],
+                issuer: "نظام المتابعة",
+              };
+              updateData.certificates = [...currentCertificates, newCertificate];
+            }
+            else if (profileFieldMapping === 'ongoing_courses') {
+              // Get current courses
+              const { data: currentKid } = await supabase
+                .from("case_kids")
+                .select("ongoing_courses")
+                .eq("id", kidId)
+                .single();
+              
+              const currentCourses = (currentKid?.ongoing_courses as any[]) || [];
+              // Append new course
+              const newCourse = {
+                name: fieldValue,
+                type: "course",
+                status: "ongoing",
+              };
+              updateData.ongoing_courses = [...currentCourses, newCourse];
+            }
+            
+            // Update kid profile if we have data to update
+            if (Object.keys(updateData).length > 0) {
+              const { error: updateError } = await supabase
+                .from("case_kids")
+                .update(updateData)
+                .eq("id", kidId);
+
+              if (updateError) throw updateError;
+            }
+          }
+        }
+
+        // Always save to followup_action_kid_answers (even if profile was updated)
+        // This ensures we have a record of the answer
         const answerData: any = {
           followup_action_id: taskId,
           kid_id: kidId,
@@ -347,6 +436,7 @@ export default function CaseFollowups() {
         taskId: task.id,
         kidId: kidId,
         taskLevel: "kid_level",
+        profileFieldMapping: task.profile_field_mapping || null,
         answer: {
           type: task.answer_type,
           text: answer?.text || "",

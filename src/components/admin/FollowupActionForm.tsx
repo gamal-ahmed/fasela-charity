@@ -49,6 +49,7 @@ const formSchema = z.object({
   create_for_all_cases: z.boolean().default(false),
   task_level: z.enum(["case_level", "kid_level"]).default("case_level"),
   kid_ids: z.array(z.string()).default([]),
+  profile_field_mapping: z.enum(["health_state", "current_grade", "school_name", "education_progress", "certificates", "ongoing_courses"]).optional().nullable(),
 }).refine((data) => {
   // Either create_for_all_cases is true OR case_id is provided
   return data.create_for_all_cases || (data.case_id && data.case_id.length > 0);
@@ -101,6 +102,7 @@ export default function FollowupActionForm({
       create_for_all_cases: false,
       task_level: "case_level",
       kid_ids: [],
+      profile_field_mapping: null,
     },
   });
 
@@ -223,6 +225,7 @@ export default function FollowupActionForm({
         answer_options: values.answer_type === "multi_choice" && values.answer_options ? values.answer_options : [],
         task_level: values.task_level,
         kid_ids: values.task_level === "kid_level" ? values.kid_ids : [],
+        profile_field_mapping: values.task_level === "kid_level" ? (values.profile_field_mapping || null) : null,
         created_by: userData.user.id,
       };
 
@@ -659,6 +662,42 @@ export default function FollowupActionForm({
                           <SelectItem value="photo_upload">رفع صورة (Photo Upload)</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {/* Profile Field Mapping - Only for kid-level tasks */}
+              {taskLevel === "kid_level" && requiresCaseAction && (
+                <FormField
+                  control={form.control}
+                  name="profile_field_mapping"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ربط الإجابة بحقل الملف الشخصي (اختياري)</FormLabel>
+                      <Select 
+                        onValueChange={(value) => field.onChange(value === "none" ? null : value)} 
+                        value={field.value || "none"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="اختر حقل الملف الشخصي أو اتركه فارغاً" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">لا يوجد ربط (سيتم حفظها في قسم إجابات المتابعة)</SelectItem>
+                          <SelectItem value="health_state">الحالة الصحية</SelectItem>
+                          <SelectItem value="current_grade">الصف الحالي</SelectItem>
+                          <SelectItem value="school_name">اسم المدرسة</SelectItem>
+                          <SelectItem value="education_progress">تقدم التعليمي</SelectItem>
+                          <SelectItem value="certificates">الشهادات</SelectItem>
+                          <SelectItem value="ongoing_courses">الدورات الجارية</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-sm text-muted-foreground">
+                        إذا اخترت حقل، سيتم ملء حقل الملف الشخصي مباشرة. إذا لم تختر، ستذهب الإجابة إلى قسم إجابات المتابعة.
+                      </p>
                       <FormMessage />
                     </FormItem>
                   )}
