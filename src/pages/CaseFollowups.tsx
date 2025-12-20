@@ -311,32 +311,36 @@ export default function CaseFollowups() {
     if (task.task_level === "kid_level" && kidId) {
       // Kid-level task
       const answer = kidTaskAnswers[task.id]?.[kidId];
-      if (!answer) {
-        toast({
-          title: "خطأ",
-          description: "يرجى إدخال الإجابة",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (task.answer_type === "multi_choice" && !answer.choice) {
-        toast({
-          title: "خطأ",
-          description: "يرجى اختيار خيار",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const kidPhotos = kidUploadedPhotos[task.id]?.[kidId] || [];
-      if (task.answer_type === "photo_upload" && kidPhotos.length === 0) {
-        toast({
-          title: "خطأ",
-          description: "يرجى رفع صورة واحدة على الأقل",
-          variant: "destructive",
-        });
-        return;
+
+      // Validate based on answer type
+      if (task.answer_type === "photo_upload") {
+        if (kidPhotos.length === 0) {
+          toast({
+            title: "خطأ",
+            description: "يرجى رفع صورة واحدة على الأقل",
+            variant: "destructive",
+          });
+          return;
+        }
+      } else if (task.answer_type === "multi_choice") {
+        if (!answer || !answer.choice) {
+          toast({
+            title: "خطأ",
+            description: "يرجى اختيار خيار",
+            variant: "destructive",
+          });
+          return;
+        }
+      } else if (task.answer_type === "text_area") {
+        if (!answer || !answer.text || answer.text.trim() === "") {
+          toast({
+            title: "خطأ",
+            description: "يرجى إدخال الإجابة",
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
       submitAnswerMutation.mutate({
@@ -345,48 +349,53 @@ export default function CaseFollowups() {
         taskLevel: "kid_level",
         answer: {
           type: task.answer_type,
-          text: answer.text,
-          choice: answer.choice,
+          text: answer?.text || "",
+          choice: answer?.choice || "",
           photos: kidPhotos,
         }
       });
     } else {
       // Case-level task
       const answer = taskAnswers[task.id];
-      if (!answer) {
-        toast({
-          title: "خطأ",
-          description: "يرجى إدخال الإجابة",
-          variant: "destructive",
-        });
-        return;
-      }
+      const photos = uploadedPhotos[task.id] || [];
 
-      if (task.answer_type === "multi_choice" && !answer.choice) {
-        toast({
-          title: "خطأ",
-          description: "يرجى اختيار خيار",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (task.answer_type === "photo_upload" && (!uploadedPhotos[task.id] || uploadedPhotos[task.id].length === 0)) {
-        toast({
-          title: "خطأ",
-          description: "يرجى رفع صورة واحدة على الأقل",
-          variant: "destructive",
-        });
-        return;
+      // Validate based on answer type
+      if (task.answer_type === "photo_upload") {
+        if (photos.length === 0) {
+          toast({
+            title: "خطأ",
+            description: "يرجى رفع صورة واحدة على الأقل",
+            variant: "destructive",
+          });
+          return;
+        }
+      } else if (task.answer_type === "multi_choice") {
+        if (!answer || !answer.choice) {
+          toast({
+            title: "خطأ",
+            description: "يرجى اختيار خيار",
+            variant: "destructive",
+          });
+          return;
+        }
+      } else if (task.answer_type === "text_area") {
+        if (!answer || !answer.text || answer.text.trim() === "") {
+          toast({
+            title: "خطأ",
+            description: "يرجى إدخال الإجابة",
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
       submitAnswerMutation.mutate({
         taskId: task.id,
         answer: {
           type: task.answer_type,
-          text: answer.text,
-          choice: answer.choice,
-          photos: uploadedPhotos[task.id] || [],
+          text: answer?.text || "",
+          choice: answer?.choice || "",
+          photos: photos,
         }
       });
     }
