@@ -449,6 +449,9 @@ export const DonationsByCaseView = () => {
       totalAmount: donations.reduce((sum, d) => sum + d.amount, 0),
       confirmedAmount: donations.filter(d => d.status === 'confirmed').reduce((sum, d) => sum + d.amount, 0),
       redeemedAmount: donations.filter(d => d.status === 'redeemed').reduce((sum, d) => sum + d.amount, 0),
+      totalHandedOver: donations.reduce((sum, d) => sum + (d.total_handed_over || 0), 0),
+      totalConfirmed: donations.filter(d => d.status === 'confirmed').length,
+      totalHandedOverAmount: donations.reduce((sum, d) => sum + (d.total_handed_over || 0), 0),
     };
     return stats;
   };
@@ -509,8 +512,9 @@ export const DonationsByCaseView = () => {
                           <div className="text-sm font-medium">
                             {stats.total} تبرع
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            {stats.confirmedAmount.toLocaleString()} ج.م مؤكد
+                          <div className="text-xs text-muted-foreground space-y-1">
+                            <div>مؤكد: {stats.totalConfirmed} ({stats.confirmedAmount.toLocaleString()} ج.م)</div>
+                            <div>مسلم: {stats.totalHandedOverAmount.toLocaleString()} ج.م</div>
                           </div>
                         </div>
                         <ChevronDown 
@@ -528,12 +532,17 @@ export const DonationsByCaseView = () => {
                         )}
                         {stats.confirmed > 0 && (
                           <Badge variant="outline" className="bg-green-50 text-green-700">
-                            مؤكد: {stats.confirmed}
+                            مؤكد: {stats.confirmed} ({stats.confirmedAmount.toLocaleString()} ج.م)
+                          </Badge>
+                        )}
+                        {stats.totalHandedOverAmount > 0 && (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                            مسلم: {stats.totalHandedOverAmount.toLocaleString()} ج.م
                           </Badge>
                         )}
                         {stats.redeemed > 0 && (
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                            مسلم: {stats.redeemed}
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                            مسلم بالكامل: {stats.redeemed}
                           </Badge>
                         )}
                         {stats.cancelled > 0 && (
@@ -563,8 +572,10 @@ export const DonationsByCaseView = () => {
                              <TableHead className="text-right">كود الدفع</TableHead>
                              <TableHead className="text-right">الحالة</TableHead>
                              <TableHead className="text-right">حالة التسليم</TableHead>
+                             <TableHead className="text-right">المسلم</TableHead>
                              <TableHead className="text-right">تاريخ التبرع</TableHead>
                              <TableHead className="text-right">تاريخ التأكيد</TableHead>
+                             <TableHead className="text-right">التفاصيل والملاحظات</TableHead>
                              <TableHead className="text-right">إجراءات</TableHead>
                            </TableRow>
                           </TableHeader>
@@ -609,10 +620,34 @@ export const DonationsByCaseView = () => {
                                   </div>
                                 </TableCell>
                                  <TableCell>
-                                   {getStatusBadge(donation.status)}
+                                   <div className="flex flex-col gap-1">
+                                     {getStatusBadge(donation.status)}
+                                     {donation.status === 'confirmed' && (
+                                       <Badge variant="outline" className="bg-green-50 text-green-700 text-xs">
+                                         ✓ مؤكد
+                                       </Badge>
+                                     )}
+                                   </div>
                                  </TableCell>
                                  <TableCell>
-                                   {getHandoverStatusBadge(donation)}
+                                   <div className="flex flex-col gap-1">
+                                     {getHandoverStatusBadge(donation)}
+                                     {donation.total_handed_over && donation.total_handed_over > 0 && (
+                                       <Badge variant="outline" className="bg-blue-50 text-blue-700 text-xs">
+                                         ✓ مسلم: {donation.total_handed_over.toLocaleString()} ج.م
+                                       </Badge>
+                                     )}
+                                   </div>
+                                 </TableCell>
+                                 <TableCell>
+                                   <div className="font-medium">
+                                     {donation.total_handed_over?.toLocaleString() || 0} ج.م
+                                   </div>
+                                   {donation.total_handed_over && donation.amount && (
+                                     <div className="text-xs text-muted-foreground">
+                                       من {donation.amount.toLocaleString()} ج.م
+                                     </div>
+                                   )}
                                  </TableCell>
                                  <TableCell>
                                    {new Date(donation.created_at).toLocaleDateString('ar-SA')}
@@ -622,6 +657,27 @@ export const DonationsByCaseView = () => {
                                    ? new Date(donation.confirmed_at).toLocaleDateString('ar-SA')
                                    : '-'
                                  }
+                               </TableCell>
+                               <TableCell>
+                                 <div className="space-y-1 max-w-xs">
+                                   {donation.admin_notes && (
+                                     <div className="text-xs">
+                                       <span className="font-medium">ملاحظات:</span>
+                                       <p className="text-muted-foreground mt-1 whitespace-pre-wrap">
+                                         {donation.admin_notes}
+                                       </p>
+                                     </div>
+                                   )}
+                                   {donation.payment_reference && (
+                                     <div className="text-xs">
+                                       <span className="font-medium">مرجع الدفع:</span>
+                                       <p className="text-muted-foreground">{donation.payment_reference}</p>
+                                     </div>
+                                   )}
+                                   {!donation.admin_notes && !donation.payment_reference && (
+                                     <span className="text-xs text-muted-foreground">-</span>
+                                   )}
+                                 </div>
                                </TableCell>
                                <TableCell>
                                  <div className="flex gap-1 flex-wrap">

@@ -86,6 +86,9 @@ export default function CaseFollowups() {
     queryKey: ["case_followups", caseId],
     queryFn: async () => {
       if (!caseId) return [];
+      
+      console.log("CaseFollowups: Fetching followups for caseId:", caseId);
+      
       const { data, error } = await supabase
         .from("followup_actions")
         .select("id, title, description, action_date, status, requires_case_action, requires_volunteer_action, answer_type, answer_options, answer_text, answer_photos, answer_multi_choice, answered_at, task_level, kid_ids, profile_field_mapping")
@@ -94,7 +97,12 @@ export default function CaseFollowups() {
         .eq("requires_case_action", true)
         .order("action_date", { ascending: true });
       
-      if (error) throw error;
+      if (error) {
+        console.error("CaseFollowups: Error fetching followups:", error);
+        throw error;
+      }
+      
+      console.log("CaseFollowups: Fetched followups:", data?.length || 0, "items");
       
       // Parse JSON fields if they're strings
       const parsedData = (data || []).map((item: any) => {
