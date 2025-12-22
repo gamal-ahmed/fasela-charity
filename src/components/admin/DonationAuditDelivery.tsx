@@ -740,11 +740,30 @@ const DonationAuditDelivery = () => {
                           onClick={() => toggleCaseExpansion(group.case.id)}
                         >
                           <div className="flex items-center justify-between">
-                            <div>
+                            <div className="flex-1">
                               <h3 className="font-semibold text-lg">{group.case.title_ar}</h3>
-                              <p className="text-sm text-muted-foreground">
-                                {group.donations.length} تبرع جاهز للتسليم
-                              </p>
+                              <div className="flex items-center gap-4 mt-1 flex-wrap">
+                                <p className="text-sm text-muted-foreground">
+                                  {group.donations.length} تبرع جاهز للتسليم
+                                </p>
+                                <div className="flex items-center gap-3 text-sm">
+                                  <span className="text-muted-foreground">
+                                    إجمالي المبلغ: <span className="font-semibold text-blue-600">
+                                      {group.donations.reduce((sum, d) => sum + d.amount, 0).toLocaleString()} ج.م
+                                    </span>
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    المسلم: <span className="font-semibold text-green-600">
+                                      {group.donations.reduce((sum, d) => sum + (d.total_handed_over || 0), 0).toLocaleString()} ج.م
+                                    </span>
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    جاهز: <span className="font-semibold text-orange-600">
+                                      {group.donations.reduce((sum, d) => sum + (d.amount - (d.total_handed_over || 0)), 0).toLocaleString()} ج.م
+                                    </span>
+                                  </span>
+                                </div>
+                              </div>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-muted-foreground">
@@ -760,56 +779,132 @@ const DonationAuditDelivery = () => {
                         </div>
                         {isExpanded && (
                           <div className="space-y-3 pl-4">
-                            {group.donations.map((donation) => (
-                              <div key={donation.id} className="flex items-center justify-between p-3 border rounded-lg">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-full">
-                                      <p className="font-medium">{donation.donor_name || "متبرع مجهول"}</p>
-                                      <p className="text-sm text-muted-foreground">
-                                        المبلغ المتبقي: {(donation.amount - (donation.total_handed_over || 0)).toLocaleString()} ج.م من {donation.amount.toLocaleString()} ج.م
-                                      </p>
-                                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                                        <span>
-                                          تاريخ الإنشاء: {new Date(donation.created_at).toLocaleDateString('ar-EG', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric'
-                                          })}
-                                        </span>
-                                        {donation.confirmed_at && (
-                                          <span>
-                                            تاريخ التأكيد: {new Date(donation.confirmed_at).toLocaleDateString('ar-EG', {
-                                              year: 'numeric',
-                                              month: 'long',
-                                              day: 'numeric'
-                                            })}
-                                          </span>
+                            {group.donations.map((donation) => {
+                              const remainingAmount = donation.amount - (donation.total_handed_over || 0);
+                              const handedOverPercentage = donation.amount > 0 ? ((donation.total_handed_over || 0) / donation.amount * 100).toFixed(1) : 0;
+                              
+                              return (
+                                <Card key={donation.id} className="p-4 border-2">
+                                  <div className="space-y-4">
+                                    {/* Header with Donor Info */}
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1 space-y-2">
+                                        <div className="flex items-center gap-2">
+                                          <p className="font-semibold text-lg">{donation.donor_name || "متبرع مجهول"}</p>
+                                          {donation.donor_email && (
+                                            <Badge variant="outline" className="text-xs">
+                                              {donation.donor_email}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                                            {donation.donation_type === 'monthly' ? 'كفالة شهرية' : 'تبرع مخصص'}
+                                          </Badge>
+                                          {donation.donation_type === 'monthly' && donation.months_pledged > 0 && (
+                                            <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                                              {donation.months_pledged} شهر
+                                            </Badge>
+                                          )}
+                                          {getHandoverStatusBadge(donation.handover_status, donation.total_handed_over || 0, donation.amount)}
+                                        </div>
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => openHandoverDialog(donation)}
+                                        className="flex items-center gap-1"
+                                      >
+                                        <Truck className="w-3 h-3" />
+                                        تسليم
+                                      </Button>
+                                    </div>
+
+                                    {/* Amount Breakdown */}
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-muted/50 rounded-lg">
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">المبلغ الإجمالي</p>
+                                        <p className="font-semibold text-sm">{donation.amount.toLocaleString()} ج.م</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">المسلم</p>
+                                        <p className="font-semibold text-sm text-blue-600">
+                                          {(donation.total_handed_over || 0).toLocaleString()} ج.م
+                                        </p>
+                                        {donation.amount > 0 && (
+                                          <p className="text-xs text-muted-foreground">
+                                            ({handedOverPercentage}%)
+                                          </p>
                                         )}
                                       </div>
-                                      <div className="flex items-center gap-2 mt-1">
-                                        {getHandoverStatusBadge(donation.handover_status, donation.total_handed_over || 0, donation.amount)}
-                                      </div>
-                                      {donation.admin_notes && (
-                                        <p className="text-xs text-muted-foreground mt-1 italic">
-                                          ملاحظات: {donation.admin_notes}
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">المتبقي</p>
+                                        <p className="font-semibold text-sm text-orange-600">
+                                          {remainingAmount.toLocaleString()} ج.م
                                         </p>
-                                      )}
+                                        {donation.amount > 0 && (
+                                          <p className="text-xs text-muted-foreground">
+                                            ({100 - parseFloat(handedOverPercentage)}%)
+                                          </p>
+                                        )}
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">جاهز للتسليم</p>
+                                        <p className="font-semibold text-sm text-green-600">
+                                          {remainingAmount.toLocaleString()} ج.م
+                                        </p>
+                                      </div>
                                     </div>
+
+                                    {/* Payment & Dates Info */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                      <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                          <CreditCard className="w-4 h-4 text-muted-foreground" />
+                                          <span className="text-muted-foreground">كود الدفع:</span>
+                                          <span className="font-mono font-medium">{donation.payment_code}</span>
+                                        </div>
+                                        {donation.payment_reference && (
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-muted-foreground">مرجع الدفع:</span>
+                                            <span className="font-medium">{donation.payment_reference}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                          <Clock className="w-4 h-4 text-muted-foreground" />
+                                          <span className="text-muted-foreground">تاريخ الإنشاء:</span>
+                                          <span>{new Date(donation.created_at).toLocaleDateString('ar-EG', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric'
+                                          })}</span>
+                                        </div>
+                                        {donation.confirmed_at && (
+                                          <div className="flex items-center gap-2">
+                                            <CheckCircle className="w-4 h-4 text-green-500" />
+                                            <span className="text-muted-foreground">تاريخ التأكيد:</span>
+                                            <span>{new Date(donation.confirmed_at).toLocaleDateString('ar-EG', {
+                                              year: 'numeric',
+                                              month: 'short',
+                                              day: 'numeric'
+                                            })}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Admin Notes */}
+                                    {donation.admin_notes && (
+                                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                        <p className="text-xs font-medium text-blue-900 mb-1">ملاحظات الإدارة:</p>
+                                        <p className="text-sm text-blue-800 whitespace-pre-wrap">{donation.admin_notes}</p>
+                                      </div>
+                                    )}
                                   </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Button
-                                    size="sm"
-                                    onClick={() => openHandoverDialog(donation)}
-                                    className="flex items-center gap-1"
-                                  >
-                                    <Truck className="w-3 h-3" />
-                                    تسليم
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
+                                </Card>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -886,11 +981,23 @@ const DonationAuditDelivery = () => {
                           onClick={() => toggleCaseExpansion(group.caseId)}
                         >
                           <div className="flex items-center justify-between">
-                            <div>
+                            <div className="flex-1">
                               <h3 className="font-semibold text-lg">{group.case.title_ar}</h3>
-                              <p className="text-sm text-muted-foreground">
-                                {group.records.length} عملية تسليم
-                              </p>
+                              <div className="flex items-center gap-4 mt-1 flex-wrap">
+                                <p className="text-sm text-muted-foreground">
+                                  {group.records.length} عملية تسليم
+                                </p>
+                                <div className="flex items-center gap-3 text-sm">
+                                  <span className="text-muted-foreground">
+                                    إجمالي المسلم: <span className="font-semibold text-green-600">
+                                      {group.records.reduce((sum, r) => sum + r.handover_amount, 0).toLocaleString()} ج.م
+                                    </span>
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    من {new Set(group.records.map(r => r.donation_id)).size} تبرع
+                                  </span>
+                                </div>
+                              </div>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-muted-foreground">
@@ -905,51 +1012,119 @@ const DonationAuditDelivery = () => {
                           </div>
                         </div>
                         {isExpanded && (
-                          <div className="space-y-2 pl-4">
-                            {group.records.map((record) => (
-                              <div key={record.id} className="flex items-center justify-between p-2 border-b last:border-b-0">
-                                <div className="flex-1">
-                                  <p className="text-sm font-medium">
-                                    {record.donations.donor_name || "متبرع مجهول"} - {record.handover_amount.toLocaleString()} ج.م
-                                  </p>
-                                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                                    <span>
-                                      تاريخ التسليم: {new Date(record.handover_date).toLocaleDateString('ar-EG', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric'
-                                      })}
-                                    </span>
-                                    {record.donations.created_at && (
-                                      <span>
-                                        تاريخ الإنشاء: {new Date(record.donations.created_at).toLocaleDateString('ar-EG', {
-                                          year: 'numeric',
-                                          month: 'long',
-                                          day: 'numeric'
-                                        })}
-                                      </span>
-                                    )}
-                                    {record.donations.confirmed_at && (
-                                      <span>
-                                        تاريخ التأكيد: {new Date(record.donations.confirmed_at).toLocaleDateString('ar-EG', {
-                                          year: 'numeric',
-                                          month: 'long',
-                                          day: 'numeric'
-                                        })}
-                                      </span>
-                                    )}
+                          <div className="space-y-3 pl-4">
+                            {group.records.map((record) => {
+                              const originalAmount = record.donations.amount;
+                              const handoverPercentage = originalAmount > 0 ? (record.handover_amount / originalAmount * 100).toFixed(1) : 0;
+                              
+                              return (
+                                <Card key={record.id} className="p-4 border-2 border-green-200 bg-green-50/30">
+                                  <div className="space-y-4">
+                                    {/* Header with Donor Info */}
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1 space-y-2">
+                                        <div className="flex items-center gap-2">
+                                          <p className="font-semibold text-lg">{record.donations.donor_name || "متبرع مجهول"}</p>
+                                          <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
+                                            ✓ مسلم
+                                          </Badge>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <Badge variant="outline" className="text-xs">
+                                            كود: {record.donations.payment_code}
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Amount Breakdown */}
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-3 bg-white rounded-lg border border-green-200">
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">المبلغ الأصلي</p>
+                                        <p className="font-semibold text-sm">{originalAmount.toLocaleString()} ج.م</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">المبلغ المسلم</p>
+                                        <p className="font-semibold text-sm text-green-600">
+                                          {record.handover_amount.toLocaleString()} ج.م
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                          ({handoverPercentage}% من المبلغ الأصلي)
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">تاريخ التسليم</p>
+                                        <p className="font-semibold text-sm">
+                                          {new Date(record.handover_date).toLocaleDateString('ar-EG', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric'
+                                          })}
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {/* Timeline & Payment Info */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                      <div className="space-y-2">
+                                        <p className="text-xs font-medium text-muted-foreground">التواريخ:</p>
+                                        <div className="space-y-1">
+                                          {record.donations.created_at && (
+                                            <div className="flex items-center gap-2">
+                                              <Clock className="w-3 h-3 text-muted-foreground" />
+                                              <span className="text-muted-foreground text-xs">الإنشاء:</span>
+                                              <span className="text-xs">{new Date(record.donations.created_at).toLocaleDateString('ar-EG', {
+                                                year: 'numeric',
+                                                month: 'short',
+                                                day: 'numeric'
+                                              })}</span>
+                                            </div>
+                                          )}
+                                          {record.donations.confirmed_at && (
+                                            <div className="flex items-center gap-2">
+                                              <CheckCircle className="w-3 h-3 text-green-500" />
+                                              <span className="text-muted-foreground text-xs">التأكيد:</span>
+                                              <span className="text-xs">{new Date(record.donations.confirmed_at).toLocaleDateString('ar-EG', {
+                                                year: 'numeric',
+                                                month: 'short',
+                                                day: 'numeric'
+                                              })}</span>
+                                            </div>
+                                          )}
+                                          <div className="flex items-center gap-2">
+                                            <Truck className="w-3 h-3 text-blue-500" />
+                                            <span className="text-muted-foreground text-xs">التسليم:</span>
+                                            <span className="text-xs font-medium">{new Date(record.handover_date).toLocaleDateString('ar-EG', {
+                                              year: 'numeric',
+                                              month: 'short',
+                                              day: 'numeric'
+                                            })}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <p className="text-xs font-medium text-muted-foreground">معلومات إضافية:</p>
+                                        <div className="space-y-1">
+                                          <div className="flex items-center gap-2">
+                                            <Package className="w-3 h-3 text-muted-foreground" />
+                                            <span className="text-muted-foreground text-xs">الحالة:</span>
+                                            <span className="text-xs">{group.case.title_ar}</span>
+                                          </div>
+                                          {record.handover_notes && (
+                                            <div className="mt-2">
+                                              <p className="text-xs font-medium text-muted-foreground mb-1">ملاحظات التسليم:</p>
+                                              <p className="text-xs text-muted-foreground italic bg-white p-2 rounded border">
+                                                {record.handover_notes}
+                                              </p>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
-                                  {record.handover_notes && (
-                                    <p className="text-xs text-muted-foreground mt-1 italic">
-                                      ملاحظات التسليم: {record.handover_notes}
-                                    </p>
-                                  )}
-                                </div>
-                                <Badge variant="outline" className="text-xs">
-                                  مسلم
-                                </Badge>
-                              </div>
-                            ))}
+                                </Card>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
