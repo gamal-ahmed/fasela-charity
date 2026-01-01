@@ -140,7 +140,7 @@ export default function FollowupActionsView() {
         }
       }
       
-      return data as FollowupAction[];
+      return (data || []) as unknown as FollowupAction[];
     },
     staleTime: 30000,
     refetchOnWindowFocus: false,
