@@ -304,6 +304,23 @@ export default function AdminCaseView() {
           </Card>
         )}
 
+        {/* Case Description */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <FileText className="h-6 w-6 text-primary" />
+              <CardTitle>وصف الحالة</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-lg bg-muted/50 p-4">
+              <p className="text-foreground whitespace-pre-wrap leading-relaxed">
+                {caseData.description_ar || caseData.description || "لا يوجد وصف"}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Case Info Card */}
         <Card>
           <CardHeader>
