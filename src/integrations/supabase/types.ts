@@ -1391,9 +1391,67 @@ export type Database = {
         }
         Relationships: []
       }
+      followup_action_kid_answers: {
+        Row: {
+          answer_multi_choice: string | null
+          answer_photos: Json | null
+          answer_text: string | null
+          answered_at: string
+          answered_by: string | null
+          created_at: string
+          followup_action_id: string
+          id: string
+          kid_id: string
+        }
+        Insert: {
+          answer_multi_choice?: string | null
+          answer_photos?: Json | null
+          answer_text?: string | null
+          answered_at?: string
+          answered_by?: string | null
+          created_at?: string
+          followup_action_id: string
+          id?: string
+          kid_id: string
+        }
+        Update: {
+          answer_multi_choice?: string | null
+          answer_photos?: Json | null
+          answer_text?: string | null
+          answered_at?: string
+          answered_by?: string | null
+          created_at?: string
+          followup_action_id?: string
+          id?: string
+          kid_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "followup_action_kid_answers_followup_action_id_fkey"
+            columns: ["followup_action_id"]
+            isOneToOne: false
+            referencedRelation: "followup_actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "followup_action_kid_answers_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "case_kids"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       followup_actions: {
         Row: {
           action_date: string
+          answer_multi_choice: string | null
+          answer_options: Json | null
+          answer_photos: Json | null
+          answer_text: string | null
+          answer_type: string | null
+          answered_at: string | null
+          answered_by: string | null
           case_id: string
           completed_at: string | null
           completed_by: string | null
@@ -1403,14 +1461,24 @@ export type Database = {
           created_by: string
           description: string | null
           id: string
+          kid_ids: Json | null
+          profile_field_mapping: string | null
           requires_case_action: boolean
           requires_volunteer_action: boolean
           status: string
+          task_level: string | null
           title: string
           updated_at: string
         }
         Insert: {
           action_date: string
+          answer_multi_choice?: string | null
+          answer_options?: Json | null
+          answer_photos?: Json | null
+          answer_text?: string | null
+          answer_type?: string | null
+          answered_at?: string | null
+          answered_by?: string | null
           case_id: string
           completed_at?: string | null
           completed_by?: string | null
@@ -1420,14 +1488,24 @@ export type Database = {
           created_by: string
           description?: string | null
           id?: string
+          kid_ids?: Json | null
+          profile_field_mapping?: string | null
           requires_case_action?: boolean
           requires_volunteer_action?: boolean
           status?: string
+          task_level?: string | null
           title: string
           updated_at?: string
         }
         Update: {
           action_date?: string
+          answer_multi_choice?: string | null
+          answer_options?: Json | null
+          answer_photos?: Json | null
+          answer_text?: string | null
+          answer_type?: string | null
+          answered_at?: string | null
+          answered_by?: string | null
           case_id?: string
           completed_at?: string | null
           completed_by?: string | null
@@ -1437,9 +1515,12 @@ export type Database = {
           created_by?: string
           description?: string | null
           id?: string
+          kid_ids?: Json | null
+          profile_field_mapping?: string | null
           requires_case_action?: boolean
           requires_volunteer_action?: boolean
           status?: string
+          task_level?: string | null
           title?: string
           updated_at?: string
         }

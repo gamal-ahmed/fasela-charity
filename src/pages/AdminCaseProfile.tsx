@@ -241,34 +241,69 @@ export default function AdminCaseProfile() {
           </TabsList>
 
           <TabsContent value="profile" className="space-y-6">
+            {/* Case Description Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  وصف الحالة
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <p className="text-foreground whitespace-pre-wrap leading-relaxed">
+                    {caseData.description_ar || caseData.description || "لا يوجد وصف"}
+                  </p>
+                </div>
+                {caseData.short_description_ar && (
+                  <div className="mt-4">
+                    <p className="text-sm text-muted-foreground mb-2">الوصف المختصر:</p>
+                    <p className="text-muted-foreground">
+                      {caseData.short_description_ar}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Case Details Card */}
             <Card>
               <CardHeader>
                 <CardTitle>معلومات الحالة</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="prose max-w-none">
-                  <h3 className="text-xl font-semibold mb-4">الوصف</h3>
-                  <p className="text-muted-foreground whitespace-pre-wrap">
-                    {caseData.description_ar || caseData.description}
-                  </p>
-                  
-                  <div className="grid grid-cols-2 gap-4 mt-6">
-                    <div>
-                      <p className="text-sm text-muted-foreground">المستوى التعليمي</p>
-                      <p className="font-medium">{caseData.education_level || "غير محدد"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">القدرة على العمل</p>
-                      <p className="font-medium">{caseData.work_ability || "غير محدد"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">الحالة الصحية</p>
-                      <p className="font-medium">{caseData.health_state || "غير محدد"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">التكلفة الشهرية</p>
-                      <p className="font-medium text-lg">{caseData.monthly_cost.toLocaleString()} ج.م</p>
-                    </div>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">المستوى التعليمي</p>
+                    <p className="font-medium">{caseData.education_level || "غير محدد"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">القدرة على العمل</p>
+                    <p className="font-medium">{caseData.work_ability || "غير محدد"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">الحالة الصحية</p>
+                    <p className="font-medium">{caseData.health_state || "غير محدد"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">التكلفة الشهرية</p>
+                    <p className="font-medium text-lg">{caseData.monthly_cost.toLocaleString()} ج.م</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">عمر الوالد/ة</p>
+                    <p className="font-medium">{caseData.parent_age ? `${caseData.parent_age} سنة` : "غير محدد"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">عدد الأبناء</p>
+                    <p className="font-medium">{caseData.kids_number || 0}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">قيمة الإيجار</p>
+                    <p className="font-medium">{caseData.rent_amount ? `${caseData.rent_amount.toLocaleString()} ج.م` : "غير محدد"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">هاتف التواصل</p>
+                    <p className="font-medium" dir="ltr">{caseData.contact_phone || "غير محدد"}</p>
                   </div>
                 </div>
               </CardContent>
