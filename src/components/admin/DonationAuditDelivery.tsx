@@ -781,7 +781,7 @@ const DonationAuditDelivery = () => {
                           <div className="space-y-3 pl-4">
                             {group.donations.map((donation) => {
                               const remainingAmount = donation.amount - (donation.total_handed_over || 0);
-                              const handedOverPercentage = donation.amount > 0 ? ((donation.total_handed_over || 0) / donation.amount * 100).toFixed(1) : 0;
+                              const handedOverPercentage = donation.amount > 0 ? ((donation.total_handed_over || 0) / donation.amount * 100).toFixed(1) : "0";
                               
                               return (
                                 <Card key={donation.id} className="p-4 border-2">

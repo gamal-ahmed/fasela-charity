@@ -119,7 +119,7 @@ export default function FollowupActionsList({ caseId, onCreateNew }: FollowupAct
         }
       }
 
-      return data as FollowupAction[];
+      return (data || []) as unknown as FollowupAction[];
     },
     staleTime: 30000,
     refetchOnWindowFocus: false,
