@@ -46,7 +46,7 @@ export const FeaturedCasesCarousel = () => {
         throw casesError;
       }
 
-      // Fetch donations and handovers for each case
+      // Fetch donations for each case
       const casesWithStats = await Promise.all(
         (cases || []).map(async (caseItem) => {
           const [{ data: donations }] = await Promise.all([

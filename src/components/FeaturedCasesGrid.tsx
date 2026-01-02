@@ -32,13 +32,17 @@ export const FeaturedCasesGrid = () => {
         throw casesError;
       }
 
-      // Fetch donations and handovers for each case
+      // Fetch donations for each case
       const casesWithStats = await Promise.all(
         (cases || []).map(async (caseItem) => {
+<<<<<<< HEAD
           const [
             { data: donations },
             { data: handovers }
           ] = await Promise.all([
+=======
+          const [{ data: donations }] = await Promise.all([
+>>>>>>> 2b5aca0c4e2887be8c104cc9d4a3fadcc8142eea
             supabase
               .from("donations")
               .select("amount")
@@ -51,6 +55,7 @@ export const FeaturedCasesGrid = () => {
           ]);
 
           const directDonations = donations?.reduce((sum, d) => sum + Number(d.amount || 0), 0) || 0;
+<<<<<<< HEAD
 
           // Calculate handovers that came from other cases (transfers)
           // We check if original_case_id exists and is different from the current case_id
@@ -63,6 +68,10 @@ export const FeaturedCasesGrid = () => {
 
           const totalSecured = directDonations + transferredHandovers;
 
+=======
+          const totalSecured = directDonations;
+
+>>>>>>> 2b5aca0c4e2887be8c104cc9d4a3fadcc8142eea
           return {
             ...caseItem,
             total_secured_money: totalSecured
