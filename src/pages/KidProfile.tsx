@@ -82,19 +82,20 @@ const KidProfile = () => {
     },
   });
 
-  // Fetch kid-level tasks for this kid
+  // Fetch kid-level tasks for this kid (scoped to the kid's case)
   const { data: kidTasks } = useQuery({
-    queryKey: ["kid-tasks", id],
+    queryKey: ["kid-tasks", id, kid?.case_id],
     queryFn: async () => {
-      if (!id) return [];
-      
-      // Fetch tasks where this kid is included in kid_ids
+      if (!id || !kid?.case_id) return [];
+
+      // Fetch tasks for this case where this kid is included
       const { data: tasks, error } = await supabase
         .from("followup_actions")
         .select("id, title, description, action_date, status, answer_type, answer_options, task_level, kid_ids")
         .eq("task_level", "kid_level")
         .eq("status", "pending")
-        .eq("requires_case_action", true);
+        .eq("requires_case_action", true)
+        .eq("case_id", kid.case_id);
 
       if (error) throw error;
 
@@ -123,7 +124,7 @@ const KidProfile = () => {
 
       return kidTasks;
     },
-    enabled: !!id,
+    enabled: !!id && !!kid?.case_id,
   });
 
   const getGenderIcon = (gender: string) => {

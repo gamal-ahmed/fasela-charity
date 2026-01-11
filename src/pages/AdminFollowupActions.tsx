@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrganization } from "@/hooks/useOrganization";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ interface FollowupAction {
 }
 
 export default function FollowupActionsView() {
+  const { currentOrg, isSuperAdmin } = useOrganization();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedAction, setSelectedAction] = useState<FollowupAction | null>(null);
@@ -57,19 +59,34 @@ export default function FollowupActionsView() {
   const queryClient = useQueryClient();
 
   const { data: actions, isLoading } = useQuery({
-    queryKey: ["followup-actions-all"],
+    queryKey: ["followup-actions-all", currentOrg?.id, isSuperAdmin],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("followup_actions" as any)
-        .select(`
-          *,
-          cases (
-            title,
-            title_ar
-          )
-        `)
-        .order("action_date", { ascending: false });
-      
+      // If not super admin, scope followups to cases belonging to the current organization
+      let followupsQuery = supabase.from("followup_actions" as any).select(`
+        *,
+        cases (
+          title,
+          title_ar
+        )
+      `).order("action_date", { ascending: false });
+
+      if (!isSuperAdmin) {
+        if (!currentOrg?.id) return [] as FollowupAction[];
+
+        // Fetch case ids for the current organization
+        const { data: casesData, error: casesError } = await supabase
+          .from("cases")
+          .select("id")
+          .eq("organization_id", currentOrg.id);
+
+        if (casesError) throw casesError;
+        const caseIds = (casesData || []).map((c: any) => c.id);
+        if (caseIds.length === 0) return [] as FollowupAction[];
+
+        followupsQuery = followupsQuery.in("case_id", caseIds);
+      }
+
+      const { data, error } = await followupsQuery;
       if (error) throw error;
 
       // Parse JSON fields if they're strings
@@ -139,7 +156,7 @@ export default function FollowupActionsView() {
           });
         }
       }
-      
+
       return (data || []) as unknown as FollowupAction[];
     },
     staleTime: 30000,
@@ -165,7 +182,8 @@ export default function FollowupActionsView() {
     },
     onSuccess: () => {
       toast.success("تم إكمال المتابعة بنجاح");
-      queryClient.invalidateQueries({ queryKey: ["followup-actions-all"] });
+      // Invalidate any followup-actions-all queries (scoped by org id in key)
+      queryClient.invalidateQueries({ queryKey: ["followup-actions-all"], exact: false });
       setShowCompletionDialog(false);
       setSelectedAction(null);
       setCompletionNotes("");
@@ -189,7 +207,7 @@ export default function FollowupActionsView() {
     },
     onSuccess: () => {
       toast.success("تم إلغاء المتابعة");
-      queryClient.invalidateQueries({ queryKey: ["followup-actions-all"] });
+      queryClient.invalidateQueries({ queryKey: ["followup-actions-all"], exact: false });
     },
     onError: (error: any) => {
       toast.error("فشل إلغاء المتابعة: " + error.message);

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrganization } from "@/hooks/useOrganization";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
@@ -23,6 +24,8 @@ const MonthlyReport = () => {
     months.push({ value, label });
   }
 
+  const { currentOrg, isSuperAdmin } = useOrganization();
+
   const { data: reportData, isLoading } = useQuery({
     queryKey: ["monthly-report", selectedMonth],
     queryFn: async () => {
@@ -30,51 +33,118 @@ const MonthlyReport = () => {
       const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
       const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
 
+      // If not super admin, scope everything to the selected organization
+      let caseIds: string[] | null = null;
+      if (!isSuperAdmin) {
+        if (!currentOrg?.id) {
+          return {
+            droppedCases: [],
+            joinedCases: [],
+            followups: [],
+            donations: [],
+            stats: {
+              totalDonations: 0,
+              totalHandovers: 0,
+              totalFollowupCost: 0,
+              followupsCount: 0,
+              followupsPending: 0,
+              followupsCompleted: 0,
+              droppedCount: 0,
+              joinedCount: 0,
+            },
+            charts: { followupsByStatus: [], donationsByType: [] },
+          };
+        }
+
+        const { data: casesForOrg, error: casesError } = await supabase
+          .from("cases")
+          .select("id")
+          .eq("organization_id", currentOrg.id);
+
+        if (casesError) throw casesError;
+        caseIds = (casesForOrg || []).map((c: any) => c.id);
+        // If no cases, return empty report set
+        if (caseIds.length === 0) {
+          return {
+            droppedCases: [],
+            joinedCases: [],
+            followups: [],
+            donations: [],
+            stats: {
+              totalDonations: 0,
+              totalHandovers: 0,
+              totalFollowupCost: 0,
+              followupsCount: 0,
+              followupsPending: 0,
+              followupsCompleted: 0,
+              droppedCount: 0,
+              joinedCount: 0,
+            },
+            charts: { followupsByStatus: [], donationsByType: [] },
+          };
+        }
+      }
+
       // Get cases that changed lifecycle_status to 'closed' or 'paused' in this month
-      const { data: droppedCases, error: droppedError } = await supabase
+      const droppedCasesQuery = supabase
         .from("cases")
         .select("id, title_ar, title, lifecycle_status, profile_notes, updated_at")
         .in("lifecycle_status", ["closed", "paused"])
         .gte("updated_at", startDate.toISOString())
         .lte("updated_at", endDate.toISOString());
 
-      if (droppedError) throw droppedError;
-
-      // Get cases created in this month
-      const { data: joinedCases, error: joinedError } = await supabase
+      const joinedCasesQuery = supabase
         .from("cases")
         .select("id, title_ar, title, created_at")
         .gte("created_at", startDate.toISOString())
         .lte("created_at", endDate.toISOString());
 
+      if (caseIds) {
+        droppedCasesQuery.in("id", caseIds);
+        joinedCasesQuery.in("id", caseIds);
+      }
+
+      const { data: droppedCases, error: droppedError } = await droppedCasesQuery;
+      if (droppedError) throw droppedError;
+
+      const { data: joinedCases, error: joinedError } = await joinedCasesQuery;
       if (joinedError) throw joinedError;
 
       // Get follow-ups in this month
-      const { data: followups, error: followupsError } = await supabase
+      const followupsQuery = supabase
         .from("followup_actions")
         .select("id, title, status, cost, action_date, case_id, cases(title_ar, title)")
         .gte("action_date", startDate.toISOString().split('T')[0])
         .lte("action_date", endDate.toISOString().split('T')[0]);
 
+      if (caseIds) followupsQuery.in("case_id", caseIds);
+
+      const { data: followups, error: followupsError } = await followupsQuery;
       if (followupsError) throw followupsError;
 
       // Get donations confirmed in this month
-      const { data: donations, error: donationsError } = await supabase
+      const donationsQuery = supabase
         .from("donations")
         .select("id, amount, donation_type, confirmed_at, case_id, cases(title_ar, title)")
         .eq("status", "confirmed")
         .gte("confirmed_at", startDate.toISOString())
         .lte("confirmed_at", endDate.toISOString());
 
+      if (caseIds) donationsQuery.in("case_id", caseIds);
+
+      const { data: donations, error: donationsError } = await donationsQuery;
       if (donationsError) throw donationsError;
 
       // Get handovers in this month
-      const { data: handovers, error: handoversError } = await supabase
+      const handoversQuery = supabase
         .from("donation_handovers")
         .select("handover_amount, handover_date")
         .gte("handover_date", startDate.toISOString())
         .lte("handover_date", endDate.toISOString());
 
+      if (caseIds) handoversQuery.in("case_id", caseIds);
+
+      const { data: handovers, error: handoversError } = await handoversQuery;
       if (handoversError) throw handoversError;
 
       // Calculate statistics

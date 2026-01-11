@@ -149,8 +149,8 @@ export default function FollowupActionsList({ caseId, onCreateNew }: FollowupAct
     },
     onSuccess: () => {
       toast.success("تم إكمال المتابعة بنجاح");
-      queryClient.invalidateQueries({ queryKey: ["followup-actions", caseId] });
-      queryClient.invalidateQueries({ queryKey: ["followup-actions-all"] });
+  queryClient.invalidateQueries({ queryKey: ["followup-actions", caseId] });
+  queryClient.invalidateQueries({ queryKey: ["followup-actions-all"], exact: false });
       setShowCompletionDialog(false);
       setSelectedAction(null);
       setCompletionNotes("");
@@ -174,8 +174,8 @@ export default function FollowupActionsList({ caseId, onCreateNew }: FollowupAct
     },
     onSuccess: () => {
       toast.success("تم إلغاء المتابعة");
-      queryClient.invalidateQueries({ queryKey: ["followup-actions", caseId] });
-      queryClient.invalidateQueries({ queryKey: ["followup-actions-all"] });
+  queryClient.invalidateQueries({ queryKey: ["followup-actions", caseId] });
+  queryClient.invalidateQueries({ queryKey: ["followup-actions-all"], exact: false });
     },
     onError: (error: any) => {
       toast.error("فشل إلغاء المتابعة: " + error.message);
@@ -193,8 +193,8 @@ export default function FollowupActionsList({ caseId, onCreateNew }: FollowupAct
     },
     onSuccess: () => {
       toast.success("تم تحديث المتابعة بنجاح");
-      queryClient.invalidateQueries({ queryKey: ["followup-actions", caseId] });
-      queryClient.invalidateQueries({ queryKey: ["followup-actions-all"] });
+  queryClient.invalidateQueries({ queryKey: ["followup-actions", caseId] });
+  queryClient.invalidateQueries({ queryKey: ["followup-actions-all"], exact: false });
       setShowEditDialog(false);
       setSelectedAction(null);
     },

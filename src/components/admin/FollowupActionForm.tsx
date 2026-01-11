@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useOrganization } from "@/hooks/useOrganization";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -90,6 +91,7 @@ export default function FollowupActionForm({
   const [newOption, setNewOption] = useState("");
   const [selectedKidIds, setSelectedKidIds] = useState<string[]>([]);
   const queryClient = useQueryClient();
+  const { currentOrg, isSuperAdmin } = useOrganization();
 
   // Initialize form first
   const form = useForm<z.infer<typeof formSchema>>({
@@ -129,10 +131,18 @@ export default function FollowupActionForm({
   const { data: cases } = useQuery({
     queryKey: ["cases-for-followup"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("cases")
         .select("id, title, title_ar")
         .order("title_ar", { ascending: true });
+
+      // If not super admin, restrict cases to current organization
+      if (!isSuperAdmin) {
+        if (!currentOrg?.id) return [];
+        query = query.eq("organization_id", currentOrg.id);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
@@ -244,10 +254,13 @@ export default function FollowupActionForm({
           // Create kid-level tasks for all kids in all cases
           console.log("FollowupActionForm: Creating kid-level tasks for all kids in all cases");
 
-          // Fetch all cases with their kids
-          const { data: allCases, error: casesError } = await supabase
-            .from("cases")
-            .select("id");
+          // Fetch all cases (scoped to org for non-super-admins)
+          let casesQuery = supabase.from("cases").select("id");
+          if (!isSuperAdmin) {
+            if (!currentOrg?.id) throw new Error("لا توجد منظمة محددة");
+            casesQuery = casesQuery.eq("organization_id", currentOrg.id);
+          }
+          const { data: allCases, error: casesError } = await casesQuery;
 
           if (casesError) {
             throw new Error("فشل في جلب قائمة الحالات: " + casesError.message);
@@ -257,10 +270,12 @@ export default function FollowupActionForm({
             throw new Error("لا توجد حالات متاحة");
           }
 
-          // Fetch all kids grouped by case
+          // Fetch all kids grouped by case (only for the fetched cases)
+          const caseIds = (allCases || []).map((c: any) => c.id);
           const { data: allKids, error: kidsError } = await supabase
             .from("case_kids")
-            .select("id, case_id");
+            .select("id, case_id")
+            .in("case_id", caseIds);
 
           if (kidsError) {
             throw new Error("فشل في جلب قائمة الأطفال: " + kidsError.message);
@@ -308,10 +323,13 @@ export default function FollowupActionForm({
           // Create case-level tasks for all cases
           console.log("FollowupActionForm: Creating follow-up for all cases");
 
-          // Fetch all cases
-          const { data: allCases, error: casesError } = await supabase
-            .from("cases")
-            .select("id");
+          // Fetch all cases (scope to org for non-super-admins)
+          let casesQuery2 = supabase.from("cases").select("id");
+          if (!isSuperAdmin) {
+            if (!currentOrg?.id) throw new Error("لا توجد منظمة محددة");
+            casesQuery2 = casesQuery2.eq("organization_id", currentOrg.id);
+          }
+          const { data: allCases, error: casesError } = await casesQuery2;
 
           if (casesError) {
             throw new Error("فشل في جلب قائمة الحالات: " + casesError.message);
@@ -356,10 +374,10 @@ export default function FollowupActionForm({
         toast.success("تم إضافة المتابعة بنجاح");
       }
 
-      // Invalidate all relevant queries
-      queryClient.invalidateQueries({ queryKey: ["followup-actions"] });
-      queryClient.invalidateQueries({ queryKey: ["followup-actions-all"] });
-      queryClient.invalidateQueries({ queryKey: ["followup-actions-dashboard"] });
+  // Invalidate all relevant queries
+  queryClient.invalidateQueries({ queryKey: ["followup-actions"] });
+  queryClient.invalidateQueries({ queryKey: ["followup-actions-all"], exact: false });
+  queryClient.invalidateQueries({ queryKey: ["followup-actions-dashboard"] });
 
       form.reset();
       setAnswerOptions([]);

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrganization } from "@/hooks/useOrganization";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +15,9 @@ export default function FollowupActionsDashboard() {
   const { data: actions, isLoading } = useQuery({
     queryKey: ["followup-actions-dashboard"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { currentOrg, isSuperAdmin } = useOrganization();
+
+      let query = supabase
         .from("followup_actions" as any)
         .select(`
           *,
@@ -26,6 +29,20 @@ export default function FollowupActionsDashboard() {
         .order("action_date", { ascending: false })
         .limit(10);
 
+      if (!isSuperAdmin) {
+        if (!currentOrg?.id) return [];
+
+        const { data: casesData, error: casesError } = await supabase
+          .from("cases")
+          .select("id")
+          .eq("organization_id", currentOrg.id);
+        if (casesError) throw casesError;
+        const caseIds = (casesData || []).map((c: any) => c.id);
+        if (caseIds.length === 0) return [];
+        query = query.in("case_id", caseIds);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as any[];
     },
