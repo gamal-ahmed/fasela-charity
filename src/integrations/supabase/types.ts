@@ -4189,6 +4189,10 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_admin_or_volunteer: { Args: never; Returns: boolean }
       is_admin_user: { Args: never; Returns: boolean }
+      is_org_admin: {
+        Args: { check_org_id: string; check_user_id: string }
+        Returns: boolean
+      }
       is_org_member: { Args: { org_id: string }; Returns: boolean }
       is_super_admin: { Args: { check_user_id?: string }; Returns: boolean }
       make_user_admin: { Args: { user_email: string }; Returns: boolean }
@@ -4212,6 +4216,10 @@ export type Database = {
       }
       update_basket_item_quantity: {
         Args: { p_item_id: string; p_quantity: number }
+        Returns: boolean
+      }
+      user_belongs_to_org: {
+        Args: { check_org_id: string; check_user_id: string }
         Returns: boolean
       }
     }

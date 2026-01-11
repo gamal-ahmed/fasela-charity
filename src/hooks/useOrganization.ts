@@ -153,7 +153,7 @@ export function useUpdateMemberRole() {
     }) => {
       const { data, error } = await supabase
         .from("user_roles")
-        .update({ role: newRole })
+        .update({ role: newRole as "admin" | "user" })
         .eq("id", roleId)
         .select()
         .single();
@@ -232,7 +232,7 @@ export function useCreateInvitation() {
         .insert({
           organization_id: organizationId,
           email,
-          role,
+          role: role as "admin" | "user",
           invited_by: session?.user?.id,
         })
         .select()
