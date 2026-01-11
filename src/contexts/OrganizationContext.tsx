@@ -49,35 +49,67 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Use the database function to get user organizations
-      const { data, error } = await (supabase.rpc as any)('get_user_organizations', { check_user_id: session.user.id });
+      // First check if user is super admin
+      const { data: superAdminCheck } = await (supabase.rpc as any)('is_super_admin', { check_user_id: session.user.id });
+      const isUserSuperAdmin = superAdminCheck === true;
+      setIsSuperAdmin(isUserSuperAdmin);
 
-      if (error) {
-        console.error("Error fetching user organizations:", error);
-        setIsLoading(false);
-        return;
+      let orgs: UserOrganization[] = [];
+
+      if (isUserSuperAdmin) {
+        // Super admin can see ALL organizations
+        const { data: allOrgs, error: allOrgsError } = await supabase
+          .from("organizations")
+          .select("*")
+          .eq("is_active", true)
+          .order("name");
+
+        if (allOrgsError) {
+          console.error("Error fetching all organizations:", allOrgsError);
+          setIsLoading(false);
+          return;
+        }
+
+        orgs = (allOrgs || []).map((org: any) => ({
+          id: org.id,
+          name: org.name,
+          slug: org.slug,
+          logo_url: org.logo_url,
+          settings: org.settings || {},
+          is_active: org.is_active,
+          role: "admin" as const, // Super admin has admin access to all orgs
+          is_super_admin: true,
+        }));
+      } else {
+        // Regular user - use the database function to get user organizations
+        const { data, error } = await (supabase.rpc as any)('get_user_organizations', { check_user_id: session.user.id });
+
+        if (error) {
+          console.error("Error fetching user organizations:", error);
+          setIsLoading(false);
+          return;
+        }
+
+        orgs = ((data as any) || []).map((row: {
+          organization_id: string;
+          organization_name: string;
+          organization_slug: string;
+          organization_logo_url: string | null;
+          user_role: "admin" | "volunteer" | "user";
+          is_super_admin: boolean;
+        }) => ({
+          id: row.organization_id,
+          name: row.organization_name,
+          slug: row.organization_slug,
+          logo_url: row.organization_logo_url,
+          settings: {},
+          is_active: true,
+          role: row.user_role,
+          is_super_admin: row.is_super_admin,
+        }));
       }
 
-      const orgs: UserOrganization[] = ((data as any) || []).map((row: {
-        organization_id: string;
-        organization_name: string;
-        organization_slug: string;
-        organization_logo_url: string | null;
-        user_role: "admin" | "volunteer" | "user";
-        is_super_admin: boolean;
-      }) => ({
-        id: row.organization_id,
-        name: row.organization_name,
-        slug: row.organization_slug,
-        logo_url: row.organization_logo_url,
-        settings: {},
-        is_active: true,
-        role: row.user_role,
-        is_super_admin: row.is_super_admin,
-      }));
-
       setUserOrgs(orgs);
-      setIsSuperAdmin(orgs.some(org => org.is_super_admin));
 
       // Try to restore previously selected org from localStorage
       const savedOrgId = localStorage.getItem(STORAGE_KEY);
