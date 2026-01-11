@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, parseISO } from "date-fns";
 import { ar } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronDown, ChevronUp, User, Calendar, CreditCard } from "lucide-react";
+import { ChevronDown, ChevronUp, User, Calendar, CreditCard, Users, FileText, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useOrgQueryOptions } from "@/hooks/useOrgQuery";
 
 interface DonationDetail {
   id: string;
@@ -35,6 +36,7 @@ interface MonthlyDonationData {
 
 export const MonthlyDonationsView = () => {
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
+  const { orgId } = useOrgQueryOptions();
 
   const toggleMonth = (month: string) => {
     setExpandedMonths(prev => {
@@ -49,9 +51,9 @@ export const MonthlyDonationsView = () => {
   };
 
   const { data: monthlyData, isLoading } = useQuery({
-    queryKey: ["monthly-donations"],
+    queryKey: ["monthly-donations", orgId],
     queryFn: async () => {
-      // Fetch all confirmed donations with case details
+      if (!orgId) return [];
       const { data: donations, error: donationsError } = await supabase
         .from("donations")
         .select(`
@@ -70,6 +72,7 @@ export const MonthlyDonationsView = () => {
           )
         `)
         .eq("status", "confirmed")
+        .eq("organization_id", orgId)
         .order("confirmed_at", { ascending: false });
 
       if (donationsError) throw donationsError;
@@ -104,7 +107,7 @@ export const MonthlyDonationsView = () => {
         monthlyGroups[monthKey].totalHandedOver += handedOver;
         monthlyGroups[monthKey].readyToHandover += remaining;
         monthlyGroups[monthKey].confirmedCount += 1;
-        
+
         // Add donation details
         monthlyGroups[monthKey].donations.push({
           id: donation.id,
@@ -122,10 +125,11 @@ export const MonthlyDonationsView = () => {
       });
 
       // Convert to array and sort by month descending
-      return Object.values(monthlyGroups).sort((a, b) => 
+      return Object.values(monthlyGroups).sort((a, b) =>
         b.month.localeCompare(a.month)
       );
     },
+    enabled: !!orgId,
   });
 
   if (isLoading) {
@@ -200,7 +204,7 @@ export const MonthlyDonationsView = () => {
         {monthlyData.map((month) => {
           const handoverPercentage = (month.totalHandedOver / month.totalDonations) * 100;
           const isExpanded = expandedMonths.has(month.month);
-          
+
           return (
             <Card key={month.month} className="border-l-4 border-l-primary">
               <CardHeader className="pb-3">
@@ -271,7 +275,7 @@ export const MonthlyDonationsView = () => {
                       </h4>
                       {month.donations.map((donation) => {
                         const donationPercentage = (donation.total_handed_over / donation.amount) * 100;
-                        
+
                         return (
                           <Card key={donation.id} className="bg-muted/30">
                             <CardContent className="pt-4 space-y-3">

@@ -24,12 +24,17 @@ import PublicDonorReport from "./pages/PublicDonorReport";
 import MonthlyDonorReport from "./pages/MonthlyDonorReport";
 import MonthlyReport from "./pages/MonthlyReport";
 import AdminStaticPages from "./pages/admin/AdminStaticPages";
+import OrganizationsPage from "./pages/admin/organizations/OrganizationsPage";
+import OrganizationSettingsPage from "./pages/admin/organizations/OrganizationSettingsPage";
+import OrganizationMembersPage from "./pages/admin/organizations/OrganizationMembersPage";
 import SelectionCriteria from "./pages/SelectionCriteria";
 import FundingChannels from "./pages/FundingChannels";
 import CasePipeline from "./pages/CasePipeline";
 import Fasela50 from "./pages/Fasela50";
 import MomSurvey from "./pages/MomSurvey";
 import CaseFollowups from "./pages/CaseFollowups";
+import AcceptInvitation from "./pages/AcceptInvitation";
+import { OrganizationProvider } from "./contexts/OrganizationContext";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +69,7 @@ const App = () => (
           </Route>
 
           <Route path="/auth" element={<Auth />} />
+          <Route path="/accept-invitation" element={<OrganizationProvider><AcceptInvitation /></OrganizationProvider>} />
 
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
@@ -74,6 +80,11 @@ const App = () => (
           <Route path="/admin/tasks" element={<AdminLayout><AdminTasksPage /></AdminLayout>} />
           <Route path="/admin/reports" element={<AdminLayout><AdminReportsPage /></AdminLayout>} />
           <Route path="/admin/static-pages" element={<AdminLayout><AdminStaticPages /></AdminLayout>} />
+
+          {/* Organization Management Routes (Super Admin) */}
+          <Route path="/admin/organizations" element={<AdminLayout><OrganizationsPage /></AdminLayout>} />
+          <Route path="/admin/organizations/:id/settings" element={<AdminLayout><OrganizationSettingsPage /></AdminLayout>} />
+          <Route path="/admin/organizations/:id/members" element={<AdminLayout><OrganizationMembersPage /></AdminLayout>} />
 
           {/* Admin Detail Views - Wrapped in Layout for consistency */}
           <Route path="/admin/case-profile/:id" element={<AdminLayout><AdminCaseProfile /></AdminLayout>} />

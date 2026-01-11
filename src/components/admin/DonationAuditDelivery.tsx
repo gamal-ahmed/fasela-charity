@@ -28,6 +28,7 @@ import {
   ChevronDown,
   ChevronRight
 } from "lucide-react";
+import { useOrgQueryOptions } from "@/hooks/useOrgQuery";
 
 interface Donation {
   id: string;
@@ -100,10 +101,11 @@ const DonationAuditDelivery = () => {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { orgId, enabled } = useOrgQueryOptions();
 
   // Fetch donations with case details
   const { data: donations = [], isLoading } = useQuery({
-    queryKey: ["donation-audit"],
+    queryKey: ["donation-audit", orgId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("donations")
@@ -111,30 +113,34 @@ const DonationAuditDelivery = () => {
           *,
           cases!inner(id, title, title_ar)
         `)
-        .order("created_at", { ascending: false });
+        .eq("organization_id", orgId)
+        .order("created_at", { ascending: false }) as any;
 
       if (error) throw error;
       return data as Donation[];
-    }
+    },
+    enabled: !!orgId,
   });
 
   // Fetch cases for handover transfer
   const { data: allCases = [] } = useQuery({
-    queryKey: ["cases-for-handover"],
+    queryKey: ["cases-for-handover", orgId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cases")
         .select("id, title_ar, status")
-        .order("title_ar", { ascending: true });
+        .eq("organization_id", orgId)
+        .order("title_ar", { ascending: true }) as any;
 
       if (error) throw error;
       return data;
-    }
+    },
+    enabled: !!orgId,
   });
 
   // Fetch all handover history since inception with pagination
   const { data: handoverHistory = [], isFetching: isFetchingHandovers } = useQuery({
-    queryKey: ["handover-history", handoverPage],
+    queryKey: ["handover-history", handoverPage, orgId],
     queryFn: async () => {
       const from = 0;
       const to = handoverPage * HANDOVERS_PER_PAGE - 1;
@@ -147,25 +153,29 @@ const DonationAuditDelivery = () => {
           original_case:cases!donation_handovers_original_case_id_fkey(title, title_ar),
           donations(donor_name, amount, payment_code, created_at, confirmed_at)
         `)
+        .eq("organization_id", orgId)
         .order("handover_date", { ascending: false })
-        .range(from, to);
+        .range(from, to) as any;
 
       if (error) throw error;
       return data as HandoverRecord[];
-    }
+    },
+    enabled: !!orgId,
   });
 
   // Check if there are more handovers to load
   const { data: totalHandovers } = useQuery({
-    queryKey: ["handover-count"],
+    queryKey: ["handover-count", orgId],
     queryFn: async () => {
       const { count, error } = await supabase
         .from("donation_handovers")
-        .select("*", { count: 'exact', head: true });
+        .select("*", { count: 'exact', head: true })
+        .eq("organization_id", orgId);
 
       if (error) throw error;
       return count || 0;
-    }
+    },
+    enabled: !!orgId,
   });
 
   // Confirm donation mutation
@@ -788,7 +798,7 @@ const DonationAuditDelivery = () => {
                             {group.donations.map((donation) => {
                               const remainingAmount = donation.amount - (donation.total_handed_over || 0);
                               const handedOverPercentage = donation.amount > 0 ? ((donation.total_handed_over || 0) / donation.amount * 100).toFixed(1) : "0";
-                              
+
                               return (
                                 <Card key={donation.id} className="p-4 border-2">
                                   <div className="space-y-4">
@@ -1022,7 +1032,7 @@ const DonationAuditDelivery = () => {
                             {group.records.map((record) => {
                               const originalAmount = record.donations.amount;
                               const handoverPercentage = originalAmount > 0 ? (record.handover_amount / originalAmount * 100).toFixed(1) : 0;
-                              
+
                               return (
                                 <Card key={record.id} className="p-4 border-2 border-green-200 bg-green-50/30">
                                   <div className="space-y-4">

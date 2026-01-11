@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,8 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const invitationToken = searchParams.get("invitation");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -26,9 +28,13 @@ const Auth = () => {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         if (session?.user) {
-          navigate("/admin");
+          if (invitationToken) {
+            navigate(`/accept-invitation?token=${invitationToken}`);
+          } else {
+            navigate("/admin");
+          }
         }
       }
     );
@@ -37,14 +43,18 @@ const Auth = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
-        navigate("/admin");
+        if (invitationToken) {
+          navigate(`/accept-invitation?token=${invitationToken}`);
+        } else {
+          navigate("/admin");
+        }
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, invitationToken]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
