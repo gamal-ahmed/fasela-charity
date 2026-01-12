@@ -4,7 +4,7 @@
 BEGIN;
 
 -- Create function
-CREATE OR REPLACE FUNCTION public.accept_invitation(token uuid)
+CREATE OR REPLACE FUNCTION public.accept_invitation(token text)
 RETURNS TABLE(invitation_id uuid, organization_id uuid, role text) AS $$
 DECLARE
   inv record;
@@ -39,6 +39,6 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Grant execute to authenticated role so logged-in users can call it
-GRANT EXECUTE ON FUNCTION public.accept_invitation(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.accept_invitation(text) TO authenticated;
 
 COMMIT;
