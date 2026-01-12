@@ -129,11 +129,29 @@ export const DonationSection = ({
     try {
       if (!caseId || !paymentCode) return;
       
+      // Fetch the case to get its organization_id
+      const { data: caseData, error: caseError } = await supabase
+        .from('cases')
+        .select('organization_id')
+        .eq('id', caseId)
+        .single();
+      
+      if (caseError || !caseData) {
+        console.error('Error fetching case:', caseError);
+        toast({
+          title: "خطأ",
+          description: "حدث خطأ في جلب بيانات الحالة. يرجى المحاولة مرة أخرى.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       // Record pending donation with donor name and the amount from the main page
       const { error } = await supabase
         .from('donations')
         .insert({
           case_id: caseId,
+          organization_id: caseData.organization_id,
           donor_name: donorName,
           donor_email: donorEmail || null,
           amount: totalAmount, // Use the amount already calculated in the main page
