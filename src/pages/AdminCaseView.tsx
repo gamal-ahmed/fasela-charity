@@ -174,8 +174,7 @@ export default function AdminCaseView() {
   const { data: caseData, isLoading } = useQuery({
     queryKey: ["admin-case-view", id],
     queryFn: async () => {
-      const { currentOrg, isSuperAdmin } = useOrganization();
-
+      // Use the OrganizationContext values from component scope
       // Fetch case data (scope by organization for non-super-admins)
       let caseQuery = supabase.from("cases").select("*, admin_profile_picture_url").eq("id", id);
       if (!isSuperAdmin) {
@@ -183,9 +182,27 @@ export default function AdminCaseView() {
         caseQuery = caseQuery.eq("organization_id", currentOrg.id);
       }
 
-      const { data: caseInfo, error: caseError } = await caseQuery.single();
-
+      // Use maybeSingle to avoid throwing when not found so we can implement a fallback for super-admins
+      const { data: caseInfo, error: caseError } = await caseQuery.maybeSingle();
       if (caseError) throw caseError;
+
+      // If not found and user is super-admin, try again without org scoping (defensive)
+      let resolvedCase = caseInfo;
+      if (!resolvedCase && isSuperAdmin) {
+        const { data: fallbackCase, error: fallbackError } = await supabase
+          .from("cases")
+          .select("*, admin_profile_picture_url")
+          .eq("id", id)
+          .maybeSingle();
+
+        if (fallbackError) throw fallbackError;
+        resolvedCase = fallbackCase;
+      }
+
+      if (!resolvedCase) {
+        // Not found or no access
+        throw new Error("Case not found");
+      }
 
       // Fetch all related data
       const [kidsData, donationsData, reportsData, followupsData, handoversData, charitiesData] = await Promise.all([
