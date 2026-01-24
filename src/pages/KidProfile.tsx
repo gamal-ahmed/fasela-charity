@@ -6,10 +6,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, GraduationCap, BookOpen, Calendar, Award, Edit2, Save, Plus, X, TrendingUp, Palette, PenTool, FileText, CheckCircle2, Clock } from "lucide-react";
+import { Heart, GraduationCap, BookOpen, Calendar, Award, Edit2, Save, Plus, X, TrendingUp, Palette, PenTool, FileText, CheckCircle2, Clock, Camera, Upload } from "lucide-react";
 import { useParams, Link } from "react-router-dom";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Kid {
   id: string;
@@ -38,6 +39,10 @@ const KidProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedKid, setEditedKid] = useState<Partial<Kid>>({});
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const { data: kid, isLoading } = useQuery({
     queryKey: ["kid", id],
@@ -207,6 +212,93 @@ const KidProfile = () => {
     setEditedKid({ ...editedKid, photo_url: "" });
   };
 
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+        audio: false
+      });
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        streamRef.current = stream;
+      }
+      setShowCamera(true);
+    } catch (error) {
+      console.error("Error accessing camera:", error);
+      toast.error("لا يمكن الوصول إلى الكاميرا. يرجى التحقق من الأذونات");
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = async () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+
+    if (!context) return;
+
+    // Set canvas dimensions to match video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    // Draw video frame to canvas
+    context.drawImage(video, 0, 0);
+
+    // Convert canvas to blob
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        toast.error("فشل التقاط الصورة");
+        return;
+      }
+
+      setUploadingPhoto(true);
+      stopCamera();
+
+      try {
+        const fileName = `kid_${id}_${Date.now()}.jpg`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('case-images')
+          .upload(fileName, blob, {
+            contentType: 'image/jpeg'
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('case-images')
+          .getPublicUrl(fileName);
+
+        setEditedKid({ ...editedKid, photo_url: publicUrl });
+        toast.success("تم التقاط الصورة بنجاح");
+      } catch (error) {
+        console.error("Error uploading captured photo:", error);
+        toast.error("حدث خطأ أثناء رفع الصورة");
+      } finally {
+        setUploadingPhoto(false);
+      }
+    }, 'image/jpeg', 0.95);
+  };
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
   const addEducationProgress = () => {
     setEditedKid({
       ...editedKid,
@@ -291,7 +383,18 @@ const KidProfile = () => {
                           onClick={() => document.getElementById('kid-photo-upload')?.click()}
                           disabled={uploadingPhoto}
                         >
-                          {uploadingPhoto ? "جاري الرفع..." : "رفع صورة"}
+                          <Upload className="w-4 h-4 ml-1" />
+                          {uploadingPhoto ? "جاري الرفع..." : "رفع ملف"}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={startCamera}
+                          disabled={uploadingPhoto}
+                        >
+                          <Camera className="w-4 h-4 ml-1" />
+                          التقاط صورة
                         </Button>
                         {editedKid.photo_url && (
                           <Button
@@ -961,6 +1064,35 @@ const KidProfile = () => {
             </Card>
           </CardContent>
         </Card>
+
+        {/* Camera Modal */}
+        <Dialog open={showCamera} onOpenChange={(open) => !open && stopCamera()}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>التقاط صورة</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <canvas ref={canvasRef} className="hidden" />
+              <div className="flex gap-2">
+                <Button onClick={capturePhoto} disabled={uploadingPhoto}>
+                  <Camera className="w-4 h-4 ml-2" />
+                  {uploadingPhoto ? "جاري الرفع..." : "التقاط"}
+                </Button>
+                <Button variant="outline" onClick={stopCamera}>
+                  إلغاء
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
