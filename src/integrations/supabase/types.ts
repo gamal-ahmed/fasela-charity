@@ -4043,6 +4043,14 @@ export type Database = {
       }
     }
     Functions: {
+      accept_invitation: {
+        Args: { token: string }
+        Returns: {
+          invitation_id: string
+          organization_id: string
+          role: string
+        }[]
+      }
       add_experiment_steps: {
         Args: { p_experiment_id: string; p_new_steps: Json }
         Returns: undefined
