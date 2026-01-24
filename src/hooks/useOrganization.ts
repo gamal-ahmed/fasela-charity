@@ -220,13 +220,16 @@ export function useCreateInvitation() {
       organizationId,
       email,
       role,
+      organizationName,
     }: {
       organizationId: string;
       email: string;
       role: "admin" | "volunteer" | "user";
+      organizationName: string;
     }) => {
       const { data: { session } } = await supabase.auth.getSession();
 
+      // 1. Create the invitation record
       const { data, error } = await supabase
         .from("org_invitations")
         .insert({
@@ -239,6 +242,30 @@ export function useCreateInvitation() {
         .single();
 
       if (error) throw error;
+
+      // 2. Send the invitation email
+      try {
+        const emailResult = await supabase.functions.invoke("send-invitation-email", {
+          body: {
+            email,
+            organizationName,
+            inviterName: session?.user?.user_metadata?.name,
+            role,
+            token: data.token,
+            appUrl: window.location.origin,
+          },
+        });
+        
+        if (emailResult.error) {
+          console.error("Failed to send invitation email:", emailResult.error);
+        } else {
+          console.log("Invitation email sent successfully");
+        }
+      } catch (emailError) {
+        console.error("Failed to send invitation email:", emailError);
+        // Don't fail the invitation creation if email fails
+      }
+
       return data;
     },
     onSuccess: (data) => {
