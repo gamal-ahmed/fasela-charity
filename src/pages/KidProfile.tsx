@@ -43,12 +43,17 @@ const KidProfile = () => {
     const checkAdmin = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        const { data } = await supabase
+        console.log("Checking admin role for user:", session.user.id);
+        const { data, error } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", session.user.id)
           .single();
+
+        console.log("Admin role check result:", { data, error });
         setIsAdmin(data?.role === "admin");
+      } else {
+        console.log("No session found in KidProfile");
       }
     };
     checkAdmin();
