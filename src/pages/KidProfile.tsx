@@ -239,55 +239,77 @@ const KidProfile = () => {
   };
 
   const capturePhoto = async () => {
-    if (!videoRef.current || !canvasRef.current) return;
+    if (!videoRef.current || !canvasRef.current) {
+      toast.error("الكاميرا غير جاهزة");
+      return;
+    }
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
+
+    // Check if video is ready and has valid dimensions
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+      toast.error("يرجى الانتظار حتى تصبح الكاميرا جاهزة");
+      return;
+    }
+
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      toast.error("لا يمكن الحصول على أبعاد الفيديو");
+      return;
+    }
+
     const context = canvas.getContext('2d');
+    if (!context) {
+      toast.error("فشل إنشاء سياق الرسم");
+      return;
+    }
 
-    if (!context) return;
+    try {
+      // Set canvas dimensions to match video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
 
-    // Set canvas dimensions to match video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+      // Draw video frame to canvas
+      context.drawImage(video, 0, 0);
 
-    // Draw video frame to canvas
-    context.drawImage(video, 0, 0);
+      // Convert canvas to blob
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          toast.error("فشل تحويل الصورة");
+          return;
+        }
 
-    // Convert canvas to blob
-    canvas.toBlob(async (blob) => {
-      if (!blob) {
-        toast.error("فشل التقاط الصورة");
-        return;
-      }
+        setUploadingPhoto(true);
+        stopCamera();
 
-      setUploadingPhoto(true);
-      stopCamera();
+        try {
+          const fileName = `kid_${id}_${Date.now()}.jpg`;
 
-      try {
-        const fileName = `kid_${id}_${Date.now()}.jpg`;
+          const { error: uploadError } = await supabase.storage
+            .from('case-images')
+            .upload(fileName, blob, {
+              contentType: 'image/jpeg'
+            });
 
-        const { error: uploadError } = await supabase.storage
-          .from('case-images')
-          .upload(fileName, blob, {
-            contentType: 'image/jpeg'
-          });
+          if (uploadError) throw uploadError;
 
-        if (uploadError) throw uploadError;
+          const { data: { publicUrl } } = supabase.storage
+            .from('case-images')
+            .getPublicUrl(fileName);
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('case-images')
-          .getPublicUrl(fileName);
-
-        setEditedKid({ ...editedKid, photo_url: publicUrl });
-        toast.success("تم التقاط الصورة بنجاح");
-      } catch (error) {
-        console.error("Error uploading captured photo:", error);
-        toast.error("حدث خطأ أثناء رفع الصورة");
-      } finally {
-        setUploadingPhoto(false);
-      }
-    }, 'image/jpeg', 0.95);
+          setEditedKid({ ...editedKid, photo_url: publicUrl });
+          toast.success("تم التقاط الصورة بنجاح");
+        } catch (error) {
+          console.error("Error uploading captured photo:", error);
+          toast.error("حدث خطأ أثناء رفع الصورة: " + (error as Error).message);
+        } finally {
+          setUploadingPhoto(false);
+        }
+      }, 'image/jpeg', 0.95);
+    } catch (error) {
+      console.error("Error capturing photo:", error);
+      toast.error("فشل التقاط الصورة: " + (error as Error).message);
+    }
   };
 
   // Cleanup camera on unmount
