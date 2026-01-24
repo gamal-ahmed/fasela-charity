@@ -160,6 +160,7 @@ export default function OrganizationMembersPage() {
         organizationId: id!,
         email: inviteEmail,
         role: inviteRole,
+        organizationName: organization?.name || "المنظمة",
       });
       toast({
         title: "تم الإرسال",
