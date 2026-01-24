@@ -48,7 +48,7 @@ const KidProfile = () => {
           .from("user_roles")
           .select("role")
           .eq("user_id", session.user.id)
-          .single();
+          .maybeSingle();
 
         console.log("Admin role check result:", { data, error });
         setIsAdmin(data?.role === "admin");
