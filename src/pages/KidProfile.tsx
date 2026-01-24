@@ -36,28 +36,6 @@ const KidProfile = () => {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [editedKid, setEditedKid] = useState<Partial<Kid>>({});
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  // Check if user is admin
-  React.useEffect(() => {
-    const checkAdmin = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        console.log("Checking admin role for user:", session.user.id);
-        const { data, error } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .maybeSingle();
-
-        console.log("Admin role check result:", { data, error });
-        setIsAdmin(data?.role === "admin");
-      } else {
-        console.log("No session found in KidProfile");
-      }
-    };
-    checkAdmin();
-  }, []);
 
   const { data: kid, isLoading } = useQuery({
     queryKey: ["kid", id],
@@ -287,26 +265,24 @@ const KidProfile = () => {
                   )}
                 </div>
               </div>
-              {isAdmin && (
-                <Button
-                  onClick={isEditing ? handleSave : handleEdit}
-                  variant={isEditing ? "default" : "outline"}
-                  size="lg"
-                  className="shrink-0"
-                >
-                  {isEditing ? (
-                    <>
-                      <Save className="w-4 h-4 ml-2" />
-                      حفظ
-                    </>
-                  ) : (
-                    <>
-                      <Edit2 className="w-4 h-4 ml-2" />
-                      تعديل
-                    </>
-                  )}
-                </Button>
-              )}
+              <Button
+                onClick={isEditing ? handleSave : handleEdit}
+                variant={isEditing ? "default" : "outline"}
+                size="lg"
+                className="shrink-0"
+              >
+                {isEditing ? (
+                  <>
+                    <Save className="w-4 h-4 ml-2" />
+                    حفظ
+                  </>
+                ) : (
+                  <>
+                    <Edit2 className="w-4 h-4 ml-2" />
+                    تعديل
+                  </>
+                )}
+              </Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
