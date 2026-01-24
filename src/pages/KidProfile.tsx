@@ -24,6 +24,7 @@ interface Kid {
   certificates?: Array<{ name: string; date?: string; issuer?: string }>;
   ongoing_courses?: Array<{ name: string; startDate?: string; description?: string }>;
   hobbies?: string[];
+  photo_url?: string;
   case_id: string;
   cases?: {
     title: string;
@@ -36,6 +37,7 @@ const KidProfile = () => {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [editedKid, setEditedKid] = useState<Partial<Kid>>({});
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const { data: kid, isLoading } = useQuery({
     queryKey: ["kid", id],
@@ -148,6 +150,7 @@ const KidProfile = () => {
       gender: kid?.gender || "male",
       description: kid?.description || "",
       hobbies: kid?.hobbies || [],
+      photo_url: kid?.photo_url || "",
       health_state: kid?.health_state || "",
       current_grade: kid?.current_grade || "",
       school_name: kid?.school_name || "",
@@ -156,6 +159,52 @@ const KidProfile = () => {
       ongoing_courses: kid?.ongoing_courses || [],
     });
     setIsEditing(true);
+  };
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("يرجى اختيار صورة صالحة (JPEG, PNG, WebP)");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("حجم الصورة يجب أن يكون أقل من 5 ميجابايت");
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `kid_${id}_${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('case-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('case-images')
+        .getPublicUrl(fileName);
+
+      setEditedKid({ ...editedKid, photo_url: publicUrl });
+      toast.success("تم رفع الصورة بنجاح");
+    } catch (error) {
+      console.error("Error uploading photo:", error);
+      toast.error("حدث خطأ أثناء رفع الصورة");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const removePhoto = () => {
+    setEditedKid({ ...editedKid, photo_url: "" });
   };
 
   const addEducationProgress = () => {
@@ -223,7 +272,56 @@ const KidProfile = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4 w-full">
-                <div className="text-5xl">{getGenderIcon(kid.gender)}</div>
+                {/* Profile Photo */}
+                <div className="relative">
+                  {isEditing ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-24 h-24 rounded-full overflow-hidden bg-muted flex items-center justify-center border-2 border-border">
+                        {editedKid.photo_url ? (
+                          <img src={editedKid.photo_url} alt={kid.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="text-4xl">{getGenderIcon(kid.gender)}</div>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => document.getElementById('kid-photo-upload')?.click()}
+                          disabled={uploadingPhoto}
+                        >
+                          {uploadingPhoto ? "جاري الرفع..." : "رفع صورة"}
+                        </Button>
+                        {editedKid.photo_url && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={removePhoto}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                      <input
+                        id="kid-photo-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-24 h-24 rounded-full overflow-hidden bg-muted flex items-center justify-center border-2 border-border">
+                      {kid.photo_url ? (
+                        <img src={kid.photo_url} alt={kid.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="text-4xl">{getGenderIcon(kid.gender)}</div>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <div className="flex-1">
                   {isEditing ? (
                     <div className="space-y-3">
