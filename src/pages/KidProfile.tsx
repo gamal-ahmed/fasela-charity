@@ -160,6 +160,11 @@ const KidProfile = () => {
 
   const handleEdit = () => {
     setEditedKid({
+      name: kid?.name || "",
+      age: kid?.age || 0,
+      gender: kid?.gender || "male",
+      description: kid?.description || "",
+      hobbies: kid?.hobbies || [],
       health_state: kid?.health_state || "",
       current_grade: kid?.current_grade || "",
       school_name: kid?.school_name || "",
@@ -234,16 +239,47 @@ const KidProfile = () => {
         <Card className="mb-6 animate-fade-in">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 w-full">
                 <div className="text-5xl">{getGenderIcon(kid.gender)}</div>
-                <div>
-                  <CardTitle className="text-3xl mb-2">{kid.name}</CardTitle>
-                  <Link
-                    to={`/case/${kid.case_id}`}
-                    className="text-sm text-primary hover:underline"
-                  >
-                    {kid.cases?.title_ar || kid.cases?.title}
-                  </Link>
+                <div className="flex-1">
+                  {isEditing ? (
+                    <div className="space-y-3">
+                      <Input
+                        value={editedKid.name || ""}
+                        onChange={(e) => setEditedKid({ ...editedKid, name: e.target.value })}
+                        placeholder="اسم الطفل"
+                        className="text-2xl font-bold"
+                      />
+                      <div className="flex gap-4">
+                        <Input
+                          type="number"
+                          value={editedKid.age || ""}
+                          onChange={(e) => setEditedKid({ ...editedKid, age: parseInt(e.target.value) || 0 })}
+                          placeholder="العمر"
+                          className="w-24"
+                        />
+                        <select
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-32"
+                          value={editedKid.gender || "male"}
+                          onChange={(e) => setEditedKid({ ...editedKid, gender: e.target.value })}
+                        >
+                          <option value="male">ذكر</option>
+                          <option value="female">أنثى</option>
+                        </select>
+                      </div>
+                    </div>
+                  ) : (
+                    <CardTitle className="text-3xl mb-2">{kid.name}</CardTitle>
+                  )}
+
+                  {!isEditing && (
+                    <Link
+                      to={`/case/${kid.case_id}`}
+                      className="text-sm text-primary hover:underline"
+                    >
+                      {kid.cases?.title_ar || kid.cases?.title}
+                    </Link>
+                  )}
                 </div>
               </div>
               {isAdmin && (
@@ -251,6 +287,7 @@ const KidProfile = () => {
                   onClick={isEditing ? handleSave : handleEdit}
                   variant={isEditing ? "default" : "outline"}
                   size="lg"
+                  className="shrink-0"
                 >
                   {isEditing ? (
                     <>
@@ -268,39 +305,104 @@ const KidProfile = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="outline" className="text-sm">
-                {kid.age} سنة
-              </Badge>
-              <Badge variant="secondary" className="text-sm">
-                {getGenderText(kid.gender)}
-              </Badge>
-            </div>
+            {!isEditing && (
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className="text-sm">
+                  {kid.age} سنة
+                </Badge>
+                <Badge variant="secondary" className="text-sm">
+                  {getGenderText(kid.gender)}
+                </Badge>
+              </div>
+            )}
 
-            {kid.description && (
+            {(kid.description || isEditing) && (
               <div className="bg-muted/30 p-4 rounded-lg border border-border">
                 <h3 className="font-semibold mb-2 flex items-center gap-2">
                   <PenTool className="w-4 h-4 text-primary" />
                   ملاحظات / نبذة
                 </h3>
-                <p className="text-muted-foreground whitespace-pre-wrap">{kid.description}</p>
+                {isEditing ? (
+                  <Textarea
+                    value={editedKid.description || ""}
+                    onChange={(e) => setEditedKid({ ...editedKid, description: e.target.value })}
+                    placeholder="اكتب نبذة عن الطفل..."
+                    className="min-h-[100px]"
+                  />
+                ) : (
+                  <p className="text-muted-foreground whitespace-pre-wrap">{kid.description}</p>
+                )}
               </div>
             )}
 
             {/* Hobbies Section */}
-            {kid.hobbies && kid.hobbies.length > 0 && (
+            {(kid.hobbies?.length > 0 || isEditing) && (
               <div className="bg-white p-4 rounded-lg border border-border shadow-sm">
-                <h3 className="font-semibold mb-3 flex items-center gap-2 text-lg">
-                  <Palette className="w-5 h-5 text-purple-600" />
-                  الهوايات والاهتمامات
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {kid.hobbies.map((hobby, idx) => (
-                    <Badge key={idx} variant="secondary" className="text-base py-1 px-3 bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200">
-                      {hobby}
-                    </Badge>
-                  ))}
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold flex items-center gap-2 text-lg">
+                    <Palette className="w-5 h-5 text-purple-600" />
+                    الهوايات والاهتمامات
+                  </h3>
                 </div>
+
+                {isEditing ? (
+                  <div className="space-y-4">
+                    <div className="flex gap-2">
+                      <Input
+                        id="new-hobby"
+                        placeholder="أضف هواية جديدة"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const input = e.currentTarget;
+                            const value = input.value.trim();
+                            if (value) {
+                              const currentHobbies = editedKid.hobbies || [];
+                              setEditedKid({ ...editedKid, hobbies: [...currentHobbies, value] });
+                              input.value = '';
+                            }
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const input = document.getElementById('new-hobby') as HTMLInputElement;
+                          const value = input?.value.trim();
+                          if (value) {
+                            const currentHobbies = editedKid.hobbies || [];
+                            setEditedKid({ ...editedKid, hobbies: [...currentHobbies, value] });
+                            input.value = '';
+                          }
+                        }}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {(editedKid.hobbies || []).map((hobby, idx) => (
+                        <Badge key={idx} variant="secondary" className="text-base py-1 px-3 bg-purple-50 text-purple-700 border-purple-200 flex items-center gap-2">
+                          {hobby}
+                          <X
+                            className="w-3 h-3 cursor-pointer hover:text-red-500"
+                            onClick={() => {
+                              const newHobbies = (editedKid.hobbies || []).filter((_, i) => i !== idx);
+                              setEditedKid({ ...editedKid, hobbies: newHobbies });
+                            }}
+                          />
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {kid.hobbies.map((hobby, idx) => (
+                      <Badge key={idx} variant="secondary" className="text-base py-1 px-3 bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200">
+                        {hobby}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -702,11 +804,10 @@ const KidProfile = () => {
                       return (
                         <div
                           key={task.id}
-                          className={`p-4 rounded-lg border-2 ${
-                            isAnswered
-                              ? "border-green-200 bg-green-50/30"
-                              : "border-amber-200 bg-amber-50/30"
-                          }`}
+                          className={`p-4 rounded-lg border-2 ${isAnswered
+                            ? "border-green-200 bg-green-50/30"
+                            : "border-amber-200 bg-amber-50/30"
+                            }`}
                         >
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex-1">
