@@ -28,6 +28,7 @@ import OrgCases from "./pages/OrgCases";
 import AdminStaticPages from "./pages/admin/AdminStaticPages";
 import OrganizationsPage from "./pages/admin/organizations/OrganizationsPage";
 import OrganizationSettingsPage from "./pages/admin/organizations/OrganizationSettingsPage";
+import { RoleProtectedRoute } from "./components/admin/RoleProtectedRoute";
 import OrganizationMembersPage from "./pages/admin/organizations/OrganizationMembersPage";
 import SelectionCriteria from "./pages/SelectionCriteria";
 import FundingChannels from "./pages/FundingChannels";
@@ -79,10 +80,10 @@ const App = () => (
           <Route path="/admin/cases" element={<AdminLayout><AdminCasesPage /></AdminLayout>} />
           <Route path="/admin/kids" element={<AdminLayout><AdminKidsPage /></AdminLayout>} />
           <Route path="/admin/calendar" element={<AdminLayout><CaseHandoverCalendar /></AdminLayout>} />
-          <Route path="/admin/donations" element={<AdminLayout><AdminDonationsPage /></AdminLayout>} />
+          <Route path="/admin/donations" element={<AdminLayout><RoleProtectedRoute requiredRoles={["admin"]}><AdminDonationsPage /></RoleProtectedRoute></AdminLayout>} />
           <Route path="/admin/tasks" element={<AdminLayout><AdminTasksPage /></AdminLayout>} />
-          <Route path="/admin/reports" element={<AdminLayout><AdminReportsPage /></AdminLayout>} />
-          <Route path="/admin/static-pages" element={<AdminLayout><AdminStaticPages /></AdminLayout>} />
+          <Route path="/admin/reports" element={<AdminLayout><RoleProtectedRoute requiredRoles={["admin"]}><AdminReportsPage /></RoleProtectedRoute></AdminLayout>} />
+          <Route path="/admin/static-pages" element={<AdminLayout><RoleProtectedRoute requiredRoles={["admin"]}><AdminStaticPages /></RoleProtectedRoute></AdminLayout>} />
           <Route path="/admin/profile" element={<AdminLayout><AdminProfilePage /></AdminLayout>} />
 
           {/* Organization Management Routes (Super Admin) */}

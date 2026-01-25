@@ -32,20 +32,15 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       }
 
       // Use the database function to get user organizations
-      const { data, error } = await (supabase.rpc as any)('get_user_organizations', { check_user_id: session.user.id });
+      const { data: userOrgs, error } = await (supabase.rpc as any)('get_user_organizations', { check_user_id: session.user.id });
 
-      // Check for admin role
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id);
+      // Check if user has at least one organization with admin, volunteer, or user role
+      const hasAdminAccess = userOrgs && userOrgs.length > 0;
 
-      const isAdmin = roles?.some(r => r.role === "admin");
-
-      if (!isAdmin) {
+      if (!hasAdminAccess) {
         toast({
           title: "غير مصرح",
-          description: "ليس لديك صلاحيات المسؤول",
+          description: "ليس لديك صلاحيات الوصول إلى لوحة التحكم",
           variant: "destructive",
         });
         navigate("/");
@@ -94,43 +89,59 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     return <div className="flex items-center justify-center min-h-screen">جار التحميل...</div>;
   }
 
-  const items = [
+  // Get current user role
+  const currentUserRole = currentOrg ? (currentOrg as any).role : null;
+
+  // Define menu items with required roles
+  const allItems = [
     {
       title: "نظرة عامة",
       url: "/admin",
       icon: Home,
+      requiredRoles: ["admin", "volunteer", "user"],
     },
     {
       title: "إدارة الحالات",
       url: "/admin/cases",
       icon: Users,
+      requiredRoles: ["admin", "volunteer", "user"],
     },
     {
       title: "التقويم",
       url: "/admin/calendar",
       icon: Calendar,
+      requiredRoles: ["admin", "volunteer"],
     },
     {
       title: "التبرعات",
       url: "/admin/donations",
       icon: CreditCard,
+      requiredRoles: ["admin"],
     },
     {
       title: "المهام والمتابعة",
       url: "/admin/tasks",
       icon: CheckSquare,
+      requiredRoles: ["admin", "volunteer"],
     },
     {
       title: "التقارير",
       url: "/admin/reports",
       icon: FileText,
+      requiredRoles: ["admin"],
     },
     {
       title: "الصفحات الثابتة",
       url: "/admin/static-pages",
       icon: Settings,
+      requiredRoles: ["admin"],
     },
   ];
+
+  // Filter items based on user role
+  const items = allItems.filter(
+    (item) => currentUserRole && item.requiredRoles.includes(currentUserRole)
+  );
 
   // Add Organizations link for super admins
   const superAdminItems = isSuperAdmin
