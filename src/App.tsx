@@ -17,6 +17,7 @@ import AdminKidsPage from "./pages/admin/AdminKidsPage";
 import AdminDonationsPage from "./pages/admin/AdminDonationsPage";
 import AdminTasksPage from "./pages/admin/AdminTasksPage";
 import AdminReportsPage from "./pages/admin/AdminReportsPage";
+import AdminProfilePage from "./pages/admin/AdminProfilePage";
 import AdminCaseProfile from "./pages/AdminCaseProfile";
 import AdminFollowupActions from "./pages/AdminFollowupActions";
 import AdminCaseView from "./pages/AdminCaseView";
@@ -82,6 +83,7 @@ const App = () => (
           <Route path="/admin/tasks" element={<AdminLayout><AdminTasksPage /></AdminLayout>} />
           <Route path="/admin/reports" element={<AdminLayout><AdminReportsPage /></AdminLayout>} />
           <Route path="/admin/static-pages" element={<AdminLayout><AdminStaticPages /></AdminLayout>} />
+          <Route path="/admin/profile" element={<AdminLayout><AdminProfilePage /></AdminLayout>} />
 
           {/* Organization Management Routes (Super Admin) */}
           <Route path="/admin/organizations" element={<AdminLayout><OrganizationsPage /></AdminLayout>} />

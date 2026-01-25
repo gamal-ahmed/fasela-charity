@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from "@/components/ui/sidebar";
-import { Home, Users, Calendar, CreditCard, CheckSquare, FileText, LogOut, Settings, Building2 } from "lucide-react";
+import { Home, Users, Calendar, CreditCard, CheckSquare, FileText, LogOut, Settings, Building2, User } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -193,6 +193,16 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
             </SidebarGroup>
 
             <div className="mt-auto p-4 space-y-2">
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                asChild
+              >
+                <Link to="/admin/profile">
+                  <User className="mr-2 h-4 w-4" />
+                  الملف الشخصي
+                </Link>
+              </Button>
               <Button
                 variant="outline"
                 className="w-full justify-start"
