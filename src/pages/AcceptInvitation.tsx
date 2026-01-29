@@ -30,8 +30,62 @@ const AcceptInvitation = () => {
         }
     }, [invitation]);
 
-    const handleAcceptClick = () => {
-        setStep("password");
+    const handleAcceptClick = async () => {
+        // Check if user is already authenticated
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+            // User is already registered and logged in
+            // Check if the logged-in user's email matches the invitation email
+            if (session.user.email?.toLowerCase() === invitation?.email?.toLowerCase()) {
+                // Email matches, directly accept the invitation
+                await handleDirectAccept();
+            } else {
+                // Email doesn't match - user is logged in as different user
+                toast({
+                    title: "خطأ",
+                    description: `أنت مسجل دخولك كـ ${session.user.email}، لكن الدعوة موجهة إلى ${invitation?.email}. يرجى تسجيل الخروج أولاً.`,
+                    variant: "destructive",
+                });
+            }
+        } else {
+            // User is not authenticated, show password step
+            setStep("password");
+        }
+    };
+
+    const handleDirectAccept = async () => {
+        if (!token) {
+            toast({
+                title: "خطأ",
+                description: "رمز الدعوة غير صالح",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setIsProcessing(true);
+        setStep("processing");
+        
+        try {
+            await acceptInvitation.mutateAsync(token);
+            
+            toast({
+                title: "تم قبول الدعوة",
+                description: `أنت الآن عضو في منظمة ${invitation?.organizations?.name}`,
+            });
+            
+            navigate("/admin");
+        } catch (error) {
+            setIsProcessing(false);
+            setStep("choice");
+            const message = error instanceof Error ? error.message : "حدث خطأ غير متوقع";
+            toast({
+                title: "خطأ في قبول الدعوة",
+                description: message,
+                variant: "destructive",
+            });
+        }
     };
 
     const handleReject = () => {
@@ -52,18 +106,36 @@ const AcceptInvitation = () => {
         try {
             setStep("processing");
             
-            // Sign up the user with the email and password
-            const { data: authData, error: authError } = await supabase.auth.signUp({
+            // Try to sign up the user with the email and password
+            let authData;
+            let authError;
+            
+            ({ data: authData, error: authError } = await supabase.auth.signUp({
                 email,
                 password,
-            });
-            console.log("Auth Data:", authData);
-            if (authError) {
+            }));
+            
+            // If sign up fails because user already exists, try to sign in instead
+            if (authError && (authError.message.includes("already registered") || authError.message.includes("User already registered"))) {
+                // User already exists, try to sign in
+                const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                });
+                
+                if (signInError) {
+                    throw new Error(signInError.message);
+                }
+                
+                authData = signInData;
+            } else if (authError) {
                 throw new Error(authError.message);
             }
-
-            // Once signed up, accept the invitation in the backend
-            if (authData.user) {
+            
+            console.log("Auth Data:", authData);
+            
+            // Once authenticated (signed up or signed in), accept the invitation in the backend
+            if (authData?.user) {
                 await acceptInvitation.mutateAsync(token);
                 
                 toast({
