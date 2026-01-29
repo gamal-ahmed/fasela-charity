@@ -198,7 +198,7 @@ const AcceptInvitation = () => {
                     <CardTitle className="text-2xl font-bold">دعوة للانضمام</CardTitle>
                     <CardDescription className="mt-2">
                         {step === "choice" && "تمت دعوتك للانضمام إلى منظمة"}
-                        {step === "password" && "أنشئ كلمة مرور"}
+                        {step === "password" && "أدخل كلمة مرور"}
                         {step === "processing" && "جاري المعالجة..."}
                     </CardDescription>
                 </CardHeader>
@@ -243,7 +243,7 @@ const AcceptInvitation = () => {
                                 <Input
                                     id="password"
                                     type="password"
-                                    placeholder="أدخل كلمة مرور قوية"
+                                    placeholder="أدخل كلمة المرور"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     onKeyPress={(e) => e.key === "Enter" && handlePasswordSubmit()}
