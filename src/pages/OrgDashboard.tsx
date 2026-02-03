@@ -122,8 +122,8 @@ export default function OrgDashboard() {
   const familyData = featuredCase
     ? {
         familyName: featuredCase.title_ar || featuredCase.title || "عائلة",
-        location: featuredCase.location || "",
-        familySize: featuredCase.family_size || 0,
+        location: featuredCase.city || featuredCase.area || "",
+        familySize: featuredCase.kids_number || 0,
         members: [], // Cases don't store individual members
         story:
           featuredCase.description_ar ||
@@ -152,9 +152,9 @@ export default function OrgDashboard() {
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
             {org.name}
           </h1>
-          {org.description && (
+          {(org.settings as { description?: string })?.description && (
             <p className="text-lg sm:text-xl opacity-90 max-w-3xl mx-auto leading-relaxed mb-6">
-              {org.description}
+              {(org.settings as { description?: string }).description}
             </p>
           )}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -169,7 +169,7 @@ export default function OrgDashboard() {
               asChild
               size="lg"
               variant="outline"
-              className="text-base sm:text-lg px-6 sm:px-8 text-white border-white hover:bg-white hover:text-primary"
+              className="text-base sm:text-lg px-6 sm:px-8 bg-transparent text-white border-white hover:bg-white hover:text-primary"
             >
               <Link to="/">
                 <ArrowLeft className="w-4 h-4 ml-2" />
@@ -209,7 +209,7 @@ export default function OrgDashboard() {
                   featuredCase.title_ar || featuredCase.title || "حالة"
                 }
                 caseId={featuredCase.id}
-                caseCareType={featuredCase.case_care_type}
+                caseCareType={featuredCase.case_care_type as 'cancelled' | 'sponsorship' | 'one_time_donation'}
                 totalSecured={featuredCase.total_secured_money || 0}
               />
             </div>

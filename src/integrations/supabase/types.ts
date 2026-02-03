@@ -433,6 +433,7 @@ export type Database = {
           name: string
           ongoing_courses: Json | null
           organization_id: string
+          photo_url: string | null
           school_name: string | null
           updated_at: string
         }
@@ -451,6 +452,7 @@ export type Database = {
           name: string
           ongoing_courses?: Json | null
           organization_id: string
+          photo_url?: string | null
           school_name?: string | null
           updated_at?: string
         }
@@ -469,6 +471,7 @@ export type Database = {
           name?: string
           ongoing_courses?: Json | null
           organization_id?: string
+          photo_url?: string | null
           school_name?: string | null
           updated_at?: string
         }
@@ -1775,6 +1778,30 @@ export type Database = {
           },
         ]
       }
+      items: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sku: string | null
+          unit: Database["public"]["Enums"]["purchase_unit"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sku?: string | null
+          unit?: Database["public"]["Enums"]["purchase_unit"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sku?: string | null
+          unit?: Database["public"]["Enums"]["purchase_unit"]
+        }
+        Relationships: []
+      }
       lab_shop_categories: {
         Row: {
           color: string | null
@@ -2823,6 +2850,128 @@ export type Database = {
           value?: string
         }
         Relationships: []
+      }
+      purchase_invoices: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          invoice_no: string | null
+          notes: string | null
+          paid_amount: number
+          payment_method: Database["public"]["Enums"]["purchase_payment_method"]
+          supplier_name: string | null
+          total_amount: number
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          id?: string
+          invoice_no?: string | null
+          notes?: string | null
+          paid_amount?: number
+          payment_method?: Database["public"]["Enums"]["purchase_payment_method"]
+          supplier_name?: string | null
+          total_amount?: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          invoice_no?: string | null
+          notes?: string | null
+          paid_amount?: number
+          payment_method?: Database["public"]["Enums"]["purchase_payment_method"]
+          supplier_name?: string | null
+          total_amount?: number
+        }
+        Relationships: []
+      }
+      purchase_lines: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          line_total: number
+          purchase_invoice_id: string
+          qty: number
+          unit_cost: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          line_total: number
+          purchase_invoice_id: string
+          qty: number
+          unit_cost: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          line_total?: number
+          purchase_invoice_id?: string
+          qty?: number
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_lines_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_lines_purchase_invoice_id_fkey"
+            columns: ["purchase_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_stock_movements: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          item_id: string
+          qty: number
+          ref_id: string
+          ref_type: string
+          type: Database["public"]["Enums"]["purchase_stock_movement_type"]
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          id?: string
+          item_id: string
+          qty: number
+          ref_id: string
+          ref_type?: string
+          type?: Database["public"]["Enums"]["purchase_stock_movement_type"]
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          item_id?: string
+          qty?: number
+          ref_id?: string
+          ref_type?: string
+          type?: Database["public"]["Enums"]["purchase_stock_movement_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_stock_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shared_categories: {
         Row: {
@@ -3926,6 +4075,585 @@ export type Database = {
         }
         Relationships: []
       }
+      zan_cash_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          method: Database["public"]["Enums"]["cash_method"]
+          notes: string | null
+          source_id: string | null
+          source_type: Database["public"]["Enums"]["cash_source_type"]
+          tx_date: string
+          tx_type: Database["public"]["Enums"]["cash_tx_type"]
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          method?: Database["public"]["Enums"]["cash_method"]
+          notes?: string | null
+          source_id?: string | null
+          source_type?: Database["public"]["Enums"]["cash_source_type"]
+          tx_date?: string
+          tx_type: Database["public"]["Enums"]["cash_tx_type"]
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          method?: Database["public"]["Enums"]["cash_method"]
+          notes?: string | null
+          source_id?: string | null
+          source_type?: Database["public"]["Enums"]["cash_source_type"]
+          tx_date?: string
+          tx_type?: Database["public"]["Enums"]["cash_tx_type"]
+        }
+        Relationships: []
+      }
+      zan_discounts: {
+        Row: {
+          communication_message: string | null
+          created_at: string
+          description: string | null
+          discount_type: string
+          discount_value: number
+          end_date: string | null
+          id: string
+          is_active: boolean | null
+          product_ids: string[] | null
+          start_date: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          communication_message?: string | null
+          created_at?: string
+          description?: string | null
+          discount_type?: string
+          discount_value: number
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          product_ids?: string[] | null
+          start_date?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          communication_message?: string | null
+          created_at?: string
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          product_ids?: string[] | null
+          start_date?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      zan_expense_lines: {
+        Row: {
+          add_to_stock: boolean
+          created_at: string
+          expense_id: string
+          id: string
+          material_id: string
+          qty: number
+        }
+        Insert: {
+          add_to_stock?: boolean
+          created_at?: string
+          expense_id: string
+          id?: string
+          material_id: string
+          qty: number
+        }
+        Update: {
+          add_to_stock?: boolean
+          created_at?: string
+          expense_id?: string
+          id?: string
+          material_id?: string
+          qty?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zan_expense_lines_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "zan_expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zan_expense_lines_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "zan_materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zan_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          description: string | null
+          expense_date: string
+          id: string
+          invoice_url: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          invoice_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          invoice_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      zan_inventory_items: {
+        Row: {
+          category: Database["public"]["Enums"]["inventory_item_category"]
+          created_at: string
+          id: string
+          location: string | null
+          name: string
+          reorder_point: number | null
+          sku: string
+          unit: Database["public"]["Enums"]["inventory_unit"]
+          updated_at: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["inventory_item_category"]
+          created_at?: string
+          id?: string
+          location?: string | null
+          name: string
+          reorder_point?: number | null
+          sku: string
+          unit?: Database["public"]["Enums"]["inventory_unit"]
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["inventory_item_category"]
+          created_at?: string
+          id?: string
+          location?: string | null
+          name?: string
+          reorder_point?: number | null
+          sku?: string
+          unit?: Database["public"]["Enums"]["inventory_unit"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      zan_materials: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          min_quantity: number | null
+          name: string
+          notes: string | null
+          quantity: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          min_quantity?: number | null
+          name: string
+          notes?: string | null
+          quantity?: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          min_quantity?: number | null
+          name?: string
+          notes?: string | null
+          quantity?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      zan_monthly_close: {
+        Row: {
+          closing_inventory_value: number
+          created_at: string
+          month: string
+          notes: string | null
+          opening_inventory_value: number
+          updated_at: string
+        }
+        Insert: {
+          closing_inventory_value?: number
+          created_at?: string
+          month: string
+          notes?: string | null
+          opening_inventory_value?: number
+          updated_at?: string
+        }
+        Update: {
+          closing_inventory_value?: number
+          created_at?: string
+          month?: string
+          notes?: string | null
+          opening_inventory_value?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      zan_order_items: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          leg_color: string | null
+          notes: string | null
+          order_id: string
+          product_id: string | null
+          quantity: number
+          unit_price: number
+          width: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          leg_color?: string | null
+          notes?: string | null
+          order_id: string
+          product_id?: string | null
+          quantity?: number
+          unit_price: number
+          width?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          leg_color?: string | null
+          notes?: string | null
+          order_id?: string
+          product_id?: string | null
+          quantity?: number
+          unit_price?: number
+          width?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zan_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "zan_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zan_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "zan_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zan_orders: {
+        Row: {
+          agent_name: string | null
+          area: string | null
+          color: string | null
+          created_at: string
+          created_by: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          delivery: string | null
+          delivery_date: string | null
+          delivery_fees: number | null
+          deposit_screenshot_url: string | null
+          discount_amount: number | null
+          discount_id: string | null
+          driver_name: string | null
+          feedback_image_url: string | null
+          feedback_text: string | null
+          id: string
+          notes: string | null
+          paid_amount: number
+          payment_method: string | null
+          product_id: string | null
+          remaining_amount: number
+          sales_channel: string | null
+          status: string | null
+          total_amount: number
+          updated_at: string
+          width: string | null
+        }
+        Insert: {
+          agent_name?: string | null
+          area?: string | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          delivery?: string | null
+          delivery_date?: string | null
+          delivery_fees?: number | null
+          deposit_screenshot_url?: string | null
+          discount_amount?: number | null
+          discount_id?: string | null
+          driver_name?: string | null
+          feedback_image_url?: string | null
+          feedback_text?: string | null
+          id?: string
+          notes?: string | null
+          paid_amount?: number
+          payment_method?: string | null
+          product_id?: string | null
+          remaining_amount?: number
+          sales_channel?: string | null
+          status?: string | null
+          total_amount: number
+          updated_at?: string
+          width?: string | null
+        }
+        Update: {
+          agent_name?: string | null
+          area?: string | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          delivery?: string | null
+          delivery_date?: string | null
+          delivery_fees?: number | null
+          deposit_screenshot_url?: string | null
+          discount_amount?: number | null
+          discount_id?: string | null
+          driver_name?: string | null
+          feedback_image_url?: string | null
+          feedback_text?: string | null
+          id?: string
+          notes?: string | null
+          paid_amount?: number
+          payment_method?: string | null
+          product_id?: string | null
+          remaining_amount?: number
+          sales_channel?: string | null
+          status?: string | null
+          total_amount?: number
+          updated_at?: string
+          width?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zan_orders_discount_id_fkey"
+            columns: ["discount_id"]
+            isOneToOne: false
+            referencedRelation: "zan_discounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zan_orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "zan_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zan_products: {
+        Row: {
+          brand_code: string
+          color: string | null
+          colors: string[] | null
+          created_at: string
+          discount: number | null
+          id: string
+          image_url: string | null
+          name: string | null
+          old_code: string
+          price: number
+          size: string
+          updated_at: string
+          widths: string[] | null
+        }
+        Insert: {
+          brand_code: string
+          color?: string | null
+          colors?: string[] | null
+          created_at?: string
+          discount?: number | null
+          id?: string
+          image_url?: string | null
+          name?: string | null
+          old_code: string
+          price: number
+          size: string
+          updated_at?: string
+          widths?: string[] | null
+        }
+        Update: {
+          brand_code?: string
+          color?: string | null
+          colors?: string[] | null
+          created_at?: string
+          discount?: number | null
+          id?: string
+          image_url?: string | null
+          name?: string | null
+          old_code?: string
+          price?: number
+          size?: string
+          updated_at?: string
+          widths?: string[] | null
+        }
+        Relationships: []
+      }
+      zan_sales_imports: {
+        Row: {
+          created_at: string
+          external_order_id: string
+          id: string
+          import_date: string
+          lead_source: string | null
+          paid_amount: number | null
+          payment_method: string | null
+          raw_json: string | null
+          status: Database["public"]["Enums"]["sales_import_status"]
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          external_order_id: string
+          id?: string
+          import_date?: string
+          lead_source?: string | null
+          paid_amount?: number | null
+          payment_method?: string | null
+          raw_json?: string | null
+          status?: Database["public"]["Enums"]["sales_import_status"]
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          external_order_id?: string
+          id?: string
+          import_date?: string
+          lead_source?: string | null
+          paid_amount?: number | null
+          payment_method?: string | null
+          raw_json?: string | null
+          status?: Database["public"]["Enums"]["sales_import_status"]
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      zan_stock_movements: {
+        Row: {
+          admin_override: boolean
+          created_at: string
+          id: string
+          item_id: string
+          movement_date: string
+          movement_type: Database["public"]["Enums"]["stock_movement_type"]
+          notes: string | null
+          qty: number
+          unit_cost: number | null
+        }
+        Insert: {
+          admin_override?: boolean
+          created_at?: string
+          id?: string
+          item_id: string
+          movement_date?: string
+          movement_type: Database["public"]["Enums"]["stock_movement_type"]
+          notes?: string | null
+          qty: number
+          unit_cost?: number | null
+        }
+        Update: {
+          admin_override?: boolean
+          created_at?: string
+          id?: string
+          item_id?: string
+          movement_date?: string
+          movement_type?: Database["public"]["Enums"]["stock_movement_type"]
+          notes?: string | null
+          qty?: number
+          unit_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zan_stock_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "v_inventory_current_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "zan_stock_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "zan_inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zan_user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       experiment_with_category: {
@@ -4037,6 +4765,36 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "transcription_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_inventory_current_stock: {
+        Row: {
+          category:
+            | Database["public"]["Enums"]["inventory_item_category"]
+            | null
+          current_stock: number | null
+          item_id: string | null
+          location: string | null
+          name: string | null
+          reorder_point: number | null
+          sku: string | null
+          unit: Database["public"]["Enums"]["inventory_unit"] | null
+        }
+        Relationships: []
+      }
+      v_purchase_current_stock: {
+        Row: {
+          balance: number | null
+          item_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_stock_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
             referencedColumns: ["id"]
           },
         ]
@@ -4238,7 +4996,19 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "volunteer"
+      cash_method: "CASH" | "TRANSFER"
+      cash_source_type:
+        | "SALE_IMPORT"
+        | "PURCHASE"
+        | "EXPENSE"
+        | "SALARY"
+        | "OTHER"
+        | "ORDER"
+        | "PURCHASE_INVOICE"
+      cash_tx_type: "IN" | "OUT"
       experiment_method_enum: "Engineering Design Process" | "Scientific Method"
+      inventory_item_category: "WOOD_SHEET" | "STEEL_TUBE" | "OTHER"
+      inventory_unit: "BOARD" | "METER" | "PIECE"
       listing_status: "active" | "sold" | "cancelled"
       olive_type:
         | "agizy"
@@ -4256,6 +5026,11 @@ export type Database = {
         | "wateqan"
         | "hamid"
         | "khudairi"
+      purchase_payment_method: "CASH" | "TRANSFER" | "CREDIT"
+      purchase_stock_movement_type: "IN"
+      purchase_unit: "BOARD" | "METER" | "PIECE"
+      sales_import_status: "DELIVERED" | "CANCELLED" | "OTHER"
+      stock_movement_type: "IN" | "OUT" | "ADJUST"
       transaction_status: "pending" | "completed" | "cancelled"
       user_role: "user" | "admin"
       user_type: "farmer" | "trader"
@@ -4387,10 +5162,23 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "volunteer"],
+      cash_method: ["CASH", "TRANSFER"],
+      cash_source_type: [
+        "SALE_IMPORT",
+        "PURCHASE",
+        "EXPENSE",
+        "SALARY",
+        "OTHER",
+        "ORDER",
+        "PURCHASE_INVOICE",
+      ],
+      cash_tx_type: ["IN", "OUT"],
       experiment_method_enum: [
         "Engineering Design Process",
         "Scientific Method",
       ],
+      inventory_item_category: ["WOOD_SHEET", "STEEL_TUBE", "OTHER"],
+      inventory_unit: ["BOARD", "METER", "PIECE"],
       listing_status: ["active", "sold", "cancelled"],
       olive_type: [
         "agizy",
@@ -4409,6 +5197,11 @@ export const Constants = {
         "hamid",
         "khudairi",
       ],
+      purchase_payment_method: ["CASH", "TRANSFER", "CREDIT"],
+      purchase_stock_movement_type: ["IN"],
+      purchase_unit: ["BOARD", "METER", "PIECE"],
+      sales_import_status: ["DELIVERED", "CANCELLED", "OTHER"],
+      stock_movement_type: ["IN", "OUT", "ADJUST"],
       transaction_status: ["pending", "completed", "cancelled"],
       user_role: ["user", "admin"],
       user_type: ["farmer", "trader"],
