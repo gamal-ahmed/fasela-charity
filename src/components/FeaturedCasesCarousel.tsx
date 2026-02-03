@@ -19,21 +19,32 @@ import Autoplay from "embla-carousel-autoplay";
 
 
 
-export const FeaturedCasesCarousel = () => {
+interface FeaturedCasesCarouselProps {
+  organizationId?: string;
+}
+
+export const FeaturedCasesCarousel = ({ organizationId }: FeaturedCasesCarouselProps = {}) => {
   const [api, setApi] = useState<any>();
   const [current, setCurrent] = useState(0);
 
   const { data: featuredCases, isLoading, error } = useQuery({
-    queryKey: ["featured-cases"],
+    queryKey: ["featured-cases", organizationId],
     queryFn: async () => {
-      // Fetch featured cases
-      const { data: cases, error: casesError } = await supabase
+      // Build query for featured cases
+      let query = supabase
         .from("cases")
         .select("*")
         .eq("is_published", true)
         .eq("is_featured", true)
         .not("title_ar", "is", null)
-        .not("description_ar", "is", null)
+        .not("description_ar", "is", null);
+
+      // Filter by organization if provided
+      if (organizationId) {
+        query = query.eq("organization_id", organizationId);
+      }
+
+      const { data: cases, error: casesError } = await query
         .order("created_at", { ascending: false })
         .limit(10); // Allow more cases in carousel
 

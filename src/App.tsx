@@ -25,6 +25,7 @@ import PublicDonorReport from "./pages/PublicDonorReport";
 import MonthlyDonorReport from "./pages/MonthlyDonorReport";
 import MonthlyReport from "./pages/MonthlyReport";
 import OrgCases from "./pages/OrgCases";
+import OrgDashboard from "./pages/OrgDashboard";
 import AdminStaticPages from "./pages/admin/AdminStaticPages";
 import OrganizationsPage from "./pages/admin/organizations/OrganizationsPage";
 import OrganizationSettingsPage from "./pages/admin/organizations/OrganizationSettingsPage";
@@ -69,6 +70,7 @@ const App = () => (
             <Route path="/monthly-report" element={<MonthlyReport />} />
             <Route path="/donor-report" element={<PublicDonorReport />} />
             <Route path="/monthly-donor-report" element={<MonthlyDonorReport />} />
+            <Route path="/o/:orgSlug" element={<OrgDashboard />} />
             <Route path="/o/:orgSlug/cases" element={<OrgCases />} />
           </Route>
 
