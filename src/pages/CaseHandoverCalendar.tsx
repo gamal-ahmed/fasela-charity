@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, ChevronRight, Edit2, Plus, Search, ImageIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit2, Plus, Search, ImageIcon, ArrowUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { useOrganization } from "@/contexts/OrganizationContext";
 
@@ -44,6 +44,7 @@ export default function CaseHandoverCalendar() {
   const { currentOrg } = useOrganization();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortByRecent, setSortByRecent] = useState(true);
   const [editDialog, setEditDialog] = useState<{
     open: boolean;
     caseId: string;
@@ -398,10 +399,35 @@ export default function CaseHandoverCalendar() {
     return monthHandovers.reduce((sum, h) => sum + h.amount, 0);
   };
 
-  const filteredCases = (casesWithHandovers || []).filter(c =>
-    c.caseTitleAr.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.caseTitle.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Get the most recent month with handover for sorting
+  const getMostRecentHandoverMonth = (handoversByMonth: Record<string, HandoverData[]>) => {
+    const monthKeys = Object.keys(handoversByMonth).filter(key => key.startsWith(`${selectedYear}-`));
+    if (monthKeys.length === 0) return -1;
+    const sortedKeys = monthKeys.sort((a, b) => b.localeCompare(a)); // descending
+    const mostRecent = sortedKeys[0];
+    return parseInt(mostRecent.split('-')[1], 10);
+  };
+
+  const filteredAndSortedCases = useMemo(() => {
+    let cases = (casesWithHandovers || []).filter(c =>
+      c.caseTitleAr.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.caseTitle.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    if (sortByRecent) {
+      cases = [...cases].sort((a, b) => {
+        const aRecent = getMostRecentHandoverMonth(a.handoversByMonth);
+        const bRecent = getMostRecentHandoverMonth(b.handoversByMonth);
+        // Cases with recent handovers first, then by month (descending)
+        if (aRecent === -1 && bRecent === -1) return 0;
+        if (aRecent === -1) return 1;
+        if (bRecent === -1) return -1;
+        return bRecent - aRecent;
+      });
+    }
+
+    return cases;
+  }, [casesWithHandovers, searchQuery, sortByRecent, selectedYear]);
 
   if (!currentOrg) {
     return (
@@ -431,6 +457,15 @@ export default function CaseHandoverCalendar() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          <Button
+            variant={sortByRecent ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSortByRecent(!sortByRecent)}
+            className="gap-2"
+          >
+            <ArrowUpDown className="h-4 w-4" />
+            {sortByRecent ? "الأحدث أولاً" : "ترتيب أبجدي"}
+          </Button>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -458,13 +493,13 @@ export default function CaseHandoverCalendar() {
         <div className="flex items-center justify-center py-12">
           <span className="text-muted-foreground">جار التحميل...</span>
         </div>
-      ) : filteredCases.length === 0 ? (
+      ) : filteredAndSortedCases.length === 0 ? (
         <div className="flex items-center justify-center py-12">
           <span className="text-muted-foreground">لا توجد حالات</span>
         </div>
       ) : (
         <div className="space-y-6">
-          {filteredCases.map((caseItem) => (
+          {filteredAndSortedCases.map((caseItem) => (
             <Card key={caseItem.caseId}>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center justify-between">
