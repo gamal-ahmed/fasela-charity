@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,9 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, ChevronLeft, ChevronRight, Edit2, Plus, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit2, Plus, Search, ImageIcon } from "lucide-react";
 import { format } from "date-fns";
-import AdminHeader from "@/components/admin/AdminHeader";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface HandoverData {
   id?: string;
@@ -41,6 +41,7 @@ interface Donation {
 export default function CaseHandoverCalendar() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { currentOrg } = useOrganization();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [searchQuery, setSearchQuery] = useState("");
   const [editDialog, setEditDialog] = useState<{
@@ -60,20 +61,25 @@ export default function CaseHandoverCalendar() {
     isReportCheckpoint: false
   });
   const [availableDonations, setAvailableDonations] = useState<Donation[]>([]);
+  const [reportFile, setReportFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+    "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
   ];
 
   const { data: casesWithHandovers, isLoading } = useQuery({
-    queryKey: ["case-handover-calendar", selectedYear],
+    queryKey: ["case-handover-calendar", selectedYear, currentOrg?.id],
     queryFn: async () => {
+      if (!currentOrg?.id) return [];
+
       const { data: cases, error: casesError } = await supabase
         .from("cases")
         .select("id, title, title_ar, monthly_cost")
+        .eq("organization_id", currentOrg.id)
         .eq("is_published", true)
-        .order("title");
+        .order("title_ar");
 
       if (casesError) throw casesError;
 
@@ -83,12 +89,12 @@ export default function CaseHandoverCalendar() {
       const { data: handovers, error: handoversError } = await supabase
         .from("donation_handovers")
         .select("id, case_id, handover_amount, handover_date, handover_notes")
+        .eq("organization_id", currentOrg.id)
         .gte("handover_date", startDate.toISOString())
         .lte("handover_date", endDate.toISOString());
 
       if (handoversError) throw handoversError;
 
-      // Fetch monthly reports for the year
       const { data: reports, error: reportsError } = await supabase
         .from("monthly_reports")
         .select("id, case_id, report_date, images")
@@ -99,20 +105,18 @@ export default function CaseHandoverCalendar() {
 
       const result: CaseHandovers[] = cases.map(caseItem => {
         const caseHandovers = handovers.filter(h => h.case_id === caseItem.id);
-        const caseReports = reports.filter(r => r.case_id === caseItem.id);
+        const caseReports = reports?.filter(r => r.case_id === caseItem.id) || [];
         const handoversByMonth: Record<string, HandoverData[]> = {};
 
         caseHandovers.forEach(handover => {
           const date = new Date(handover.handover_date);
           const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
-          // Find matching report image for this month
           const monthReport = caseReports.find(r => {
             const rDate = new Date(r.report_date);
             return `${rDate.getFullYear()}-${String(rDate.getMonth() + 1).padStart(2, '0')}` === monthKey;
           });
 
-          // Get the first image from the report if available
           let reportImageUrl = undefined;
           if (monthReport && monthReport.images && Array.isArray(monthReport.images) && monthReport.images.length > 0) {
             reportImageUrl = monthReport.images[0] as string;
@@ -127,7 +131,6 @@ export default function CaseHandoverCalendar() {
             amount: handover.handover_amount,
             date: handover.handover_date,
             notes: handover.handover_notes || undefined,
-            is_report_checkpoint: (handover as any).is_report_checkpoint || false,
             report_image_url: reportImageUrl,
           });
         });
@@ -143,9 +146,9 @@ export default function CaseHandoverCalendar() {
 
       return result;
     },
+    enabled: !!currentOrg?.id,
   });
 
-  // Fetch available donations when dialog opens
   const fetchAvailableDonations = async (caseId: string) => {
     const { data, error } = await supabase
       .from("donations")
@@ -172,10 +175,6 @@ export default function CaseHandoverCalendar() {
     })).filter(d => d.remaining > 0);
   };
 
-
-  const [reportFile, setReportFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setReportFile(e.target.files[0]);
@@ -194,11 +193,12 @@ export default function CaseHandoverCalendar() {
       isReportCheckpoint: boolean;
       reportFile?: File | null;
     }) => {
+      if (!currentOrg?.id) throw new Error("No organization selected");
+
       const handoverDate = new Date(data.year, data.month, 15);
       const preciseAmount = Number(Number(data.amount).toFixed(2));
       let reportImageUrl = null;
 
-      // Handle Image Upload if provided
       if (data.isReportCheckpoint && data.reportFile) {
         setIsUploading(true);
         const fileExt = data.reportFile.name.split('.').pop();
@@ -222,9 +222,7 @@ export default function CaseHandoverCalendar() {
         setIsUploading(false);
       }
 
-      // Handle Monthly Report Record
       if (data.isReportCheckpoint && reportImageUrl) {
-        // Check if report exists for this month
         const startDate = new Date(data.year, data.month, 1).toISOString();
         const endDate = new Date(data.year, data.month + 1, 0).toISOString();
 
@@ -238,7 +236,6 @@ export default function CaseHandoverCalendar() {
         const existingReport = existingReports?.[0];
 
         if (existingReport) {
-          // Update existing report
           const currentImages = Array.isArray(existingReport.images) ? existingReport.images : [];
           const newImages = [...currentImages, reportImageUrl];
 
@@ -247,7 +244,6 @@ export default function CaseHandoverCalendar() {
             .update({ images: newImages })
             .eq("id", existingReport.id);
         } else {
-          // Create new report
           await supabase
             .from("monthly_reports")
             .insert({
@@ -263,16 +259,14 @@ export default function CaseHandoverCalendar() {
       }
 
       if (data.handoverId) {
-        const updateData: any = {
-          handover_amount: preciseAmount,
-          handover_notes: data.notes,
-          donation_id: data.donationId,
-          updated_at: new Date().toISOString(),
-        };
-
         const { error } = await supabase
           .from("donation_handovers")
-          .update(updateData)
+          .update({
+            handover_amount: preciseAmount,
+            handover_notes: data.notes,
+            donation_id: data.donationId,
+            updated_at: new Date().toISOString(),
+          })
           .eq("id", data.handoverId);
 
         if (error) throw error;
@@ -282,10 +276,11 @@ export default function CaseHandoverCalendar() {
           .insert({
             case_id: data.caseId,
             donation_id: data.donationId,
+            organization_id: currentOrg.id,
             handover_amount: preciseAmount,
             handover_date: handoverDate.toISOString(),
             handover_notes: data.notes,
-          } as any);
+          });
 
         if (error) throw error;
       }
@@ -304,7 +299,7 @@ export default function CaseHandoverCalendar() {
     onError: (error: Error) => {
       setIsUploading(false);
       toast({
-        title: "Error",
+        title: "خطأ",
         description: error.message,
         variant: "destructive",
       });
@@ -321,7 +316,6 @@ export default function CaseHandoverCalendar() {
   ) => {
     const existingHandover = existingHandovers?.[0];
 
-    // Fetch available donations
     const donations = await fetchAvailableDonations(caseId);
     setAvailableDonations(donations);
 
@@ -398,14 +392,143 @@ export default function CaseHandoverCalendar() {
     });
   };
 
-  // ... (getMonthTotal and filteredCases remain same)
+  const getMonthTotal = (handoversByMonth: Record<string, HandoverData[]>, monthIndex: number) => {
+    const monthKey = `${selectedYear}-${String(monthIndex + 1).padStart(2, '0')}`;
+    const monthHandovers = handoversByMonth[monthKey] || [];
+    return monthHandovers.reduce((sum, h) => sum + h.amount, 0);
+  };
+
+  const filteredCases = (casesWithHandovers || []).filter(c =>
+    c.caseTitleAr.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.caseTitle.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (!currentOrg) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-muted-foreground">يرجى اختيار منظمة</p>
+      </div>
+    );
+  }
 
   return (
-    <AdminHeader title="تقويم التسليم الشهري">
-      {/* ... (Header content remains same) */}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">تقويم التسليم الشهري</h2>
+          <p className="text-muted-foreground">
+            تتبع التسليمات الشهرية لجميع الحالات
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="بحث عن حالة..."
+              className="pr-9 w-64"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setSelectedYear(selectedYear - 1)}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <span className="text-lg font-semibold min-w-[60px] text-center">
+              {selectedYear}
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setSelectedYear(selectedYear + 1)}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
 
-      {/* ... (Cases grid remains same) */}
+      {/* Cases List */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <span className="text-muted-foreground">جار التحميل...</span>
+        </div>
+      ) : filteredCases.length === 0 ? (
+        <div className="flex items-center justify-center py-12">
+          <span className="text-muted-foreground">لا توجد حالات</span>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {filteredCases.map((caseItem) => (
+            <Card key={caseItem.caseId}>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between">
+                  <span>{caseItem.caseTitleAr}</span>
+                  <span className="text-sm font-normal text-muted-foreground">
+                    التكلفة الشهرية: {caseItem.monthlyCost.toLocaleString()} ج.م
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-12 gap-2">
+                  {months.map((monthName, monthIndex) => {
+                    const monthKey = `${selectedYear}-${String(monthIndex + 1).padStart(2, '0')}`;
+                    const monthHandovers = caseItem.handoversByMonth[monthKey] || [];
+                    const monthTotal = getMonthTotal(caseItem.handoversByMonth, monthIndex);
+                    const hasHandover = monthHandovers.length > 0;
+                    const hasReport = monthHandovers.some(h => h.report_image_url);
 
+                    return (
+                      <button
+                        key={monthIndex}
+                        onClick={() => openEditDialog(
+                          caseItem.caseId,
+                          caseItem.caseTitle,
+                          caseItem.caseTitleAr,
+                          caseItem.monthlyCost,
+                          monthIndex,
+                          monthHandovers
+                        )}
+                        className={`
+                          relative p-3 rounded-lg border text-center transition-all
+                          hover:border-primary hover:shadow-sm
+                          ${hasHandover
+                            ? 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800'
+                            : 'bg-muted/30 border-border'
+                          }
+                        `}
+                      >
+                        <div className="text-xs font-medium text-muted-foreground mb-1">
+                          {monthName}
+                        </div>
+                        {hasHandover ? (
+                          <>
+                            <div className="text-sm font-bold text-green-700 dark:text-green-300">
+                              {monthTotal.toLocaleString()}
+                            </div>
+                            {hasReport && (
+                              <ImageIcon className="absolute top-1 left-1 h-3 w-3 text-blue-500" />
+                            )}
+                          </>
+                        ) : (
+                          <Plus className="h-4 w-4 mx-auto text-muted-foreground" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Edit Dialog */}
       <Dialog open={editDialog?.open || false} onOpenChange={(open) => {
         if (!open) {
           setEditDialog(null);
@@ -414,7 +537,7 @@ export default function CaseHandoverCalendar() {
           setReportFile(null);
         }
       }}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-xl">
               {editDialog?.existingHandover ? "تعديل" : "إضافة"} تسليم شهري
@@ -426,7 +549,41 @@ export default function CaseHandoverCalendar() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            {/* ... (Donation select and Amount input remain same) */}
+            <div className="space-y-2">
+              <Label htmlFor="donation">اختر التبرع *</Label>
+              <Select
+                value={editForm.selectedDonationId}
+                onValueChange={(value) => setEditForm({ ...editForm, selectedDonationId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر التبرع الذي سيتم الخصم منه" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableDonations.length === 0 ? (
+                    <div className="p-2 text-sm text-muted-foreground text-center">
+                      لا توجد تبرعات متاحة لهذه الحالة
+                    </div>
+                  ) : (
+                    availableDonations.map((donation) => (
+                      <SelectItem key={donation.id} value={donation.id}>
+                        {donation.donor_name} - متبقي: {donation.remaining.toLocaleString()} ج.م
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="amount">المبلغ *</Label>
+              <Input
+                id="amount"
+                type="number"
+                placeholder="أدخل مبلغ التسليم"
+                value={editForm.amount}
+                onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+              />
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="notes">ملاحظات (اختياري)</Label>
@@ -471,7 +628,6 @@ export default function CaseHandoverCalendar() {
                 )}
               </div>
             )}
-
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => {
@@ -486,7 +642,6 @@ export default function CaseHandoverCalendar() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AdminHeader>
+    </div>
   );
 }
-

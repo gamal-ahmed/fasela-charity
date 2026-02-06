@@ -4111,6 +4111,42 @@ export type Database = {
         }
         Relationships: []
       }
+      zan_delivery_fee_config: {
+        Row: {
+          area_rules: Json
+          base_fee_egp: number
+          created_at: string
+          exception_areas: Json
+          floor_surcharge_per_floor_egp: number
+          floor_threshold: number
+          id: string
+          size_rules: Json
+          updated_at: string
+        }
+        Insert: {
+          area_rules?: Json
+          base_fee_egp?: number
+          created_at?: string
+          exception_areas?: Json
+          floor_surcharge_per_floor_egp?: number
+          floor_threshold?: number
+          id?: string
+          size_rules?: Json
+          updated_at?: string
+        }
+        Update: {
+          area_rules?: Json
+          base_fee_egp?: number
+          created_at?: string
+          exception_areas?: Json
+          floor_surcharge_per_floor_egp?: number
+          floor_threshold?: number
+          id?: string
+          size_rules?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       zan_discounts: {
         Row: {
           communication_message: string | null
@@ -4405,6 +4441,7 @@ export type Database = {
           driver_name: string | null
           feedback_image_url: string | null
           feedback_text: string | null
+          floor: number | null
           id: string
           notes: string | null
           paid_amount: number
@@ -4434,6 +4471,7 @@ export type Database = {
           driver_name?: string | null
           feedback_image_url?: string | null
           feedback_text?: string | null
+          floor?: number | null
           id?: string
           notes?: string | null
           paid_amount?: number
@@ -4463,6 +4501,7 @@ export type Database = {
           driver_name?: string | null
           feedback_image_url?: string | null
           feedback_text?: string | null
+          floor?: number | null
           id?: string
           notes?: string | null
           paid_amount?: number
