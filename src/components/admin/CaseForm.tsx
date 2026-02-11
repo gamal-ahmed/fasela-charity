@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
+import { LabeledSwitch } from "@/components/ui/labeled-switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -1329,21 +1329,13 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="deserve_zakkah" className="flex items-center gap-2">
-                مستحق للزكاة
-              </Label>
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <Switch
-                  id="deserve_zakkah"
-                  checked={watch("deserve_zakkah")}
-                  onCheckedChange={(checked) => setValue("deserve_zakkah", checked)}
-                />
-                <Label htmlFor="deserve_zakkah" className="text-sm text-muted-foreground">
-                  الحالة مستحقة للزكاة
-                </Label>
-              </div>
-            </div>
+            <LabeledSwitch
+              id="deserve_zakkah"
+              checked={watch("deserve_zakkah")}
+              onCheckedChange={(checked) => setValue("deserve_zakkah", checked)}
+              label="مستحق للزكاة"
+              description="الحالة مستحقة للزكاة"
+            />
 
             <div className="space-y-2">
               <Label htmlFor="case_care_type">نوع رعاية الحالة</Label>
@@ -1392,33 +1384,19 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
                   </p>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="show_monthly_donation">عرض خيار الكفالة الشهرية</Label>
-                  <div className="flex items-center space-x-2 space-x-reverse pt-2">
-                    <Switch
-                      id="show_monthly_donation"
-                      checked={watch("show_monthly_donation") ?? true}
-                      onCheckedChange={(checked) => setValue("show_monthly_donation", checked)}
-                    />
-                    <Label htmlFor="show_monthly_donation" className="text-sm text-muted-foreground">
-                      {watch("show_monthly_donation") !== false ? "مفعّل" : "معطّل"}
-                    </Label>
-                  </div>
-                </div>
+                <LabeledSwitch
+                  id="show_monthly_donation"
+                  checked={watch("show_monthly_donation") ?? true}
+                  onCheckedChange={(checked) => setValue("show_monthly_donation", checked)}
+                  label="عرض خيار الكفالة الشهرية"
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="show_custom_donation">عرض خيار التبرع المخصص</Label>
-                  <div className="flex items-center space-x-2 space-x-reverse pt-2">
-                    <Switch
-                      id="show_custom_donation"
-                      checked={watch("show_custom_donation") ?? true}
-                      onCheckedChange={(checked) => setValue("show_custom_donation", checked)}
-                    />
-                    <Label htmlFor="show_custom_donation" className="text-sm text-muted-foreground">
-                      {watch("show_custom_donation") !== false ? "مفعّل" : "معطّل"}
-                    </Label>
-                  </div>
-                </div>
+                <LabeledSwitch
+                  id="show_custom_donation"
+                  checked={watch("show_custom_donation") ?? true}
+                  onCheckedChange={(checked) => setValue("show_custom_donation", checked)}
+                  label="عرض خيار التبرع المخصص"
+                />
               </div>
               <p className="text-xs text-muted-foreground">
                 ملاحظة: يجب تفعيل خيار واحد على الأقل (الكفالة الشهرية أو التبرع المخصص)
@@ -1427,27 +1405,23 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
           </Card>
 
           <div className="space-y-4">
-            <div className="flex items-center space-x-2 space-x-reverse">
-              <Switch
-                id="is_published"
-                checked={watch("is_published")}
-                onCheckedChange={(checked) => setValue("is_published", checked)}
-              />
-              <Label htmlFor="is_published">نشر الحالة فوراً</Label>
-            </div>
-            <div className="flex items-center space-x-2 space-x-reverse">
-              <Switch
+            <LabeledSwitch
+              id="is_published"
+              checked={watch("is_published")}
+              onCheckedChange={(checked) => setValue("is_published", checked)}
+              label="نشر الحالة فوراً"
+            />
+            <div className="space-y-1">
+              <LabeledSwitch
                 id="is_featured"
-                checked={watch("is_featured")}
+                checked={watch("is_featured") ?? false}
                 onCheckedChange={(checked) => setValue("is_featured", checked)}
+                label="عرض في القسم المميز (الصفحة الرئيسية)"
               />
-              <Label htmlFor="is_featured" className="text-sm">
-                عرض في القسم المميز (الصفحة الرئيسية)
-              </Label>
+              <p className="text-xs text-muted-foreground pr-6">
+                عند تفعيل هذا الخيار، ستظهر الحالة في قسم الحالات المميزة على الصفحة الرئيسية (حد أقصى 3 حالات)
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground pr-6">
-              عند تفعيل هذا الخيار، ستظهر الحالة في قسم الحالات المميزة على الصفحة الرئيسية (حد أقصى 3 حالات)
-            </p>
           </div>
         </CardContent>
       </Card>
