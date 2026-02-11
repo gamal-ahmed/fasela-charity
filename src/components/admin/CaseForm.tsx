@@ -963,10 +963,10 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="title_ar">العنوان (عربي)</Label>
+              <Label htmlFor="title_ar">اسم الحالة (عربي)</Label>
               <Input
                 id="title_ar"
-                {...register("title_ar", { required: "العنوان العربي مطلوب" })}
+                {...register("title_ar", { required: "اسم الحالة بالعربي مطلوب" })}
                 placeholder="اسم العائلة أو الحالة"
               />
               {errors.title_ar && (
@@ -975,11 +975,11 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="title">العنوان (إنجليزي) - اختياري</Label>
+              <Label htmlFor="title">اسم الحالة (إنجليزي) - اختياري</Label>
               <Input
                 id="title"
                 {...register("title")}
-                placeholder="Family name or case title"
+                placeholder="Family or case name"
               />
             </div>
           </div>
@@ -1094,7 +1094,7 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
             </CardContent>
           </Card>
 
-          <div className={`grid gap-4 ${watch("case_care_type") === 'one_time_donation' || watch("case_care_type") === 'cancelled' ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
+          <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="monthly_cost">
                 {watch("case_care_type") === 'one_time_donation' ? 'المبلغ المطلوب (جنيه)' : 'التكلفة الشهرية (جنيه)'}
@@ -1137,147 +1137,150 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
                 )}
               </div>
             )}
+          </div>
 
-            <div className="space-y-2">
-              <Label>صورة الحالة</Label>
-              <div className="space-y-3">
-                {currentImageUrl && (
-                  <div className="relative w-32 h-32 border rounded-lg overflow-hidden">
-                    <img
-                      src={currentImageUrl}
-                      alt="صورة الحالة"
-                      className="w-full h-full object-cover"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-1 right-1 p-1 h-6 w-6"
-                      onClick={removeImage}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                )}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      disabled={uploadingImage}
-                      className="hidden"
-                      id="case-image-upload"
-                    />
-                    <Label
-                      htmlFor="case-image-upload"
-                      className="cursor-pointer"
-                    >
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={uploadingImage}
-                        asChild
-                      >
-                        <span className="flex items-center gap-2">
-                          <Upload className="h-4 w-4" />
-                          {uploadingImage ? "جاري الرفع..." : "رفع صورة"}
-                        </span>
-                      </Button>
-                    </Label>
-                  </div>
-                  <div className="text-sm text-muted-foreground text-center">أو</div>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="url"
-                      placeholder="لصق رابط الصورة هنا"
-                      value={imageUrlInput}
-                      onChange={(e) => setImageUrlInput(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleImageFromUrl}
-                      disabled={!imageUrlInput.trim()}
-                    >
-                      إضافة
-                    </Button>
-                  </div>
+          {/* Image Upload Sections */}
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Case Image */}
+            <div className="p-4 border rounded-lg space-y-3">
+              <Label className="text-base font-medium">صورة الحالة</Label>
+              {currentImageUrl && (
+                <div className="relative w-32 h-32 border rounded-lg overflow-hidden">
+                  <img
+                    src={currentImageUrl}
+                    alt="صورة الحالة"
+                    className="w-full h-full object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-1 right-1 p-1 h-6 w-6"
+                    onClick={removeImage}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={uploadingImage}
+                  className="hidden"
+                  id="case-image-upload"
+                />
+                <Label
+                  htmlFor="case-image-upload"
+                  className="cursor-pointer"
+                >
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={uploadingImage}
+                    asChild
+                  >
+                    <span className="flex items-center gap-2">
+                      <Upload className="h-4 w-4" />
+                      {uploadingImage ? "جاري الرفع..." : "رفع صورة"}
+                    </span>
+                  </Button>
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 border-t border-muted" />
+                <span className="text-xs text-muted-foreground">أو</span>
+                <div className="flex-1 border-t border-muted" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="url"
+                  placeholder="رابط الصورة"
+                  value={imageUrlInput}
+                  onChange={(e) => setImageUrlInput(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleImageFromUrl}
+                  disabled={!imageUrlInput.trim()}
+                >
+                  إضافة
+                </Button>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>صورة الملف الشخصي للإدارة (للعرض في لوحة الإدارة فقط)</Label>
-              <div className="space-y-3">
-                {adminProfilePictureUrl && (
-                  <div className="relative w-32 h-32 border rounded-lg overflow-hidden">
-                    <img
-                      src={adminProfilePictureUrl}
-                      alt="صورة الملف الشخصي للإدارة"
-                      className="w-full h-full object-cover"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-1 right-1 p-1 h-6 w-6"
-                      onClick={removeAdminProfilePicture}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                )}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAdminProfilePictureUpload}
-                      disabled={uploadingAdminProfilePicture}
-                      className="hidden"
-                      id="admin-profile-picture-upload"
-                    />
-                    <Label
-                      htmlFor="admin-profile-picture-upload"
-                      className="cursor-pointer"
-                    >
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={uploadingAdminProfilePicture}
-                        asChild
-                      >
-                        <span className="flex items-center gap-2">
-                          <Upload className="h-4 w-4" />
-                          {uploadingAdminProfilePicture ? "جاري الرفع..." : "رفع صورة الملف الشخصي"}
-                        </span>
-                      </Button>
-                    </Label>
-                  </div>
-                  <div className="text-sm text-muted-foreground text-center">أو</div>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="url"
-                      placeholder="لصق رابط الصورة هنا"
-                      value={adminProfilePictureUrlInput}
-                      onChange={(e) => setAdminProfilePictureUrlInput(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleAdminProfilePictureFromUrl}
-                      disabled={!adminProfilePictureUrlInput.trim()}
-                    >
-                      إضافة
-                    </Button>
-                  </div>
+            {/* Admin Profile Picture */}
+            <div className="p-4 border rounded-lg space-y-3">
+              <Label className="text-base font-medium">صورة الملف الشخصي للإدارة</Label>
+              <p className="text-xs text-muted-foreground">للعرض في لوحة الإدارة فقط</p>
+              {adminProfilePictureUrl && (
+                <div className="relative w-32 h-32 border rounded-lg overflow-hidden">
+                  <img
+                    src={adminProfilePictureUrl}
+                    alt="صورة الملف الشخصي للإدارة"
+                    className="w-full h-full object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-1 right-1 p-1 h-6 w-6"
+                    onClick={removeAdminProfilePicture}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  هذه الصورة ستظهر فقط في لوحة الإدارة ولن تظهر للمستخدمين
-                </p>
+              )}
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAdminProfilePictureUpload}
+                  disabled={uploadingAdminProfilePicture}
+                  className="hidden"
+                  id="admin-profile-picture-upload"
+                />
+                <Label
+                  htmlFor="admin-profile-picture-upload"
+                  className="cursor-pointer"
+                >
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={uploadingAdminProfilePicture}
+                    asChild
+                  >
+                    <span className="flex items-center gap-2">
+                      <Upload className="h-4 w-4" />
+                      {uploadingAdminProfilePicture ? "جاري الرفع..." : "رفع صورة"}
+                    </span>
+                  </Button>
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 border-t border-muted" />
+                <span className="text-xs text-muted-foreground">أو</span>
+                <div className="flex-1 border-t border-muted" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="url"
+                  placeholder="رابط الصورة"
+                  value={adminProfilePictureUrlInput}
+                  onChange={(e) => setAdminProfilePictureUrlInput(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAdminProfilePictureFromUrl}
+                  disabled={!adminProfilePictureUrlInput.trim()}
+                >
+                  إضافة
+                </Button>
               </div>
             </div>
           </div>
@@ -1285,7 +1288,7 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
           <div className="grid md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="city">المحافظة</Label>
-              <Select onValueChange={(value) => setValue("city", value)} defaultValue="القاهرة">
+              <Select onValueChange={(value) => setValue("city", value)} value={watch("city") || "القاهرة"}>
                 <SelectTrigger>
                   <SelectValue placeholder="اختر المحافظة" />
                 </SelectTrigger>
