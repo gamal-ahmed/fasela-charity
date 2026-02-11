@@ -351,19 +351,24 @@ export default function AdminCaseView() {
       )}
 
       <div className={`space-y-6 ${hasPendingFollowups ? 'border-2 border-yellow-400 p-4 rounded-xl bg-yellow-50/30' : ''}`}>
-        {/* Admin Profile Picture */}
-        {caseData?.admin_profile_picture_url && (
+        {/* Case Profile Picture - Show admin picture if available, otherwise show public photo */}
+        {(caseData?.admin_profile_picture_url || caseData?.photo_url) && (
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-center">
                 <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-primary/20 shadow-lg">
                   <img
-                    src={caseData.admin_profile_picture_url}
+                    src={caseData.admin_profile_picture_url || caseData.photo_url}
                     alt={caseData.title_ar || caseData.title || "Case"}
                     className="w-full h-full object-cover"
                   />
                 </div>
               </div>
+              {caseData.admin_profile_picture_url && caseData.photo_url && caseData.admin_profile_picture_url !== caseData.photo_url && (
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  صورة الإدارة (يوجد صورة عامة مختلفة)
+                </p>
+              )}
             </CardContent>
           </Card>
         )}
@@ -495,32 +500,168 @@ export default function AdminCaseView() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <div>
                 <p className="text-sm text-muted-foreground">العنوان</p>
-                <p className="font-medium">{caseData.title}</p>
+                <p className="font-medium">{caseData.title || "—"}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">العنوان بالعربية</p>
-                <p className="font-medium">{caseData.title_ar}</p>
+                <p className="font-medium">{caseData.title_ar || "—"}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">التكلفة الشهرية</p>
-                <p className="font-medium">{caseData.monthly_cost} جنيه</p>
+                <p className="text-sm text-muted-foreground">نوع الرعاية</p>
+                <Badge variant={caseData.case_care_type === 'cancelled' ? 'destructive' : 'outline'}>
+                  {caseData.case_care_type === 'sponsorship' ? 'كفالة شهرية' :
+                   caseData.case_care_type === 'one_time_donation' ? 'مساعدة لمرة واحدة' :
+                   caseData.case_care_type === 'cancelled' ? 'ملغاة' : 'غير محدد'}
+                </Badge>
               </div>
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  {caseData.case_care_type === 'one_time_donation' ? 'المبلغ المطلوب' : 'التكلفة الشهرية'}
+                </p>
+                <p className="font-medium">{(caseData.monthly_cost || 0).toLocaleString()} جنيه</p>
+              </div>
+              {caseData.case_care_type === 'sponsorship' && (
+                <div>
+                  <p className="text-sm text-muted-foreground">عدد الأشهر المطلوبة</p>
+                  <p className="font-medium">{caseData.months_needed || "—"} شهر</p>
+                </div>
+              )}
               <div>
                 <p className="text-sm text-muted-foreground">رقم جوال الأم</p>
                 <p className="font-medium">{caseData.contact_phone || "غير مسجل"}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">الحالة</p>
+                <p className="text-sm text-muted-foreground">المحافظة</p>
+                <p className="font-medium">{caseData.city || "غير محدد"}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">المنطقة</p>
+                <p className="font-medium">{caseData.area || "غير محدد"}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">حالة النشر</p>
                 <Badge variant={caseData.is_published ? "default" : "secondary"}>
                   {caseData.is_published ? "منشور" : "غير منشور"}
                 </Badge>
               </div>
+              <div>
+                <p className="text-sm text-muted-foreground">مميز</p>
+                <Badge variant={caseData.is_featured ? "default" : "outline"}>
+                  {caseData.is_featured ? "نعم" : "لا"}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">مستحق للزكاة</p>
+                <Badge variant={caseData.deserve_zakkah ? "default" : "outline"} className={caseData.deserve_zakkah ? "bg-green-600" : ""}>
+                  {caseData.deserve_zakkah ? "نعم" : "لا"}
+                </Badge>
+              </div>
             </div>
+
+            {/* Short Description */}
+            {(caseData.short_description_ar || caseData.short_description) && (
+              <div className="mt-4 pt-4 border-t">
+                <p className="text-sm text-muted-foreground mb-2">الوصف المختصر</p>
+                <p className="text-foreground">{caseData.short_description_ar || caseData.short_description}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
+
+        {/* Description Images */}
+        {caseData.description_images && Array.isArray(caseData.description_images) && caseData.description_images.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>صور إضافية</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {caseData.description_images
+                  .filter((img: unknown): img is string => typeof img === 'string')
+                  .map((imageUrl: string, index: number) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={imageUrl}
+                        alt={`صورة إضافية ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg border shadow-sm"
+                      />
+                    </div>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Parent/Guardian Profile */}
+        {(caseData.parent_age || caseData.health_state || caseData.education_level ||
+          caseData.work_ability || caseData.skills || caseData.rent_amount ||
+          caseData.kids_number || caseData.profile_notes) && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <Users className="h-6 w-6 text-primary" />
+                <CardTitle>بيانات ولي الأمر / مقدم الرعاية</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {caseData.parent_age && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">العمر</p>
+                    <p className="font-medium">{caseData.parent_age} سنة</p>
+                  </div>
+                )}
+                {caseData.kids_number !== undefined && caseData.kids_number !== null && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">عدد الأطفال</p>
+                    <p className="font-medium">{caseData.kids_number}</p>
+                  </div>
+                )}
+                {caseData.rent_amount !== undefined && caseData.rent_amount !== null && caseData.rent_amount > 0 && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">الإيجار الشهري</p>
+                    <p className="font-medium">{caseData.rent_amount.toLocaleString()} جنيه</p>
+                  </div>
+                )}
+                {caseData.education_level && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">المستوى التعليمي</p>
+                    <p className="font-medium">{caseData.education_level}</p>
+                  </div>
+                )}
+                {caseData.work_ability && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">القدرة على العمل</p>
+                    <p className="font-medium">{caseData.work_ability}</p>
+                  </div>
+                )}
+                {caseData.skills && Array.isArray(caseData.skills) && caseData.skills.length > 0 && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">المهارات</p>
+                    <p className="font-medium">{caseData.skills.join('، ')}</p>
+                  </div>
+                )}
+              </div>
+
+              {caseData.health_state && (
+                <div className="mt-4 pt-4 border-t">
+                  <p className="text-sm text-muted-foreground mb-2">الحالة الصحية</p>
+                  <p className="text-foreground">{caseData.health_state}</p>
+                </div>
+              )}
+
+              {caseData.profile_notes && (
+                <div className="mt-4 pt-4 border-t">
+                  <p className="text-sm text-muted-foreground mb-2">ملاحظات إضافية</p>
+                  <p className="text-foreground whitespace-pre-wrap">{caseData.profile_notes}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Main Content Tabs */}
@@ -597,7 +738,10 @@ export default function AdminCaseView() {
               age: kid.age,
               gender: kid.gender as 'male' | 'female',
               description: kid.description || "",
-              hobbies: kid.hobbies || []
+              hobbies: kid.hobbies || [],
+              health_state: kid.health_state || "",
+              current_grade: kid.current_grade || "",
+              school_name: kid.school_name || ""
             }))} />
           ) : (
             <div className="text-center py-8 text-muted-foreground">

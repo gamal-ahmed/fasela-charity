@@ -440,7 +440,7 @@ export default function FollowupActionForm({
                     name="case_id"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>الحالة</FormLabel>
+                        <FormLabel>الحالة <span className="text-destructive me-1">*</span></FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
@@ -522,7 +522,7 @@ export default function FollowupActionForm({
 
                   return (
                     <FormItem>
-                      <FormLabel>اختر الأطفال</FormLabel>
+                      <FormLabel>اختر الأطفال <span className="text-destructive me-1">*</span></FormLabel>
                       <div className="space-y-2 p-4 border rounded-lg bg-muted/50">
                         {kids && kids.length > 0 ? (
                           <>
@@ -583,7 +583,7 @@ export default function FollowupActionForm({
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>عنوان المتابعة</FormLabel>
+                  <FormLabel>عنوان المتابعة <span className="text-destructive me-1">*</span></FormLabel>
                   <FormControl>
                     <Input placeholder="مثال: متابعة الحالة الصحية" {...field} />
                   </FormControl>
@@ -597,7 +597,7 @@ export default function FollowupActionForm({
               name="action_date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>تاريخ المتابعة</FormLabel>
+                  <FormLabel>تاريخ المتابعة <span className="text-destructive me-1">*</span></FormLabel>
                   <FormControl>
                     <Input type="date" {...field} />
                   </FormControl>
@@ -838,7 +838,7 @@ export default function FollowupActionForm({
                   name="recurrence_interval"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>فترة التكرار</FormLabel>
+                      <FormLabel>فترة التكرار <span className="text-destructive me-1">*</span></FormLabel>
                       <Select onValueChange={field.onChange} value={field.value || ""}>
                         <FormControl>
                           <SelectTrigger>

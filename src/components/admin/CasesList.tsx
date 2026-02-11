@@ -311,7 +311,7 @@ const CasesList = () => {
                       </div>
                       <div className="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-md">
                         <span className="font-bold text-green-700">{caseItem.confirmed_amount?.toLocaleString() || 0}</span>
-                        <span className="text-xs">جمعة دخل</span>
+                        <span className="text-xs">مجموع الدخل</span>
                       </div>
                     </div>
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -123,7 +124,12 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
   const [newCharityNameAr, setNewCharityNameAr] = useState<string>("");
   const [newCharityMonthlyAmount, setNewCharityMonthlyAmount] = useState<number>(0);
   const [showNewCharityForm, setShowNewCharityForm] = useState(false);
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<CaseFormData>();
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<CaseFormData>({
+    defaultValues: {
+      case_care_type: 'sponsorship',
+    }
+  });
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const isEditMode = !!caseId;
 
@@ -668,6 +674,16 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
   };
 
   const onSubmit = async (data: CaseFormData) => {
+    // Validate months_needed for sponsorship cases
+    if (data.case_care_type === 'sponsorship' && !data.months_needed) {
+      toast({
+        title: "خطأ",
+        description: "عدد الأشهر المطلوبة مطلوب لحالات الكفالة",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -802,6 +818,9 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
           description: "تم تحديث الحالة والاحتياجات الشهرية وبيانات الأطفال بنجاح",
         });
 
+        // Invalidate the cases query to refresh the list
+        queryClient.invalidateQueries({ queryKey: ["admin-cases"] });
+
         // Call onSuccess callback if provided
         onSuccess?.();
 
@@ -838,6 +857,11 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
             kids_number: data.kids_number || 0,
             health_state: data.health_state || null,
             parent_age: data.parent_age || null,
+            work_ability: data.work_ability || null,
+            skills: skillsArray.length > 0 ? skillsArray : null,
+            education_level: data.education_level || null,
+            profile_notes: data.profile_notes || null,
+            contact_phone: data.contact_phone || null,
             total_secured_money: 0
           } as any)
           .select()
@@ -928,6 +952,9 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
         }]);
         setCaseCharities([]);
 
+        // Invalidate the cases query to refresh the list
+        queryClient.invalidateQueries({ queryKey: ["admin-cases"] });
+
         // Call onSuccess callback if provided
         onSuccess?.();
       }
@@ -963,7 +990,7 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="title_ar">اسم الحالة (عربي)</Label>
+              <Label htmlFor="title_ar">اسم الحالة (عربي) <span className="text-destructive me-1">*</span></Label>
               <Input
                 id="title_ar"
                 {...register("title_ar", { required: "اسم الحالة بالعربي مطلوب" })}
@@ -986,7 +1013,7 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
 
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="short_description_ar">الوصف المختصر (عربي)</Label>
+              <Label htmlFor="short_description_ar">الوصف المختصر (عربي) <span className="text-destructive me-1">*</span></Label>
               <Textarea
                 id="short_description_ar"
                 {...register("short_description_ar", { required: "الوصف المختصر العربي مطلوب" })}
@@ -1011,7 +1038,7 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
 
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="description_ar">الوصف الكامل (عربي)</Label>
+              <Label htmlFor="description_ar">الوصف الكامل (عربي) <span className="text-destructive me-1">*</span></Label>
               <Textarea
                 id="description_ar"
                 {...register("description_ar", { required: "الوصف الكامل العربي مطلوب" })}
@@ -1094,49 +1121,53 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
             </CardContent>
           </Card>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="monthly_cost">
-                {watch("case_care_type") === 'one_time_donation' ? 'المبلغ المطلوب (جنيه)' : 'التكلفة الشهرية (جنيه)'}
-              </Label>
-              <Input
-                id="monthly_cost"
-                type="number"
-                {...register("monthly_cost", {
-                  required: watch("case_care_type") === 'one_time_donation' ? "المبلغ المطلوب مطلوب" : "التكلفة الشهرية مطلوبة",
-                  min: { value: 1, message: "يجب أن يكون المبلغ أكبر من صفر" }
-                })}
-                placeholder={watch("case_care_type") === 'one_time_donation' ? "10000" : "2700"}
-                disabled={watch("case_care_type") === 'cancelled'}
-              />
-              {errors.monthly_cost && (
-                <p className="text-sm text-destructive">{errors.monthly_cost.message}</p>
-              )}
-              {watch("case_care_type") === 'one_time_donation' && (
-                <p className="text-xs text-muted-foreground">المبلغ الإجمالي المطلوب لمساعدة لمرة واحدة</p>
-              )}
-              {watch("case_care_type") === 'cancelled' && (
-                <p className="text-xs text-muted-foreground">الحالة ملغاة - لا يمكن تعديل المبلغ</p>
-              )}
-            </div>
-
-            {watch("case_care_type") === 'sponsorship' && (
+          {/* Financial Information */}
+          <div className="p-4 border rounded-lg space-y-4">
+            <Label className="text-base font-medium">المعلومات المالية</Label>
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="months_needed">عدد الأشهر المطلوبة</Label>
+                <Label htmlFor="monthly_cost">
+                  {watch("case_care_type") === 'one_time_donation' ? 'المبلغ المطلوب (جنيه)' : 'التكلفة الشهرية (جنيه)'} <span className="text-destructive me-1">*</span>
+                </Label>
                 <Input
-                  id="months_needed"
+                  id="monthly_cost"
                   type="number"
-                  {...register("months_needed", {
-                    required: "عدد الأشهر مطلوب",
-                    min: { value: 1, message: "يجب أن يكون عدد الأشهر أكبر من صفر" }
+                  {...register("monthly_cost", {
+                    required: watch("case_care_type") === 'one_time_donation' ? "المبلغ المطلوب مطلوب" : "التكلفة الشهرية مطلوبة",
+                    min: { value: 1, message: "يجب أن يكون المبلغ أكبر من صفر" }
                   })}
-                  placeholder="12"
+                  placeholder={watch("case_care_type") === 'one_time_donation' ? "10000" : "2700"}
+                  disabled={watch("case_care_type") === 'cancelled'}
                 />
-                {errors.months_needed && (
-                  <p className="text-sm text-destructive">{errors.months_needed.message}</p>
+                {errors.monthly_cost && (
+                  <p className="text-sm text-destructive">{errors.monthly_cost.message}</p>
+                )}
+                {watch("case_care_type") === 'one_time_donation' && (
+                  <p className="text-xs text-muted-foreground">المبلغ الإجمالي المطلوب لمساعدة لمرة واحدة</p>
+                )}
+                {watch("case_care_type") === 'cancelled' && (
+                  <p className="text-xs text-muted-foreground">الحالة ملغاة - لا يمكن تعديل المبلغ</p>
                 )}
               </div>
-            )}
+
+              {watch("case_care_type") === 'sponsorship' && (
+                <div className="space-y-2">
+                  <Label htmlFor="months_needed">عدد الأشهر المطلوبة <span className="text-destructive me-1">*</span></Label>
+                  <Input
+                    id="months_needed"
+                    type="number"
+                    {...register("months_needed", {
+                      required: "عدد الأشهر مطلوب",
+                      min: { value: 1, message: "يجب أن يكون عدد الأشهر أكبر من صفر" }
+                    })}
+                    placeholder="12"
+                  />
+                  {errors.months_needed && (
+                    <p className="text-sm text-destructive">{errors.months_needed.message}</p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Image Upload Sections */}

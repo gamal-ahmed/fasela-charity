@@ -10,6 +10,9 @@ interface Kid {
   gender: 'male' | 'female';
   description?: string;
   hobbies?: string[];
+  health_state?: string;
+  current_grade?: string;
+  school_name?: string;
 }
 
 interface KidsInfoProps {
@@ -73,6 +76,31 @@ export const KidsInfo = ({ kids }: KidsInfoProps) => {
                     </div>
                   </div>
                 </div>
+
+                {/* Education info */}
+                {(kid.current_grade || kid.school_name) && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {kid.current_grade && (
+                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                        📚 {kid.current_grade}
+                      </Badge>
+                    )}
+                    {kid.school_name && (
+                      <Badge variant="outline" className="text-xs bg-slate-50 text-slate-700 border-slate-200">
+                        🏫 {kid.school_name}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+
+                {/* Health state */}
+                {kid.health_state && (
+                  <div className="mt-2">
+                    <Badge variant="outline" className="text-xs bg-rose-50 text-rose-700 border-rose-200">
+                      🏥 {kid.health_state}
+                    </Badge>
+                  </div>
+                )}
 
                 {kid.description && (
                   <p className="mt-3 text-sm text-muted-foreground">

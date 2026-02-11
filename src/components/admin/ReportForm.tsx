@@ -147,7 +147,7 @@ const ReportForm = () => {
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label>الحالة</Label>
+            <Label>الحالة <span className="text-destructive me-1">*</span></Label>
             <Select onValueChange={(value) => setValue("case_id", value)}>
               <SelectTrigger>
                 <SelectValue placeholder="اختر الحالة" />
@@ -163,7 +163,7 @@ const ReportForm = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="title">عنوان التقرير</Label>
+            <Label htmlFor="title">عنوان التقرير <span className="text-destructive me-1">*</span></Label>
             <Input
               id="title"
               {...register("title", { required: "عنوان التقرير مطلوب" })}
@@ -255,7 +255,7 @@ const ReportForm = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="report_date">تاريخ التقرير</Label>
+            <Label htmlFor="report_date">تاريخ التقرير <span className="text-destructive me-1">*</span></Label>
             <Input
               id="report_date"
               type="date"

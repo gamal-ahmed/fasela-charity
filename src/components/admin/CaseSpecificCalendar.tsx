@@ -237,6 +237,19 @@ export default function CaseSpecificCalendar({
       return;
     }
 
+    // Validate amount against donation's remaining balance (for new handovers)
+    if (!isEditing) {
+      const selectedDonation = availableDonations.find(d => d.id === editForm.selectedDonationId);
+      if (selectedDonation && Number(editForm.amount) > selectedDonation.remaining) {
+        toast({
+          title: "خطأ",
+          description: `المبلغ المدخل (${Number(editForm.amount).toLocaleString()} ج.م) أكبر من المتبقي في التبرع (${selectedDonation.remaining.toLocaleString()} ج.م)`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     saveMutation.mutate({
       donationId: editForm.selectedDonationId,
       month: editDialog!.month,
@@ -353,55 +366,61 @@ export default function CaseSpecificCalendar({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="donation">التبرع</Label>
-              <Select
-                value={editForm.selectedDonationId}
-                onValueChange={(value) => setEditForm(prev => ({ ...prev, selectedDonationId: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر التبرع" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableDonations.map((donation) => (
-                    <SelectItem key={donation.id} value={donation.id}>
-                      [{donation.case_title}] {donation.donor_name} - {donation.remaining.toLocaleString()} ج.م متبقي
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-4 text-right">
+            {!editDialog?.existingHandover && (
+              <div className="space-y-2">
+                <Label htmlFor="donation">التبرع <span className="text-destructive">*</span></Label>
+                <Select
+                  dir="rtl"
+                  value={editForm.selectedDonationId}
+                  onValueChange={(value) => setEditForm(prev => ({ ...prev, selectedDonationId: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر التبرع" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableDonations.map((donation) => (
+                      <SelectItem key={donation.id} value={donation.id}>
+                        [{donation.case_title}] {donation.donor_name} - {donation.remaining.toLocaleString()} ج.م متبقي
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
-            <div>
-              <Label htmlFor="amount">المبلغ</Label>
+            <div className="space-y-2">
+              <Label htmlFor="amount">المبلغ <span className="text-destructive">*</span></Label>
               <Input
                 id="amount"
                 type="number"
                 value={editForm.amount}
                 onChange={(e) => setEditForm(prev => ({ ...prev, amount: e.target.value }))}
                 placeholder="أدخل المبلغ"
+                dir="rtl"
               />
             </div>
 
-            <div>
-              <Label htmlFor="date">تاريخ التسليم</Label>
+            <div className="space-y-2">
+              <Label htmlFor="date">تاريخ التسليم <span className="text-destructive">*</span></Label>
               <Input
                 id="date"
                 type="date"
                 value={editForm.date}
                 onChange={(e) => setEditForm(prev => ({ ...prev, date: e.target.value }))}
+                dir="rtl"
               />
             </div>
 
-            <div>
-              <Label htmlFor="notes">ملاحظات (اختياري)</Label>
+            <div className="space-y-2">
+              <Label htmlFor="notes">ملاحظات</Label>
               <Textarea
                 id="notes"
                 value={editForm.notes}
                 onChange={(e) => setEditForm(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="أدخل ملاحظات التسليم"
+                placeholder="أدخل ملاحظات التسليم (اختياري)"
                 rows={3}
+                dir="rtl"
               />
             </div>
           </div>
