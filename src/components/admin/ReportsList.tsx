@@ -6,41 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Calendar, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useOrganization } from "@/contexts/OrganizationContext";
+import { useOrgQueryOptions } from "@/hooks/useOrgQuery";
 
 const ReportsList = () => {
   const [loading, setLoading] = useState<string | null>(null);
   const { toast } = useToast();
+  const { orgId, enabled: orgReady } = useOrgQueryOptions();
 
   const { data: reports, refetch } = useQuery({
-    queryKey: ["admin-reports"],
+    queryKey: ["admin-reports", orgId],
     queryFn: async () => {
-      const { currentOrg, isSuperAdmin } = useOrganization();
-
-      // If super admin, return all reports; otherwise scope to reports for cases in the current org
-      if (isSuperAdmin) {
-        const { data, error } = await supabase
-          .from("monthly_reports")
-          .select(`
-            *,
-            cases (
-              title_ar,
-              title
-            )
-          `)
-          .order("report_date", { ascending: false });
-
-        if (error) throw error;
-        return data;
-      }
-
-      if (!currentOrg?.id) return [];
-
-      // Get case ids for the organization
-      const { data: casesForOrg, error: casesError } = await supabase
-        .from("cases")
-        .select("id")
-        .eq("organization_id", currentOrg.id);
+      // Get org's case IDs for scoping
+      const casesQuery = supabase.from("cases").select("id");
+      if (orgId) casesQuery.eq("organization_id", orgId);
+      const { data: casesForOrg, error: casesError } = await casesQuery;
       if (casesError) throw casesError;
       const caseIds = (casesForOrg || []).map((c: any) => c.id);
       if (caseIds.length === 0) return [];
@@ -59,10 +38,8 @@ const ReportsList = () => {
 
       if (error) throw error;
       return data;
-      
-      if (error) throw error;
-      return data;
-    }
+    },
+    enabled: orgReady,
   });
 
   const deleteReport = async (reportId: string) => {

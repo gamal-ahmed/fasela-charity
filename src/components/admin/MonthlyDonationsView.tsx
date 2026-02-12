@@ -36,7 +36,7 @@ interface MonthlyDonationData {
 
 export const MonthlyDonationsView = () => {
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
-  const { orgId } = useOrgQueryOptions();
+  const { orgId, enabled: orgReady } = useOrgQueryOptions();
 
   const toggleMonth = (month: string) => {
     setExpandedMonths(prev => {
@@ -53,8 +53,7 @@ export const MonthlyDonationsView = () => {
   const { data: monthlyData, isLoading } = useQuery({
     queryKey: ["monthly-donations", orgId],
     queryFn: async () => {
-      if (!orgId) return [];
-      const { data: donations, error: donationsError } = await supabase
+      const query = supabase
         .from("donations")
         .select(`
           id,
@@ -72,8 +71,9 @@ export const MonthlyDonationsView = () => {
           )
         `)
         .eq("status", "confirmed")
-        .eq("organization_id", orgId)
         .order("confirmed_at", { ascending: false });
+      if (orgId) query.eq("organization_id", orgId);
+      const { data: donations, error: donationsError } = await query;
 
       if (donationsError) throw donationsError;
 
@@ -129,7 +129,7 @@ export const MonthlyDonationsView = () => {
         b.month.localeCompare(a.month)
       );
     },
-    enabled: !!orgId,
+    enabled: orgReady,
   });
 
   if (isLoading) {

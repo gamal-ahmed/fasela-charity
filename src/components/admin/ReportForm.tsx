@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrgQueryOptions } from "@/hooks/useOrgQuery";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,19 +28,23 @@ const ReportForm = () => {
   const [imageUrlInput, setImageUrlInput] = useState("");
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<ReportFormData>();
   const { toast } = useToast();
+  const { orgId, enabled: orgReady } = useOrgQueryOptions();
 
   const { data: cases } = useQuery({
-    queryKey: ["cases-for-reports"],
+    queryKey: ["cases-for-reports", orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const query = supabase
         .from("cases")
         .select("id, title_ar, title")
         .eq("is_published", true)
         .order("created_at", { ascending: false });
-      
+      if (orgId) query.eq("organization_id", orgId);
+      const { data, error } = await query;
+
       if (error) throw error;
       return data;
-    }
+    },
+    enabled: orgReady,
   });
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {

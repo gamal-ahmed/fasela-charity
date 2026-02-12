@@ -21,26 +21,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Link } from "react-router-dom";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { useToast } from "@/hooks/use-toast";
-import { useOrganization } from "@/contexts/OrganizationContext";
+import { useOrgQueryOptions } from "@/hooks/useOrgQuery";
 
 const AdminCaseListView = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "followups">("date");
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { orgId, enabled: orgReady } = useOrgQueryOptions();
 
   const { data: cases, isLoading } = useQuery({
-    queryKey: ["admin-cases-list"],
+    queryKey: ["admin-cases-list", orgId],
     queryFn: async () => {
-      const { currentOrg, isSuperAdmin } = useOrganization();
-
-      // Fetch cases scoped to organization for non-super-admins
-      let casesQuery = supabase.from("cases").select("*, admin_profile_picture_url");
-      if (!isSuperAdmin) {
-        if (!currentOrg?.id) return [];
-        casesQuery = casesQuery.eq("organization_id", currentOrg.id);
-      }
-      casesQuery = casesQuery.order("created_at", { ascending: false });
+      const casesQuery = supabase.from("cases").select("*, admin_profile_picture_url")
+        .order("created_at", { ascending: false });
+      if (orgId) casesQuery.eq("organization_id", orgId);
 
       const { data: casesData, error: casesError } = await casesQuery;
       
@@ -111,7 +106,8 @@ const AdminCaseListView = () => {
       });
       
       return casesWithFinancials;
-    }
+    },
+    enabled: orgReady,
   });
 
   // Toggle featured status mutation

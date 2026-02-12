@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useOrganization } from "@/hooks/useOrganization";
+import { useOrgQueryOptions } from "@/hooks/useOrgQuery";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,12 +12,20 @@ import { Progress } from "@/components/ui/progress";
 
 export default function FollowupActionsDashboard() {
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const { data: actions, isLoading } = useQuery({
-    queryKey: ["followup-actions-dashboard"],
-    queryFn: async () => {
-      const { currentOrg, isSuperAdmin } = useOrganization();
+  const { orgId, enabled: orgReady } = useOrgQueryOptions();
 
-      let query = supabase
+  const { data: actions, isLoading } = useQuery({
+    queryKey: ["followup-actions-dashboard", orgId],
+    queryFn: async () => {
+      // Get org's case IDs for scoping
+      const casesQuery = supabase.from("cases").select("id");
+      if (orgId) casesQuery.eq("organization_id", orgId);
+      const { data: casesData, error: casesError } = await casesQuery;
+      if (casesError) throw casesError;
+      const caseIds = (casesData || []).map((c: any) => c.id);
+      if (caseIds.length === 0) return [];
+
+      const { data, error } = await supabase
         .from("followup_actions" as any)
         .select(`
           *,
@@ -26,26 +34,14 @@ export default function FollowupActionsDashboard() {
             title_ar
           )
         `)
+        .in("case_id", caseIds)
         .order("action_date", { ascending: false })
         .limit(10);
 
-      if (!isSuperAdmin) {
-        if (!currentOrg?.id) return [];
-
-        const { data: casesData, error: casesError } = await supabase
-          .from("cases")
-          .select("id")
-          .eq("organization_id", currentOrg.id);
-        if (casesError) throw casesError;
-        const caseIds = (casesData || []).map((c: any) => c.id);
-        if (caseIds.length === 0) return [];
-        query = query.in("case_id", caseIds);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
       return data as any[];
     },
+    enabled: orgReady,
     staleTime: 30000,
     refetchOnWindowFocus: false,
   });

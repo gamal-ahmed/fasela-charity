@@ -11,6 +11,7 @@ import { LabeledSwitch } from "@/components/ui/labeled-switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useOrgQueryOptions } from "@/hooks/useOrgQuery";
 
 interface CaseFormData {
   title_ar: string;
@@ -131,12 +132,13 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
   });
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { orgId } = useOrgQueryOptions();
   const isEditMode = !!caseId;
 
   // Load charities list
   useEffect(() => {
     loadCharities();
-  }, []);
+  }, [orgId]);
 
   // Load case data when in edit mode
   useEffect(() => {
@@ -147,10 +149,13 @@ const CaseForm = ({ caseId, onSuccess }: CaseFormProps) => {
 
   const loadCharities = async () => {
     try {
-      const { data, error } = await supabase
+      const query = supabase
         .from("charities")
         .select("*")
         .order("name_ar", { ascending: true });
+      if (orgId) query.eq("organization_id", orgId);
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setCharities(data || []);

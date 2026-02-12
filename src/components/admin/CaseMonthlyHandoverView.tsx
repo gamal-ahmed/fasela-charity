@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Package, Users } from "lucide-react";
+import { useOrgQueryOptions } from "@/hooks/useOrgQuery";
 
 interface CaseHandoverData {
   caseId: string;
@@ -17,30 +18,37 @@ interface CaseHandoverData {
 }
 
 export const CaseMonthlyHandoverView = () => {
+  const { orgId, enabled: orgReady } = useOrgQueryOptions();
+
   const { data: caseHandovers, isLoading } = useQuery({
-    queryKey: ["case-monthly-handovers"],
+    queryKey: ["case-monthly-handovers", orgId],
     queryFn: async () => {
-      // Get cases data
-      const { data: cases, error: casesError } = await supabase
-        .from("cases")
-        .select("id, title, title_ar");
+      // Get cases data (org-scoped)
+      const casesQuery = supabase.from("cases").select("id, title, title_ar");
+      if (orgId) casesQuery.eq("organization_id", orgId);
+      const { data: cases, error: casesError } = await casesQuery;
 
       if (casesError) throw casesError;
 
-      // Get new partial handovers
+      const caseIds = (cases || []).map(c => c.id);
+      if (caseIds.length === 0) return [];
+
+      // Get new partial handovers (scoped by case IDs)
       const { data: handovers, error: handoversError } = await supabase
         .from("donation_handovers")
         .select("handover_amount, handover_date, case_id")
+        .in("case_id", caseIds)
         .order("handover_date", { ascending: false });
 
       if (handoversError) throw handoversError;
 
-      // Get legacy handed over donations (redeemed status)
+      // Get legacy handed over donations (scoped by case IDs)
       const { data: legacyDonations, error: legacyError } = await supabase
         .from("donations")
         .select("amount, confirmed_at, case_id")
         .eq("status", "redeemed")
         .not("confirmed_at", "is", null)
+        .in("case_id", caseIds)
         .order("confirmed_at", { ascending: false });
 
       if (legacyError) throw legacyError;
@@ -126,7 +134,8 @@ export const CaseMonthlyHandoverView = () => {
       });
 
       return Object.values(caseGroups).sort((a, b) => b.totalHandedOver - a.totalHandedOver);
-    }
+    },
+    enabled: orgReady,
   });
 
   if (isLoading) {

@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
-import { useOrganization } from "@/hooks/useOrganization";
+import { useOrgQueryOptions } from "@/hooks/useOrgQuery";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -91,7 +91,7 @@ export default function FollowupActionForm({
   const [newOption, setNewOption] = useState("");
   const [selectedKidIds, setSelectedKidIds] = useState<string[]>([]);
   const queryClient = useQueryClient();
-  const { currentOrg, isSuperAdmin } = useOrganization();
+  const { orgId } = useOrgQueryOptions();
 
   // Initialize form first
   const form = useForm<z.infer<typeof formSchema>>({
@@ -129,18 +129,13 @@ export default function FollowupActionForm({
 
   // Fetch all cases for the dropdown
   const { data: cases } = useQuery({
-    queryKey: ["cases-for-followup"],
+    queryKey: ["cases-for-followup", orgId],
     queryFn: async () => {
-      let query = supabase
+      const query = supabase
         .from("cases")
         .select("id, title, title_ar")
         .order("title_ar", { ascending: true });
-
-      // If not super admin, restrict cases to current organization
-      if (!isSuperAdmin) {
-        if (!currentOrg?.id) return [];
-        query = query.eq("organization_id", currentOrg.id);
-      }
+      if (orgId) query.eq("organization_id", orgId);
 
       const { data, error } = await query;
       if (error) throw error;
@@ -254,12 +249,9 @@ export default function FollowupActionForm({
           // Create kid-level tasks for all kids in all cases
           console.log("FollowupActionForm: Creating kid-level tasks for all kids in all cases");
 
-          // Fetch all cases (scoped to org for non-super-admins)
-          let casesQuery = supabase.from("cases").select("id");
-          if (!isSuperAdmin) {
-            if (!currentOrg?.id) throw new Error("لا توجد منظمة محددة");
-            casesQuery = casesQuery.eq("organization_id", currentOrg.id);
-          }
+          // Fetch all cases (scoped to org)
+          const casesQuery = supabase.from("cases").select("id");
+          if (orgId) casesQuery.eq("organization_id", orgId);
           const { data: allCases, error: casesError } = await casesQuery;
 
           if (casesError) {
@@ -323,12 +315,9 @@ export default function FollowupActionForm({
           // Create case-level tasks for all cases
           console.log("FollowupActionForm: Creating follow-up for all cases");
 
-          // Fetch all cases (scope to org for non-super-admins)
-          let casesQuery2 = supabase.from("cases").select("id");
-          if (!isSuperAdmin) {
-            if (!currentOrg?.id) throw new Error("لا توجد منظمة محددة");
-            casesQuery2 = casesQuery2.eq("organization_id", currentOrg.id);
-          }
+          // Fetch all cases (scoped to org)
+          const casesQuery2 = supabase.from("cases").select("id");
+          if (orgId) casesQuery2.eq("organization_id", orgId);
           const { data: allCases, error: casesError } = await casesQuery2;
 
           if (casesError) {

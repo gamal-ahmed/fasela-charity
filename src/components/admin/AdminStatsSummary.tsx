@@ -8,19 +8,21 @@ export function AdminStatsSummary() {
     const { data: stats, isLoading } = useQuery({
         queryKey: ["admin-header-stats", orgId],
         queryFn: async () => {
-            if (!orgId) return { activeCases: 0, totalKids: 0 };
+            const casesQuery = supabase
+                .from("cases")
+                .select("*", { count: "exact", head: true })
+                .eq("status", "active")
+                .eq("is_published", true);
+            if (orgId) casesQuery.eq("organization_id", orgId);
+
+            const kidsQuery = supabase
+                .from("case_kids")
+                .select("*", { count: "exact", head: true });
+            if (orgId) kidsQuery.eq("organization_id", orgId);
 
             const [activeCasesResponse, totalKidsResponse] = await Promise.all([
-                (supabase
-                    .from("cases")
-                    .select("*", { count: "exact", head: true })
-                    .eq("status", "active")
-                    .eq("is_published", true)
-                    .eq("organization_id", orgId) as any),
-                (supabase
-                    .from("case_kids")
-                    .select("*", { count: "exact", head: true })
-                    .eq("organization_id", orgId) as any),
+                casesQuery as any,
+                kidsQuery as any,
             ]);
 
             return {

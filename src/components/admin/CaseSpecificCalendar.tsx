@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useOrgQueryOptions } from "@/hooks/useOrgQuery";
 import { Calendar, ChevronLeft, ChevronRight, Edit2, Plus } from "lucide-react";
 import { format } from "date-fns";
 
@@ -43,6 +44,7 @@ export default function CaseSpecificCalendar({
   monthlyCost
 }: CaseSpecificCalendarProps) {
   const { toast } = useToast();
+  const { orgId } = useOrgQueryOptions();
   const queryClient = useQueryClient();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [editDialog, setEditDialog] = useState<{
@@ -110,11 +112,14 @@ export default function CaseSpecificCalendar({
 
   // Fetch available donations when dialog opens
   const fetchAvailableDonations = async (includeDonationId?: string) => {
-    const { data, error } = await supabase
+    const query = supabase
       .from("donations")
       .select("id, donor_name, amount, total_handed_over, cases(title_ar)")
       .eq("status", "confirmed")
       .order("created_at", { ascending: false });
+    if (orgId) query.eq("organization_id", orgId);
+
+    const { data, error } = await query;
 
     if (error) {
       toast({

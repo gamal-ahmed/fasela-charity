@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Package, TrendingUp } from "lucide-react";
+import { useOrgQueryOptions } from "@/hooks/useOrgQuery";
 
 interface MonthlyHandoverData {
   month: string;
@@ -13,23 +14,35 @@ interface MonthlyHandoverData {
 }
 
 export const MonthlyHandoverSummary = () => {
+  const { orgId, enabled: orgReady } = useOrgQueryOptions();
+
   const { data: monthlyData, isLoading } = useQuery({
-    queryKey: ["monthly-handover-summary"],
+    queryKey: ["monthly-handover-summary", orgId],
     queryFn: async () => {
-      // Get new partial handovers
+      // Get org's case IDs for scoping sub-queries
+      const casesQuery = supabase.from("cases").select("id");
+      if (orgId) casesQuery.eq("organization_id", orgId);
+      const { data: orgCases, error: casesError } = await casesQuery;
+      if (casesError) throw casesError;
+      const caseIds = (orgCases || []).map(c => c.id);
+      if (caseIds.length === 0) return [];
+
+      // Get new partial handovers (scoped by case IDs)
       const { data: handovers, error: handoversError } = await supabase
         .from("donation_handovers")
         .select("handover_amount, handover_date, case_id")
+        .in("case_id", caseIds)
         .order("handover_date", { ascending: false });
 
       if (handoversError) throw handoversError;
 
-      // Get legacy handed over donations (redeemed status)
+      // Get legacy handed over donations (scoped by case IDs)
       const { data: legacyDonations, error: legacyError } = await supabase
         .from("donations")
         .select("amount, confirmed_at, case_id")
         .eq("status", "redeemed")
         .not("confirmed_at", "is", null)
+        .in("case_id", caseIds)
         .order("confirmed_at", { ascending: false });
 
       if (legacyError) throw legacyError;
@@ -98,7 +111,8 @@ export const MonthlyHandoverSummary = () => {
       });
 
       return Object.values(monthlyGroups).sort((a, b) => b.month.localeCompare(a.month));
-    }
+    },
+    enabled: orgReady,
   });
 
   // Calculate overall totals

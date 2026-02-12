@@ -22,59 +22,65 @@ const CasesList = () => {
   const [sortBy, setSortBy] = useState<SortOption>("created_at_desc");
   const [showOnlyWithFollowups, setShowOnlyWithFollowups] = useState(false);
   const { toast } = useToast();
-  const { orgId, enabled } = useOrgQueryOptions();
+  const { orgId, enabled: orgReady } = useOrgQueryOptions();
 
   const { data: cases, refetch } = useQuery({
     queryKey: ["admin-cases", orgId],
     queryFn: async () => {
-      const { data: casesData, error: casesError } = await supabase
+      const casesQuery = supabase
         .from("cases")
         .select("*")
-        .eq("organization_id", orgId)
-        .order("created_at", { ascending: false }) as any;
+        .order("created_at", { ascending: false });
+      if (orgId) casesQuery.eq("organization_id", orgId);
+      const { data: casesData, error: casesError } = await casesQuery as any;
 
       if (casesError) throw casesError;
 
       // Get confirmed donations for each case
-      const { data: confirmedDonations, error: confirmedError } = await supabase
+      const confirmedQuery = supabase
         .from("donations")
         .select("case_id, amount")
-        .eq("organization_id", orgId)
-        .eq("status", "confirmed") as any;
+        .eq("status", "confirmed");
+      if (orgId) confirmedQuery.eq("organization_id", orgId);
+      const { data: confirmedDonations, error: confirmedError } = await confirmedQuery as any;
 
       if (confirmedError) throw confirmedError;
 
       // Get legacy redeemed donations for each case
-      const { data: redeemedDonations, error: redeemedError } = await supabase
+      const redeemedQuery = supabase
         .from("donations")
         .select("case_id, amount")
-        .eq("organization_id", orgId)
-        .eq("status", "redeemed") as any;
+        .eq("status", "redeemed");
+      if (orgId) redeemedQuery.eq("organization_id", orgId);
+      const { data: redeemedDonations, error: redeemedError } = await redeemedQuery as any;
 
       if (redeemedError) throw redeemedError;
 
       // Get new handover amounts from donation_handovers table
-      const { data: handovers, error: handoversError } = await supabase
+      const handoversQuery = supabase
         .from("donation_handovers")
-        .select("case_id, handover_amount")
-        .eq("organization_id", orgId) as any;
+        .select("case_id, handover_amount");
+      if (orgId) handoversQuery.eq("organization_id", orgId);
+      const { data: handovers, error: handoversError } = await handoversQuery as any;
 
       if (handoversError) throw handoversError;
 
       // Get kids count for each case
-      const { data: kids, error: kidsError } = await supabase
+      const kidsQuery = supabase
         .from("case_kids")
-        .select("case_id")
-        .eq("organization_id", orgId) as any;
+        .select("case_id");
+      if (orgId) kidsQuery.eq("organization_id", orgId);
+      const { data: kids, error: kidsError } = await kidsQuery as any;
 
       if (kidsError) throw kidsError;
 
       // Get pending followups for each case
-      const { data: followups, error: followupsError } = await supabase
+      const followupsQuery = supabase
         .from("followup_actions")
         .select("case_id, status")
-        .eq("organization_id", orgId)
-        .neq("status", "completed") as any;
+        .neq("status", "completed");
+      if (orgId) followupsQuery.eq("organization_id", orgId);
+      const { data: followups, error: followupsError } = await followupsQuery as any;
 
       if (followupsError) throw followupsError;
 
@@ -110,7 +116,7 @@ const CasesList = () => {
 
       return casesWithFinancials;
     },
-    enabled: !!orgId,
+    enabled: orgReady,
   });
 
   const togglePublished = async (caseId: string, currentStatus: boolean) => {

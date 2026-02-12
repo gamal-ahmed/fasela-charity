@@ -454,3 +454,72 @@ openspec archive <change-id> [--yes|-y]  # Mark complete (add --yes for automati
 ```
 
 Remember: Specs are truth. Changes are proposals. Keep them in sync.
+
+## Organization Scoping Guide
+
+This project is multi-tenant. Every admin query that reads org-scoped data **must** filter by organization — unless the user is a super admin, in which case all data should be visible.
+
+### The Hook
+
+Use `useOrgQueryOptions()` from `@/hooks/useOrgQuery`:
+
+```typescript
+import { useOrgQueryOptions } from "@/hooks/useOrgQuery";
+
+const { orgId, enabled: orgReady } = useOrgQueryOptions();
+```
+
+Return values:
+| Field | Regular user | Super admin |
+|-------|-------------|-------------|
+| `orgId` | `"uuid-..."` (their org) | `null` |
+| `enabled` | `true` once org loaded | `true` immediately |
+| `isSuperAdmin` | `false` | `true` |
+
+### The Query Pattern
+
+Always use the **conditional guard** — never call `.eq("organization_id", orgId)` unconditionally:
+
+```typescript
+// CORRECT
+const { orgId, enabled: orgReady } = useOrgQueryOptions();
+
+const { data } = useQuery({
+  queryKey: ["my-data", orgId],          // always include orgId in key
+  queryFn: async () => {
+    const query = supabase.from("cases").select("*");
+    if (orgId) query.eq("organization_id", orgId);  // guard pattern
+    const { data, error } = await query;
+    if (error) throw error;
+    return data;
+  },
+  enabled: orgReady,                      // wait for org context
+});
+```
+
+```typescript
+// WRONG — breaks for super admins (filters by null)
+query.eq("organization_id", orgId);
+
+// WRONG — blocks super admins entirely
+enabled: !!orgId,
+```
+
+### Checklist for New Admin Queries
+
+1. **Import** `useOrgQueryOptions` at component level (never inside `queryFn`)
+2. **Destructure** `const { orgId, enabled: orgReady } = useOrgQueryOptions()`
+3. **Query key** must include `orgId` for proper cache invalidation on org switch
+4. **Guard filter**: `if (orgId) query.eq("organization_id", orgId)`
+5. **Enabled flag**: use `enabled: orgReady` (combine with other conditions via `&&`)
+6. **Sub-queries**: if a parent query is already org-filtered (e.g., cases), child queries scoped by parent IDs (e.g., `donations.in("case_id", caseIds)`) do NOT need a separate org filter
+
+### Org-Scoped Tables
+
+These tables have an `organization_id` column and require org filtering in admin queries:
+
+`cases`, `case_kids`, `donations`, `monthly_reports`, `followup_actions`, `donation_handovers`, `case_charities`, `case_private_spending`, `case_confidential_info`, `charities`
+
+### Defense in Depth
+
+RLS policies on the database already enforce org isolation for authenticated users. The frontend `if (orgId)` filter is **defense in depth** — it protects against RLS misconfigurations and ensures the UI never flashes cross-org data while policies load. Always apply both layers.

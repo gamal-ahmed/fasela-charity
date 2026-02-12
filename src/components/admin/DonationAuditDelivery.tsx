@@ -101,41 +101,43 @@ const DonationAuditDelivery = () => {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { orgId, enabled } = useOrgQueryOptions();
+  const { orgId, enabled: orgReady } = useOrgQueryOptions();
 
   // Fetch donations with case details
   const { data: donations = [], isLoading } = useQuery({
     queryKey: ["donation-audit", orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const query = supabase
         .from("donations")
         .select(`
           *,
           cases!inner(id, title, title_ar)
         `)
-        .eq("organization_id", orgId)
-        .order("created_at", { ascending: false }) as any;
+        .order("created_at", { ascending: false });
+      if (orgId) query.eq("organization_id", orgId);
+      const { data, error } = await query as any;
 
       if (error) throw error;
       return data as Donation[];
     },
-    enabled: !!orgId,
+    enabled: orgReady,
   });
 
   // Fetch cases for handover transfer
   const { data: allCases = [] } = useQuery({
     queryKey: ["cases-for-handover", orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const query = supabase
         .from("cases")
         .select("id, title_ar, status")
-        .eq("organization_id", orgId)
-        .order("title_ar", { ascending: true }) as any;
+        .order("title_ar", { ascending: true });
+      if (orgId) query.eq("organization_id", orgId);
+      const { data, error } = await query as any;
 
       if (error) throw error;
       return data;
     },
-    enabled: !!orgId,
+    enabled: orgReady,
   });
 
   // Fetch all handover history since inception with pagination
@@ -145,7 +147,7 @@ const DonationAuditDelivery = () => {
       const from = 0;
       const to = handoverPage * HANDOVERS_PER_PAGE - 1;
 
-      const { data, error } = await supabase
+      const query = supabase
         .from("donation_handovers")
         .select(`
           *,
@@ -153,29 +155,31 @@ const DonationAuditDelivery = () => {
           original_case:cases!donation_handovers_original_case_id_fkey(title, title_ar),
           donations(donor_name, amount, payment_code, created_at, confirmed_at)
         `)
-        .eq("organization_id", orgId)
         .order("handover_date", { ascending: false })
-        .range(from, to) as any;
+        .range(from, to);
+      if (orgId) query.eq("organization_id", orgId);
+      const { data, error } = await query as any;
 
       if (error) throw error;
       return data as HandoverRecord[];
     },
-    enabled: !!orgId,
+    enabled: orgReady,
   });
 
   // Check if there are more handovers to load
   const { data: totalHandovers } = useQuery({
     queryKey: ["handover-count", orgId],
     queryFn: async () => {
-      const { count, error } = await supabase
+      const query = supabase
         .from("donation_handovers")
-        .select("*", { count: 'exact', head: true })
-        .eq("organization_id", orgId);
+        .select("*", { count: 'exact', head: true });
+      if (orgId) query.eq("organization_id", orgId);
+      const { count, error } = await query;
 
       if (error) throw error;
       return count || 0;
     },
-    enabled: !!orgId,
+    enabled: orgReady,
   });
 
   // Confirm donation mutation

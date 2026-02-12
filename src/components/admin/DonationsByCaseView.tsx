@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronDown, User, Calendar, CreditCard, Check, X, Package, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useOrganization } from "@/contexts/OrganizationContext";
+import { useOrgQueryOptions } from "@/hooks/useOrgQuery";
 import {
   Table,
   TableBody,
@@ -73,44 +73,40 @@ export const DonationsByCaseView = () => {
   const [createReport, setCreateReport] = useState(true); // New state for checkbox
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { orgId, enabled: orgReady } = useOrgQueryOptions();
 
   const { data: paymentReferences } = useQuery({
-    queryKey: ["payment-references"],
+    queryKey: ["payment-references", orgId],
     queryFn: async () => {
-      const { currentOrg, isSuperAdmin } = useOrganization();
+      // Scope to org's cases
+      const casesQuery = supabase.from("cases").select("id");
+      if (orgId) casesQuery.eq("organization_id", orgId);
+      const { data: casesForOrg } = await casesQuery;
+      const caseIds = (casesForOrg || []).map((c: any) => c.id);
+      if (caseIds.length === 0) return [];
 
-      // If not super admin, limit to donations for this org's cases
-      let donationQuery = supabase.from("donations").select("payment_reference").not("payment_reference", "is", null).neq("payment_reference", "");
-      if (!isSuperAdmin) {
-        if (!currentOrg?.id) return [];
-        // get case ids for org
-        const { data: casesForOrg } = await supabase.from("cases").select("id").eq("organization_id", currentOrg.id);
-        const caseIds = (casesForOrg || []).map((c: any) => c.id);
-        if (caseIds.length === 0) return [];
-        donationQuery = donationQuery.in("case_id", caseIds as any);
-      }
-
-      const { data, error } = await donationQuery;
+      const { data, error } = await supabase
+        .from("donations")
+        .select("payment_reference")
+        .not("payment_reference", "is", null)
+        .neq("payment_reference", "")
+        .in("case_id", caseIds as any);
 
       if (error) throw error;
-      
+
       // Get unique payment references
       const uniqueRefs = [...new Set(data.map(d => d.payment_reference))];
       return uniqueRefs.filter(Boolean);
-    }
+    },
+    enabled: orgReady,
   });
 
   const { data: casesWithDonations, isLoading } = useQuery({
-    queryKey: ["donations-by-case"],
+    queryKey: ["donations-by-case", orgId],
     queryFn: async () => {
-      const { currentOrg, isSuperAdmin } = useOrganization();
-
-      // First get cases (scope to org if not super admin)
-      let casesQuery = supabase.from("cases").select("id, title, title_ar, monthly_cost, total_secured_money, months_covered, status").order("title_ar", { ascending: true });
-      if (!isSuperAdmin) {
-        if (!currentOrg?.id) return [];
-        casesQuery = casesQuery.eq("organization_id", currentOrg.id);
-      }
+      // First get cases (org-scoped)
+      const casesQuery = supabase.from("cases").select("id, title, title_ar, monthly_cost, total_secured_money, months_covered, status").order("title_ar", { ascending: true });
+      if (orgId) casesQuery.eq("organization_id", orgId);
 
       const { data: cases, error: casesError } = await casesQuery;
 
@@ -132,7 +128,8 @@ export const DonationsByCaseView = () => {
       }));
 
       return casesWithDonations;
-    }
+    },
+    enabled: orgReady,
   });
 
   const { data: handoverRecords } = useQuery({
