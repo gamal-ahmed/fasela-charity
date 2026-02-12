@@ -1,5 +1,4 @@
 import { useOrganization } from "@/contexts/OrganizationContext";
-import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Hook to get the current organization ID for queries.
@@ -17,24 +16,26 @@ export function useCurrentOrgId() {
  * Hook to get organization-aware query options.
  * Use this to add org filtering to your React Query queries.
  *
+ * - For regular users: returns orgId and enables queries once org is loaded
+ * - For super admins: returns orgId as null so queries skip the org filter,
+ *   allowing them to see data across all organizations
+ *
  * Example:
  * ```
  * const { orgId, enabled } = useOrgQueryOptions();
  *
- * const { data } = useQuery({
- *   queryKey: ["cases", orgId],
- *   queryFn: () => supabase.from("cases").select("*").eq("organization_id", orgId),
- *   enabled,
- * });
+ * const query = supabase.from("cases").select("*");
+ * if (orgId) query.eq("organization_id", orgId);
  * ```
  */
 export function useOrgQueryOptions() {
-  const { currentOrg, isLoading } = useOrganization();
+  const { currentOrg, isLoading, isSuperAdmin } = useOrganization();
 
   return {
-    orgId: currentOrg?.id ?? null,
-    enabled: !isLoading && !!currentOrg?.id,
+    orgId: isSuperAdmin ? null : (currentOrg?.id ?? null),
+    enabled: !isLoading && (isSuperAdmin || !!currentOrg?.id),
     isLoading,
+    isSuperAdmin,
   };
 }
 

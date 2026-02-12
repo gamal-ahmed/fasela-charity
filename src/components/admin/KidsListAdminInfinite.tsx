@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrgQueryOptions } from "@/hooks/useOrgQuery";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,13 +10,19 @@ import KidCard, { Kid } from "@/components/KidCard";
 const PAGE_SIZE = 12;
 
 const KidsListAdminInfinite = () => {
+    const { orgId, enabled: orgReady } = useOrgQueryOptions();
+
     // Fetch statistics
     const { data: stats } = useQuery({
-        queryKey: ["kids-stats"],
+        queryKey: ["kids-stats", orgId],
         queryFn: async () => {
-            const { data: kids, error } = await supabase
+            const query = supabase
                 .from("case_kids")
                 .select("gender, age");
+
+            if (orgId) query.eq("organization_id", orgId);
+
+            const { data: kids, error } = await query;
 
             if (error) throw error;
 
@@ -31,6 +38,7 @@ const KidsListAdminInfinite = () => {
 
             return { total, boys, girls, ages0to5, ages6to12, ages13to18, averageAge };
         },
+        enabled: orgReady,
     });
 
     // Fetch kids with infinite scroll
@@ -41,16 +49,20 @@ const KidsListAdminInfinite = () => {
         isFetchingNextPage,
         isLoading,
     } = useInfiniteQuery({
-        queryKey: ["admin-kids-infinite"],
+        queryKey: ["admin-kids-infinite", orgId],
         queryFn: async ({ pageParam = 0 }) => {
             const from = pageParam * PAGE_SIZE;
             const to = from + PAGE_SIZE - 1;
 
-            const { data: kidsData, error } = await supabase
+            const query = supabase
                 .from("case_kids")
                 .select("*")
                 .order("created_at", { ascending: false })
                 .range(from, to);
+
+            if (orgId) query.eq("organization_id", orgId);
+
+            const { data: kidsData, error } = await query;
 
             if (error) throw error;
 
@@ -73,6 +85,7 @@ const KidsListAdminInfinite = () => {
             return pages.length;
         },
         initialPageParam: 0,
+        enabled: orgReady,
     });
 
     const kids = data?.pages.flat() || [];

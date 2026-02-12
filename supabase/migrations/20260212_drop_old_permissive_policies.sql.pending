@@ -1,0 +1,46 @@
+-- Drop old permissive RLS policies that bypass organization isolation.
+--
+-- The multitenancy migration (20251213_multitenancy_policies.sql) added
+-- "Org Isolation *" policies to org-scoped tables, but never dropped the
+-- original USING(true) policies. In PostgreSQL, multiple permissive policies
+-- are OR'd together, so the old policies effectively nullify org isolation.
+
+BEGIN;
+
+-- ─── case_kids ───────────────────────────────────────────────────────────────
+DROP POLICY IF EXISTS "Allow public to view kids data" ON public.case_kids;
+DROP POLICY IF EXISTS "Allow authenticated users to manage kids data" ON public.case_kids;
+
+-- ─── monthly_reports ─────────────────────────────────────────────────────────
+DROP POLICY IF EXISTS "Allow public to view monthly reports" ON public.monthly_reports;
+DROP POLICY IF EXISTS "Allow authenticated users to manage monthly reports" ON public.monthly_reports;
+
+-- ─── monthly_needs ───────────────────────────────────────────────────────────
+-- monthly_needs may not have organization_id (not in the multitenancy tables).
+-- Dropping these only if they exist; they still leak data cross-org via case_id joins.
+DROP POLICY IF EXISTS "Allow public to view monthly needs" ON public.monthly_needs;
+DROP POLICY IF EXISTS "Allow authenticated users to manage monthly needs" ON public.monthly_needs;
+
+-- ─── donation_handovers ──────────────────────────────────────────────────────
+-- Keeping existing policies for now. Multiple public pages query handover
+-- amounts (CasesList, CaseDetails, MonthlyDonorReport, etc.) as anon.
+-- Dropping these would break totalSecured calculations on public pages.
+
+-- ─── case_charities ─────────────────────────────────────────────────────────
+DROP POLICY IF EXISTS "Public can view case charities" ON public.case_charities;
+DROP POLICY IF EXISTS "Admins can manage all case charities" ON public.case_charities;
+
+-- ─── charities ───────────────────────────────────────────────────────────────
+DROP POLICY IF EXISTS "Public can view charities" ON public.charities;
+DROP POLICY IF EXISTS "Admins can manage all charities" ON public.charities;
+
+-- ─── donations ───────────────────────────────────────────────────────────────
+-- Drop the old non-org-scoped admin policies (replaced by "Org Isolation *")
+DROP POLICY IF EXISTS "Admins can view all donations" ON public.donations;
+DROP POLICY IF EXISTS "Admins can update all donations" ON public.donations;
+-- The public-facing policies below are intentional for the donation flow:
+--   "Anyone can create donations" (public INSERT)
+--   "Public can view confirmed donations for transparency" (public SELECT where status='confirmed')
+-- We keep these but they should be reviewed if public case pages become org-scoped.
+
+COMMIT;

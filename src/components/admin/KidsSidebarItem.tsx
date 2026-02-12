@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Baby, ChevronRight, Loader2, User } from "lucide-react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrgQueryOptions } from "@/hooks/useOrgQuery";
 import {
     SidebarMenuButton,
     SidebarMenuItem,
@@ -16,6 +17,7 @@ import { Button } from "@/components/ui/button";
 export function KidsSidebarItem() {
     const location = useLocation();
     const [isOpen, setIsOpen] = useState(false);
+    const { orgId, enabled: orgReady } = useOrgQueryOptions();
 
     const {
         data,
@@ -24,16 +26,22 @@ export function KidsSidebarItem() {
         isFetchingNextPage,
         isLoading,
     } = useInfiniteQuery({
-        queryKey: ["admin-sidebar-kids"],
+        queryKey: ["admin-sidebar-kids", orgId],
         queryFn: async ({ pageParam = 0 }) => {
             const from = pageParam * 10;
             const to = from + 9;
 
-            const { data, error } = await supabase
+            const query = supabase
                 .from("case_kids")
                 .select("id, name")
                 .order("created_at", { ascending: false })
                 .range(from, to);
+
+            if (orgId) {
+                query.eq("organization_id", orgId);
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
             return data;
@@ -43,7 +51,7 @@ export function KidsSidebarItem() {
             if (lastPage.length < 10) return undefined;
             return allPages.length;
         },
-        enabled: isOpen,
+        enabled: isOpen && orgReady,
     });
 
     const kids = data?.pages.flatMap((page) => page) || [];
