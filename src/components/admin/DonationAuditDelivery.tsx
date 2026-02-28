@@ -89,6 +89,7 @@ const DonationAuditDelivery = () => {
   const [handoverDate, setHandoverDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedCaseId, setSelectedCaseId] = useState("");
   const [createReport, setCreateReport] = useState(true); // New state for checkbox
+  const [reportFile, setReportFile] = useState<File | null>(null); // New state for report photo
   const [filterStatus, setFilterStatus] = useState("all");
   const [showActionDialog, setShowActionDialog] = useState(false);
   const [showHandoverDialog, setShowHandoverDialog] = useState(false);
@@ -217,7 +218,8 @@ const DonationAuditDelivery = () => {
       amount,
       notes,
       date,
-      shouldCreateReport
+      shouldCreateReport,
+      reportFile
     }: {
       donationId: string;
       caseId: string;
@@ -225,6 +227,7 @@ const DonationAuditDelivery = () => {
       notes: string;
       date: string;
       shouldCreateReport: boolean;
+      reportFile: File | null;
     }) => {
       try {
         // Insert handover record
@@ -268,6 +271,28 @@ const DonationAuditDelivery = () => {
           const reportTitle = `تسليم تبرع بقيمة ${amount.toLocaleString()} ج.م`;
           const reportDescription = `تم تسليم مبلغ ${amount.toLocaleString()} ج.م من التبرع رقم ${donationData.payment_code}''} إلى الحالة ${caseData.title_ar || caseData.title}.${notes ? `\n\nملاحظات التسليم:\n${notes}` : ''}`;
 
+          let imagesArray: string[] | null = null;
+          if (reportFile) {
+            const fileExt = reportFile.name.split('.').pop();
+            const fileName = `${Math.random()}.${fileExt}`;
+            const filePath = `case-images/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+              .from('case-images')
+              .upload(filePath, reportFile);
+
+            if (uploadError) {
+              console.error("Error uploading report image:", uploadError);
+              throw new Error("حدث خطأ أثناء رفع صورة التقرير");
+            }
+
+            const { data: { publicUrl } } = supabase.storage
+              .from('case-images')
+              .getPublicUrl(filePath);
+
+            imagesArray = [publicUrl];
+          }
+
           const { error: reportError } = await supabase
             .from("monthly_reports")
             .insert({
@@ -276,7 +301,8 @@ const DonationAuditDelivery = () => {
               description: reportDescription,
               report_date: date,
               status: 'completed',
-              category: 'handover'
+              category: 'handover',
+              ...(imagesArray && { images: imagesArray })
             } as any);
 
           if (reportError) throw reportError;
@@ -336,6 +362,7 @@ const DonationAuditDelivery = () => {
     setHandoverDate(new Date().toISOString().split('T')[0]);
     setSelectedCaseId("");
     setCreateReport(true); // Reset checkbox to checked by default
+    setReportFile(null); // Reset report photo
   };
 
   const toggleCaseExpansion = (caseId: string) => {
@@ -384,7 +411,8 @@ const DonationAuditDelivery = () => {
       amount: Number(handoverAmount),
       notes: handoverNotes,
       date: handoverDate,
-      shouldCreateReport: createReport
+      shouldCreateReport: createReport,
+      reportFile: reportFile
     });
   };
 
@@ -1312,15 +1340,30 @@ const DonationAuditDelivery = () => {
                   />
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="create-report"
-                    checked={createReport}
-                    onCheckedChange={(checked) => setCreateReport(checked as boolean)}
-                  />
-                  <Label htmlFor="create-report" className="text-sm">
-                    إنشاء تقرير تلقائي للحالة
-                  </Label>
+                <div className="flex flex-col space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="create-report"
+                      checked={createReport}
+                      onCheckedChange={(checked) => setCreateReport(checked as boolean)}
+                    />
+                    <Label htmlFor="create-report" className="text-sm">
+                      إنشاء تقرير تلقائي للحالة
+                    </Label>
+                  </div>
+
+                  {createReport && (
+                    <div className="pr-6 space-y-2">
+                      <Label htmlFor="report-photo" className="text-xs text-muted-foreground">صورة للتقرير (اختياري)</Label>
+                      <Input
+                        id="report-photo"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setReportFile(e.target.files?.[0] || null)}
+                        className="text-sm"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
