@@ -117,7 +117,7 @@ export default function CaseSpecificCalendar({
       .from("donations")
       .select("id, donor_name, amount, total_handed_over, case_id, cases(title_ar)")
       .eq("status", "confirmed")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: true });
     if (orgId) query.eq("organization_id", orgId);
 
     const { data, error } = await query;
@@ -139,7 +139,7 @@ export default function CaseSpecificCalendar({
       remaining: Number(d.amount) - Number(d.total_handed_over || 0),
       case_id: d.case_id,
       case_title: d.cases?.title_ar || "حالة غير معروفة",
-    }));
+    })).filter((d: any) => d.remaining > 0 || d.id === includeDonationId);
   };
 
   const saveMutation = useMutation({

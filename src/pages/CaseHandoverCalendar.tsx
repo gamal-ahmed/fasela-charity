@@ -159,7 +159,7 @@ export default function CaseHandoverCalendar() {
       .from("donations")
       .select("id, donor_name, amount, total_handed_over, case_id, cases(title_ar)")
       .eq("status", "confirmed")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: true });
 
     if (currentOrg?.id) {
       query.eq("organization_id", currentOrg.id);
@@ -184,7 +184,7 @@ export default function CaseHandoverCalendar() {
       remaining: Number(d.amount) - Number(d.total_handed_over || 0),
       case_id: d.case_id,
       case_title: d.cases?.title_ar || "حالة غير معروفة",
-    }));
+    })).filter((d: any) => d.remaining > 0);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
