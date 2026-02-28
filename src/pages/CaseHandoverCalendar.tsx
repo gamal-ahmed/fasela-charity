@@ -20,6 +20,7 @@ interface HandoverData {
   notes?: string;
   is_report_checkpoint?: boolean;
   report_image_url?: string;
+  donation_id?: string;
 }
 
 interface CaseHandovers {
@@ -89,7 +90,7 @@ export default function CaseHandoverCalendar() {
 
       const { data: handovers, error: handoversError } = await supabase
         .from("donation_handovers")
-        .select("id, case_id, handover_amount, handover_date, handover_notes")
+        .select("id, case_id, handover_amount, handover_date, handover_notes, donation_id")
         .eq("organization_id", currentOrg.id)
         .gte("handover_date", startDate.toISOString())
         .lte("handover_date", endDate.toISOString());
@@ -133,6 +134,7 @@ export default function CaseHandoverCalendar() {
             date: handover.handover_date,
             notes: handover.handover_notes || undefined,
             report_image_url: reportImageUrl,
+            donation_id: handover.donation_id,
           });
         });
 
@@ -173,7 +175,7 @@ export default function CaseHandoverCalendar() {
       amount: Number(d.amount),
       total_handed_over: Number(d.total_handed_over || 0),
       remaining: Number(d.amount) - Number(d.total_handed_over || 0),
-    })).filter(d => d.remaining > 0);
+    }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -323,7 +325,7 @@ export default function CaseHandoverCalendar() {
     setEditForm({
       amount: existingHandover?.amount.toString() || monthlyCost.toString(),
       notes: existingHandover?.notes || "",
-      selectedDonationId: "",
+      selectedDonationId: existingHandover?.donation_id || "",
       isReportCheckpoint: existingHandover?.is_report_checkpoint || false,
     });
 
