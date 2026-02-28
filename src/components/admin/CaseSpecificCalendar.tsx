@@ -27,6 +27,7 @@ interface Donation {
   amount: number;
   total_handed_over: number;
   remaining: number;
+  case_id: string;
   case_title: string;
 }
 
@@ -114,7 +115,7 @@ export default function CaseSpecificCalendar({
   const fetchAvailableDonations = async (includeDonationId?: string) => {
     const query = supabase
       .from("donations")
-      .select("id, donor_name, amount, total_handed_over, cases(title_ar)")
+      .select("id, donor_name, amount, total_handed_over, case_id, cases(title_ar)")
       .eq("status", "confirmed")
       .order("created_at", { ascending: false });
     if (orgId) query.eq("organization_id", orgId);
@@ -136,13 +137,15 @@ export default function CaseSpecificCalendar({
       amount: Number(d.amount),
       total_handed_over: Number(d.total_handed_over || 0),
       remaining: Number(d.amount) - Number(d.total_handed_over || 0),
+      case_id: d.case_id,
       case_title: d.cases?.title_ar || "حالة غير معروفة",
-    })).filter((d: any) => d.remaining > 0 || d.id === includeDonationId);
+    }));
   };
 
   const saveMutation = useMutation({
     mutationFn: async (data: {
       donationId: string;
+      originalCaseId: string;
       month: number;
       year: number;
       amount: number;
@@ -159,6 +162,9 @@ export default function CaseSpecificCalendar({
             handover_amount: preciseAmount,
             handover_notes: data.notes || null,
             handover_date: data.date,
+            donation_id: data.donationId,
+            original_case_id: data.originalCaseId,
+            updated_at: new Date().toISOString()
           })
           .eq("id", data.handoverId);
 
@@ -168,10 +174,12 @@ export default function CaseSpecificCalendar({
           .from("donation_handovers")
           .insert({
             case_id: caseId,
+            original_case_id: data.originalCaseId,
             donation_id: data.donationId,
             handover_amount: preciseAmount,
             handover_date: data.date,
             handover_notes: data.notes || null,
+            organization_id: orgId
           } as any);
 
         if (error) throw error;
@@ -242,21 +250,29 @@ export default function CaseSpecificCalendar({
       return;
     }
 
-    // Validate amount against donation's remaining balance (for new handovers)
-    if (!isEditing) {
-      const selectedDonation = availableDonations.find(d => d.id === editForm.selectedDonationId);
-      if (selectedDonation && Number(editForm.amount) > selectedDonation.remaining) {
-        toast({
-          title: "خطأ",
-          description: `المبلغ المدخل (${Number(editForm.amount).toLocaleString()} ج.م) أكبر من المتبقي في التبرع (${selectedDonation.remaining.toLocaleString()} ج.م)`,
-          variant: "destructive",
-        });
-        return;
-      }
+    const selectedDonation = availableDonations.find(d => d.id === editForm.selectedDonationId);
+
+    if (selectedDonation && caseId === selectedDonation.case_id && Number(editForm.amount) > selectedDonation.remaining) {
+      toast({
+        title: "خطأ",
+        description: `المبلغ المدخل (${Number(editForm.amount).toLocaleString()} ج.م) أكبر من المتبقي في التبرع (${selectedDonation.remaining.toLocaleString()} ج.م)`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedDonation && Number(editForm.amount) > selectedDonation.amount) {
+      toast({
+        title: "خطأ",
+        description: `المبلغ المدخل (${Number(editForm.amount).toLocaleString()} ج.م) أكبر من قيمة التبرع الأصلية (${selectedDonation.amount.toLocaleString()} ج.م)`,
+        variant: "destructive",
+      });
+      return;
     }
 
     saveMutation.mutate({
       donationId: editForm.selectedDonationId,
+      originalCaseId: selectedDonation?.case_id || caseId,
       month: editDialog!.month,
       year: editDialog!.year,
       amount: Number(editForm.amount),

@@ -37,6 +37,8 @@ interface Donation {
   amount: number;
   total_handed_over: number;
   remaining: number;
+  case_id: string;
+  case_title: string;
 }
 
 export default function CaseHandoverCalendar() {
@@ -152,13 +154,18 @@ export default function CaseHandoverCalendar() {
     enabled: !!currentOrg?.id,
   });
 
-  const fetchAvailableDonations = async (caseId: string) => {
-    const { data, error } = await supabase
+  const fetchAvailableDonations = async () => {
+    const query = supabase
       .from("donations")
-      .select("id, donor_name, amount, total_handed_over")
-      .eq("case_id", caseId)
+      .select("id, donor_name, amount, total_handed_over, case_id, cases(title_ar)")
       .eq("status", "confirmed")
       .order("created_at", { ascending: false });
+
+    if (currentOrg?.id) {
+      query.eq("organization_id", currentOrg.id);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       toast({
@@ -169,12 +176,14 @@ export default function CaseHandoverCalendar() {
       return [];
     }
 
-    return (data || []).map(d => ({
+    return (data || []).map((d: any) => ({
       id: d.id,
       donor_name: d.donor_name || "متبرع مجهول",
       amount: Number(d.amount),
       total_handed_over: Number(d.total_handed_over || 0),
       remaining: Number(d.amount) - Number(d.total_handed_over || 0),
+      case_id: d.case_id,
+      case_title: d.cases?.title_ar || "حالة غير معروفة",
     }));
   };
 
@@ -187,6 +196,7 @@ export default function CaseHandoverCalendar() {
   const saveMutation = useMutation({
     mutationFn: async (data: {
       caseId: string;
+      originalCaseId: string;
       donationId: string;
       month: number;
       year: number;
@@ -268,6 +278,7 @@ export default function CaseHandoverCalendar() {
             handover_amount: preciseAmount,
             handover_notes: data.notes,
             donation_id: data.donationId,
+            original_case_id: data.originalCaseId,
             updated_at: new Date().toISOString(),
           })
           .eq("id", data.handoverId);
@@ -278,12 +289,13 @@ export default function CaseHandoverCalendar() {
           .from("donation_handovers")
           .insert({
             case_id: data.caseId,
+            original_case_id: data.originalCaseId,
             donation_id: data.donationId,
             organization_id: currentOrg.id,
             handover_amount: preciseAmount,
             handover_date: handoverDate.toISOString(),
             handover_notes: data.notes,
-          });
+          } as any);
 
         if (error) throw error;
       }
@@ -319,7 +331,7 @@ export default function CaseHandoverCalendar() {
   ) => {
     const existingHandover = existingHandovers?.[0];
 
-    const donations = await fetchAvailableDonations(caseId);
+    const donations = await fetchAvailableDonations();
     setAvailableDonations(donations);
 
     setEditForm({
@@ -364,10 +376,22 @@ export default function CaseHandoverCalendar() {
     }
 
     const selectedDonation = availableDonations.find(d => d.id === editForm.selectedDonationId);
-    if (selectedDonation && amount > selectedDonation.remaining) {
+
+    // Allow any amount if transferring to another case, but enforce remaining balance if same case
+    if (selectedDonation && editDialog.caseId === selectedDonation.case_id && amount > selectedDonation.remaining) {
       toast({
         title: "مبلغ غير صالح",
         description: `المبلغ المتبقي في التبرع: ${selectedDonation.remaining.toFixed(2)} جنيه`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // For different cases, just ensure it doesn't exceed the total original donation amount
+    if (selectedDonation && amount > selectedDonation.amount) {
+      toast({
+        title: "مبلغ غير صالح",
+        description: `المبلغ الكلي للتبرع: ${selectedDonation.amount.toFixed(2)} جنيه`,
         variant: "destructive",
       });
       return;
@@ -384,6 +408,7 @@ export default function CaseHandoverCalendar() {
 
     saveMutation.mutate({
       caseId: editDialog.caseId,
+      originalCaseId: selectedDonation?.case_id || editDialog.caseId,
       donationId: editForm.selectedDonationId,
       month: editDialog.month,
       year: editDialog.year,
@@ -603,7 +628,7 @@ export default function CaseHandoverCalendar() {
                   ) : (
                     availableDonations.map((donation) => (
                       <SelectItem key={donation.id} value={donation.id}>
-                        {donation.donor_name} - متبقي: {donation.remaining.toLocaleString()} ج.م
+                        [{donation.case_title}] {donation.donor_name} - متبقي: {donation.remaining.toLocaleString()} ج.م
                       </SelectItem>
                     ))
                   )}
